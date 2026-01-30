@@ -7,6 +7,7 @@ import SiteLayout from "@/components/layout/SiteLayout";
 import Home from "@/pages/Home";
 import Demos from "@/pages/Demos";
 import Contact from "@/pages/Contact";
+import Thanks from "@/pages/Thanks";
 
 const router = createBrowserRouter([
   {
@@ -16,6 +17,7 @@ const router = createBrowserRouter([
       { index: true, element: <Home /> },
       { path: "demos", element: <Demos /> },
       { path: "contact", element: <Contact /> },
+      { path: "thanks", element: <Thanks /> },
     ],
   },
 ]);

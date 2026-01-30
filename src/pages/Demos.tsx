@@ -13,7 +13,7 @@ function DemoPlayer({
     <Card className="transition-all hover:-translate-y-0.5 hover:shadow-lg">
       <CardContent className="space-y-4 p-6">
         <div>
-          <p className="font-medium text-lg">{title}</p>
+          <p className="text-lg font-medium">{title}</p>
           <p className="text-sm text-muted-foreground">{description}</p>
         </div>
 
@@ -37,6 +37,12 @@ export default function Demos() {
       </header>
 
       <section className="grid gap-6 md:grid-cols-3">
+        <DemoPlayer
+          title="Short Story"
+          description="A short story."
+          src="/audio/shortstory.wav"
+        />
+
         <DemoPlayer
           title="Commercial"
           description="Warm, friendly, and conversational delivery for brand messaging."
