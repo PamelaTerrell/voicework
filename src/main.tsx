@@ -5,7 +5,8 @@ import "./index.css";
 
 import SiteLayout from "@/components/layout/SiteLayout";
 import Home from "@/pages/Home";
-import Demos from "@/pages/Demos";
+import Listen from "@/pages/Listen";
+import Join from "@/pages/Join";
 import Contact from "@/pages/Contact";
 import Thanks from "@/pages/Thanks";
 
@@ -15,7 +16,14 @@ const router = createBrowserRouter([
     element: <SiteLayout />,
     children: [
       { index: true, element: <Home /> },
-      { path: "demos", element: <Demos /> },
+
+      // New structure
+      { path: "listen", element: <Listen /> },
+      { path: "join", element: <Join /> },
+
+      // Keep old route working (optional but recommended)
+      { path: "demos", element: <Listen /> },
+
       { path: "contact", element: <Contact /> },
       { path: "thanks", element: <Thanks /> },
     ],
