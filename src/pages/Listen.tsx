@@ -1,24 +1,34 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
+type Episode = {
+  id: string;
+  title: string;
+  description: string;
+  thumbnailSrc?: string;
+  previewMp3?: string;
+  previewWav?: string;
+  isPremium?: boolean;
+  tags?: string[];
+};
+
 // Prevent multiple audios playing at once
-function stopOtherAudio(current) {
+function stopOtherAudio(current: HTMLAudioElement) {
   document.querySelectorAll("audio").forEach((a) => {
     if (a !== current) a.pause();
   });
 }
 
-function EpisodeCard({ episode }) {
+function EpisodeCard({ episode }: { episode: Episode }) {
   const {
     title,
     description,
     thumbnailSrc,
     previewMp3,
     previewWav,
-    isPremium,
+    isPremium = false,
     tags = [],
   } = episode;
 
@@ -45,7 +55,7 @@ function EpisodeCard({ episode }) {
 
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-2 pt-1">
-              {tags.map((t) => (
+              {tags.map((t: string) => (
                 <Badge key={t} variant="outline" className="font-normal">
                   {t}
                 </Badge>
@@ -103,7 +113,7 @@ function EpisodeCard({ episode }) {
 }
 
 export default function Listen() {
-  const episodes = [
+  const episodes: Episode[] = [
     {
       id: "lonely-ep1",
       title: "Why We Feel Lonely Even Around Others",
@@ -117,7 +127,7 @@ export default function Listen() {
     },
   ];
 
-  const comingNext = [
+  const comingNext: string[] = [
     "Why Humans Crave Belonging",
     "Why Silence Can Feel Uncomfortable",
     "The Hidden Rules of Social Norms",
@@ -162,7 +172,7 @@ export default function Listen() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
-            {comingNext.map((t) => (
+            {comingNext.map((t: string) => (
               <div key={t} className="rounded-2xl border bg-muted/30 p-4">
                 <p className="text-sm font-medium">{t}</p>
                 <p className="mt-1 text-xs text-muted-foreground">In progress</p>
