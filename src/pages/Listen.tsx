@@ -145,6 +145,18 @@ export default function Listen() {
       isPremium: true,
       tags: ["human behavior", "sociology", "bedtime", "calm"],
     },
+
+    {
+  id: "misunderstandings-ep1",
+  title: "When Silence Becomes the Loudest Answer",
+  description:
+    "A calm bedtime reflection on misunderstandings, emotional withdrawal, and how silence can quietly deepen hurt instead of resolving it.",
+  thumbnailSrc: "/images/cozyroom.png",
+  previewMp3: "/audio/misunderstandings.mp3",
+  isPremium: false,
+  tags: ["relationships", "communication", "bedtime", "calm"],
+}
+
   ];
 
   const comingNext: string[] = [
