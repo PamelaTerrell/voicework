@@ -1,18 +1,41 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 export default function Thanks() {
-  const { state } = useLocation();
-  // Optional: if you ever pass { state: { formType: "night_list" } } on navigation
-  const formType = state?.formType;
+  const [searchParams] = useSearchParams();
 
-  const title =
-    formType === "night_list" ? "You’re on the Night List 🌙" : "Thank you!";
-  const subtitle =
-    formType === "night_list"
-      ? "You’ll get new episode releases and early access as the library grows."
-      : "Your message was sent successfully. I’ll get back to you as soon as I can.";
+  const from = searchParams.get("from");
+  const product = searchParams.get("product");
+
+  // Determine context
+  const isNightList = from === "night_list";
+  const isContact = from === "contact";
+  const isStripe = from === "stripe";
+  const isMembership = product === "membership";
+  const isSingle = product === "single";
+
+  // Titles
+  let title = "Thank you 🌙";
+  let subtitle = "You’re all set.";
+
+  if (isNightList) {
+    title = "You’re on the Night List 🌙";
+    subtitle =
+      "You’ll get new episode releases, early access, and occasional cozy notes.";
+  } else if (isContact) {
+    title = "Thank you!";
+    subtitle =
+      "Your message was sent successfully. I’ll get back to you as soon as I can.";
+  } else if (isStripe && isMembership) {
+    title = "Welcome, Night Listener 🌙";
+    subtitle =
+      "Your membership is active. Thank you for supporting this project.";
+  } else if (isStripe && isSingle) {
+    title = "You’re all set 🌙";
+    subtitle =
+      "Your episode is unlocked. Thank you for listening and supporting this work.";
+  }
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
@@ -21,29 +44,48 @@ export default function Thanks() {
         <p className="text-muted-foreground">{subtitle}</p>
       </header>
 
-      <Card className="overflow-hidden">
+      <Card>
         <CardContent className="space-y-5 p-6">
+          {/* What happens next */}
           <div className="rounded-2xl border bg-background p-5">
             <p className="text-sm font-medium">What happens next</p>
 
-            {formType === "night_list" ? (
+            {isNightList && (
               <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
                 <li>• New previews will appear on the Listen page</li>
-                <li>• The Night List gets first access when full episodes launch</li>
-                <li>• You’ll also get occasional cozy notes (no spam)</li>
+                <li>• The Night List gets first access when new episodes launch</li>
+                <li>• You’ll receive occasional cozy notes (no spam)</li>
               </ul>
-            ) : (
+            )}
+
+            {isContact && (
               <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
                 <li>• I’ll reply with timing and any clarifying questions</li>
                 <li>• If you have a script, feel free to include it in your reply</li>
                 <li>• Delivery formats available: WAV or MP3</li>
               </ul>
             )}
+
+            {isStripe && (
+              <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
+                <li>• A receipt has been sent to your email</li>
+                <li>• Full episodes will be delivered shortly</li>
+                <li>• Keep an eye on your inbox for access details</li>
+              </ul>
+            )}
+
+            {!isNightList && !isContact && !isStripe && (
+              <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
+                <li>• You can listen to previews anytime</li>
+                <li>• Join the Night List for updates and early access</li>
+              </ul>
+            )}
           </div>
 
+          {/* Actions */}
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button asChild className="h-11">
-              <Link to="/listen">Listen to previews</Link>
+              <Link to="/listen">Listen</Link>
             </Button>
 
             <Button asChild variant="outline" className="h-11">
@@ -51,15 +93,18 @@ export default function Thanks() {
             </Button>
           </div>
 
-          <div className="rounded-2xl border bg-muted/30 p-5">
-            <p className="text-sm font-medium">Want early access?</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Join the Night List to get new releases and founding-listener perks.
-            </p>
-            <Button asChild className="mt-3 w-full sm:w-auto">
-              <Link to="/join">Join the Night List</Link>
-            </Button>
-          </div>
+          {/* Gentle CTA */}
+          {!isStripe && (
+            <div className="rounded-2xl border bg-muted/30 p-5">
+              <p className="text-sm font-medium">Want full episodes?</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Join as a Night Listener to unlock the full library and support future episodes.
+              </p>
+              <Button asChild className="mt-3 w-full sm:w-auto">
+                <Link to="/join">View access options</Link>
+              </Button>
+            </div>
+          )}
 
           <p className="text-xs text-muted-foreground">
             Prefer email?{" "}

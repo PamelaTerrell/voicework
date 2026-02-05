@@ -3,6 +3,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
+const STRIPE_ONE_TIME_URL =
+  "https://buy.stripe.com/14A8wIbIS4oGbItbhF2cg00";
+
+const STRIPE_SUBSCRIBE_URL =
+  "https://buy.stripe.com/bJeeV6bIS8EW27T4Th2cg02";
+
 type Episode = {
   id: string;
   title: string;
@@ -85,22 +91,36 @@ function EpisodeCard({ episode }: { episode: Episode }) {
           </audio>
         </div>
 
-        {/* Locked Full Episode */}
+        {/* Locked Full Episode -> Stripe */}
         {isPremium && (
           <div className="rounded-xl border bg-muted/40 p-4 space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium">Full Episode</p>
-              <Badge className="font-normal">Members</Badge>
+              <Badge className="font-normal">Paid</Badge>
             </div>
 
             <p className="text-sm text-muted-foreground">
-              The full bedtime-length episode is available to members. Join the Night List now for
-              founding listener access and early unlocks when subscriptions launch.
+              Unlock the full bedtime-length episode with membership, or listen once.
+              <span className="block mt-1">Cancel anytime.</span>
             </p>
 
-            <Button asChild className="w-full">
-              <Link to="/join">Join the Night List</Link>
-            </Button>
+            <div className="space-y-2">
+              <Button asChild className="w-full">
+                <a href={STRIPE_SUBSCRIBE_URL} target="_blank" rel="noreferrer">
+                  Unlock All Episodes — $4.99/month
+                </a>
+              </Button>
+
+              <Button asChild variant="outline" className="w-full">
+                <a href={STRIPE_ONE_TIME_URL} target="_blank" rel="noreferrer">
+                  Listen Once — $2.99
+                </a>
+              </Button>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Secure checkout powered by Stripe.
+            </p>
           </div>
         )}
 
@@ -146,7 +166,7 @@ export default function Listen() {
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Button asChild>
-            <Link to="/join">Join the Night List</Link>
+            <Link to="/join">Join</Link>
           </Button>
           <Button asChild variant="secondary">
             <Link to="/contact">Collaborations / Contact</Link>
@@ -186,7 +206,7 @@ export default function Listen() {
             </p>
             <div className="flex gap-2">
               <Button asChild>
-                <Link to="/join">Join the Night List</Link>
+                <Link to="/join">Join</Link>
               </Button>
               <Button asChild variant="outline">
                 <Link to="/">Back to Home</Link>

@@ -4,35 +4,69 @@ import { Input } from "@/components/ui/input";
 
 const FORM_ENDPOINT = "https://formspree.io/f/xykjjvdb";
 
+const STRIPE_ONE_TIME_URL =
+  "https://buy.stripe.com/14A8wIbIS4oGbItbhF2cg00";
+
+const STRIPE_SUBSCRIBE_URL =
+  "https://buy.stripe.com/bJeeV6bIS8EW27T4Th2cg02";
+
 export default function Join() {
   return (
     <div className="max-w-2xl space-y-8">
       <header className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">Join the Night List</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Join</h1>
         <p className="text-muted-foreground">
-          Get new episode releases, cozy late-night notes, and early access as the library grows.
+          Full-length cozy bedtime episodes about human behavior — calm, story-driven, and designed
+          for late-night listening.
         </p>
       </header>
 
+      {/* Checkout options */}
+      <Card>
+        <CardContent className="space-y-5 p-6">
+          <div className="rounded-2xl border bg-muted/40 p-4 text-sm text-muted-foreground">
+            <p className="font-medium text-foreground">Night Listener access</p>
+            <p className="mt-1">
+              Choose membership for the full library, or unlock a single episode. Cancel anytime.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <Button asChild className="w-full">
+              <a href={STRIPE_SUBSCRIBE_URL} target="_blank" rel="noreferrer">
+                Unlock All Episodes — $4.99/month
+              </a>
+            </Button>
+
+            <Button asChild variant="outline" className="w-full">
+              <a href={STRIPE_ONE_TIME_URL} target="_blank" rel="noreferrer">
+                Listen Once — $2.99
+              </a>
+            </Button>
+
+            <p className="text-xs text-muted-foreground">
+              Secure checkout powered by Stripe. You’ll receive a receipt by email.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Night List (email updates) */}
       <Card>
         <CardContent className="space-y-5 p-6">
           <div className="rounded-2xl border bg-muted p-4 text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">Founding listeners</p>
+            <p className="font-medium text-foreground">Night List (free)</p>
             <p className="mt-1">
-              You’re early. When memberships launch, the Night List will get first access and a
-              founding-listener perk.
+              Want a heads-up when new episodes drop? Join the Night List for release notes and
+              occasional cozy late-night updates.
             </p>
           </div>
 
           <form action={FORM_ENDPOINT} method="POST" className="space-y-4">
-            {/* Tag in your inbox */}
             <input type="hidden" name="_subject" value="Night List signup (stabileusa.com)" />
             <input type="hidden" name="type" value="night_list" />
-
-            {/* redirect after submit */}
             <input type="hidden" name="_next" value="https://stabileusa.com/thanks" />
 
-            {/* Honeypot */}
             <input
               type="text"
               name="_gotcha"
@@ -74,8 +108,8 @@ export default function Join() {
               />
             </div>
 
-            <Button type="submit" className="w-full">
-              Join the Night List
+            <Button type="submit" variant="secondary" className="w-full">
+              Join the Night List (free)
             </Button>
 
             <p className="text-xs text-muted-foreground">
@@ -89,7 +123,7 @@ export default function Join() {
         Prefer email?{" "}
         <a
           className="underline underline-offset-4 hover:text-foreground"
-          href="mailto:agentpamelajterrell@gmail.com?subject=Night%20List%20Signup"
+          href="mailto:agentpamelajterrell@gmail.com?subject=Night%20List"
         >
           Send a quick note
         </a>
