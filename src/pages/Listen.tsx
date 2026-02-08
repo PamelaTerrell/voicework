@@ -3,11 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-const STRIPE_ONE_TIME_URL =
-  "https://buy.stripe.com/14A8wIbIS4oGbItbhF2cg00";
-
-const STRIPE_SUBSCRIBE_URL =
-  "https://buy.stripe.com/bJeeV6bIS8EW27T4Th2cg02";
+// Stripe links (LIVE)
+const STRIPE_ONE_TIME_URL = "https://buy.stripe.com/14A8wIbIS4oGbItbhF2cg00"; // $2.99 one-time
+const STRIPE_SUBSCRIBE_URL = "https://buy.stripe.com/bJeeV6bIS8EW27T4Th2cg02"; // $4.99 / month
 
 type Episode = {
   id: string;
@@ -16,7 +14,7 @@ type Episode = {
   thumbnailSrc?: string;
   previewMp3?: string;
   previewWav?: string;
-  isPremium?: boolean;
+  isPremium?: boolean; // kept for future use
   tags?: string[];
 };
 
@@ -28,15 +26,7 @@ function stopOtherAudio(current: HTMLAudioElement) {
 }
 
 function EpisodeCard({ episode }: { episode: Episode }) {
-  const {
-    title,
-    description,
-    thumbnailSrc,
-    previewMp3,
-    previewWav,
-    isPremium = false,
-    tags = [],
-  } = episode;
+  const { title, description, thumbnailSrc, previewMp3, previewWav, tags = [] } = episode;
 
   return (
     <Card className="transition-all hover:-translate-y-1 hover:shadow-xl rounded-2xl overflow-hidden">
@@ -49,7 +39,7 @@ function EpisodeCard({ episode }: { episode: Episode }) {
             loading="lazy"
           />
           <div className="absolute top-3 right-3">
-            <Badge>Preview</Badge>
+            <Badge>Free</Badge>
           </div>
         </div>
       )}
@@ -70,12 +60,12 @@ function EpisodeCard({ episode }: { episode: Episode }) {
           )}
         </div>
 
-        {/* Preview Player */}
+        {/* Player */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">Free Preview</p>
+            <p className="text-sm font-medium">Listen</p>
             <Badge variant="secondary" className="font-normal">
-              3:00
+              Free
             </Badge>
           </div>
 
@@ -91,41 +81,49 @@ function EpisodeCard({ episode }: { episode: Episode }) {
           </audio>
         </div>
 
-        {/* Locked Full Episode -> Stripe */}
-        {isPremium && (
-          <div className="rounded-xl border bg-muted/40 p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium">Full Episode</p>
-              <Badge className="font-normal">Paid</Badge>
-            </div>
-
-            <p className="text-sm text-muted-foreground">
-              Unlock the full bedtime-length episode with membership, or listen once.
-              <span className="block mt-1">Cancel anytime.</span>
-            </p>
-
-            <div className="space-y-2">
-              <Button asChild className="w-full">
-                <a href={STRIPE_SUBSCRIBE_URL} target="_blank" rel="noreferrer">
-                  Unlock All Episodes — $4.99/month
-                </a>
-              </Button>
-
-              <Button asChild variant="outline" className="w-full">
-                <a href={STRIPE_ONE_TIME_URL} target="_blank" rel="noreferrer">
-                  Listen Once — $2.99
-                </a>
-              </Button>
-            </div>
-
-            <p className="text-xs text-muted-foreground">
-              Secure checkout powered by Stripe.
-            </p>
-          </div>
-        )}
-
         <p className="text-xs text-muted-foreground">
           Tip: headphones + low volume works best for bedtime listening.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SupportCard() {
+  return (
+    <Card className="rounded-3xl overflow-hidden border bg-background">
+      <CardContent className="p-6 sm:p-8 space-y-5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div className="space-y-1">
+            <p className="text-lg font-medium">Unlock + Support</p>
+            <p className="text-sm text-muted-foreground max-w-xl">
+              Membership unlocks the growing library as new full-length episodes release. Prefer to
+              listen once? That option is available too. <span className="font-medium">Cancel anytime.</span>
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">Secure</Badge>
+            <Badge>Stripe</Badge>
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Button asChild className="h-11">
+            <a href={STRIPE_SUBSCRIBE_URL} target="_blank" rel="noreferrer">
+              Membership — $4.99/month
+            </a>
+          </Button>
+
+          <Button asChild variant="outline" className="h-11">
+            <a href={STRIPE_ONE_TIME_URL} target="_blank" rel="noreferrer">
+              Listen Once — $2.99
+            </a>
+          </Button>
+        </div>
+
+        <p className="text-xs text-muted-foreground">
+          You’ll complete checkout on Stripe. If you have any issues, use the Contact page and I’ll
+          help.
         </p>
       </CardContent>
     </Card>
@@ -135,28 +133,16 @@ function EpisodeCard({ episode }: { episode: Episode }) {
 export default function Listen() {
   const episodes: Episode[] = [
     {
-      id: "lonely-ep1",
-      title: "Why We Feel Lonely Even Around Others",
+      id: "replays-ep1",
+      title: "Why Your Mind Replays Conversations at Night",
       description:
-        "A calm bedtime story about belonging, connection, and why loneliness can appear even when we’re not physically alone.",
-      thumbnailSrc: "/images/why-we-feel-lonely-thumbnail.png",
-      previewMp3: "/audio/why-we-feel-lonely-preview.mp3",
-      previewWav: "/audio/why-we-feel-lonely-preview.wav",
-      isPremium: true,
-      tags: ["human behavior", "sociology", "bedtime", "calm"],
+        "A gentle bedtime reflection on rumination, emotional processing, and why your brain revisits social moments when the world gets quiet.",
+      // Update this path if you named it differently:
+      thumbnailSrc: "/images/why-mind-replays-thumbnail.png",
+      // You currently have this playing as full; you can swap to a preview later:
+      previewMp3: "/audio/why-mind-replays-conversations-full.mp3",
+      tags: ["bedtime", "calm", "human behavior", "mind"],
     },
-
-    {
-  id: "misunderstandings-ep1",
-  title: "When Silence Becomes the Loudest Answer",
-  description:
-    "A calm bedtime reflection on misunderstandings, emotional withdrawal, and how silence can quietly deepen hurt instead of resolving it.",
-  thumbnailSrc: "/images/cozyroom.png",
-  previewMp3: "/audio/misunderstandings.mp3",
-  isPremium: false,
-  tags: ["relationships", "communication", "bedtime", "calm"],
-}
-
   ];
 
   const comingNext: string[] = [
@@ -171,8 +157,8 @@ export default function Listen() {
         <div className="space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight">Listen</h1>
           <p className="text-muted-foreground max-w-2xl">
-            Cozy late-night previews about human behavior. Calm, story-driven audio designed for
-            winding down and quiet listening.
+            Cozy late-night listening about human behavior — calm, story-driven audio designed for
+            winding down and quiet reflection.
           </p>
         </div>
 
@@ -185,6 +171,9 @@ export default function Listen() {
           </Button>
         </div>
       </header>
+
+      {/* Support / Unlock */}
+      <SupportCard />
 
       {/* Episodes */}
       <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
