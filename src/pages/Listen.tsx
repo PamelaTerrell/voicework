@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 // Stripe links (LIVE)
-const STRIPE_ONE_TIME_URL = "https://buy.stripe.com/14A8wIbIS4oGbItbhF2cg00"; // $2.99 one-time
-const STRIPE_SUBSCRIBE_URL = "https://buy.stripe.com/bJeeV6bIS8EW27T4Th2cg02"; // $4.99 / month
+const STRIPE_ONE_TIME_URL = "https://buy.stripe.com/fZu3cobIS08qh2N71p2cg03"; // $2.99 one-time
+const STRIPE_SUBSCRIBE_URL = "https://buy.stripe.com/9B64gs7sCg7o5k53Pd2cg05"; // $4.99 / month
 
 type Episode = {
   id: string;

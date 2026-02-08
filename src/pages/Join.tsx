@@ -5,10 +5,10 @@ import { Input } from "@/components/ui/input";
 const FORM_ENDPOINT = "https://formspree.io/f/xykjjvdb";
 
 const STRIPE_ONE_TIME_URL =
-  "https://buy.stripe.com/14A8wIbIS4oGbItbhF2cg00";
+  "https://buy.stripe.com/fZu3cobIS08qh2N71p2cg03";
 
 const STRIPE_SUBSCRIBE_URL =
-  "https://buy.stripe.com/bJeeV6bIS8EW27T4Th2cg02";
+  "https://buy.stripe.com/9B64gs7sCg7o5k53Pd2cg05";
 
 export default function Join() {
   return (

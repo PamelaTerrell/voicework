@@ -50,18 +50,16 @@ export default function Home() {
             <div className="rounded-2xl border bg-background p-5 shadow-sm">
               <p className="text-sm text-muted-foreground">Tonight’s preview</p>
               <p className="mt-1 text-xl font-medium">
-                Why We Feel Lonely Even Around Others
+                Why Your Mind Replays Conversations at Night
               </p>
               <p className="mt-2 text-sm text-muted-foreground">
-                A calm walk through loneliness, belonging, and the quiet social needs our minds
-                carry.
+                A gentle bedtime reflection on rumination, emotional processing, and why your brain
+                revisits social moments when the world gets quiet.
               </p>
 
               <div className="mt-4 space-y-2">
                 <audio controls preload="none" className="w-full">
-                  {/* Prefer mp3 for web streaming */}
-                  <source src="/audio/why-we-feel-lonely-preview.mp3" type="audio/mpeg" />
-                  <source src="/audio/why-we-feel-lonely-preview.wav" type="audio/wav" />
+                  <source src="/audio/why-mind-replays-preview.mp3" type="audio/mpeg" />
                   Your browser does not support the audio element.
                 </audio>
 

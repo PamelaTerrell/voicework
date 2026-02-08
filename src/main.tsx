@@ -9,6 +9,9 @@ import Listen from "@/pages/Listen";
 import Join from "@/pages/Join";
 import Contact from "@/pages/Contact";
 import Thanks from "@/pages/Thanks";
+import Unlocked from "@/pages/Unlocked";
+import Members from "./pages/Members";
+
 
 const router = createBrowserRouter([
   {
@@ -26,6 +29,10 @@ const router = createBrowserRouter([
 
       { path: "contact", element: <Contact /> },
       { path: "thanks", element: <Thanks /> },
+      { path: "unlocked", element: <Unlocked /> },
+      { path: "members", element: <Members />},
+      
+
     ],
   },
 ]);
