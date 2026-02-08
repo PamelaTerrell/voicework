@@ -91,7 +91,7 @@ function EpisodeCard({ episode }: { episode: Episode }) {
 
         {/* Locked Full Episode */}
         {isLocked && (
-          <div className="rounded-xl border bg-muted/40 p-4 space-y-3">
+          <div className="rounded-xl border bg-muted/40 p-2 space-y-6">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium">Full Episode</p>
               <Badge className="font-normal">Locked</Badge>
