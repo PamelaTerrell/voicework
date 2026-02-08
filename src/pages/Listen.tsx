@@ -14,7 +14,7 @@ type Episode = {
   thumbnailSrc?: string;
   previewMp3?: string;
   previewWav?: string;
-  isPremium?: boolean; // kept for future use
+  isLocked?: boolean;
   tags?: string[];
 };
 
@@ -26,7 +26,15 @@ function stopOtherAudio(current: HTMLAudioElement) {
 }
 
 function EpisodeCard({ episode }: { episode: Episode }) {
-  const { title, description, thumbnailSrc, previewMp3, previewWav, tags = [] } = episode;
+  const {
+    title,
+    description,
+    thumbnailSrc,
+    previewMp3,
+    previewWav,
+    isLocked = false,
+    tags = [],
+  } = episode;
 
   return (
     <Card className="transition-all hover:-translate-y-1 hover:shadow-xl rounded-2xl overflow-hidden">
@@ -39,7 +47,7 @@ function EpisodeCard({ episode }: { episode: Episode }) {
             loading="lazy"
           />
           <div className="absolute top-3 right-3">
-            <Badge>Free</Badge>
+            <Badge>{isLocked ? "Preview" : "Free"}</Badge>
           </div>
         </div>
       )}
@@ -60,12 +68,12 @@ function EpisodeCard({ episode }: { episode: Episode }) {
           )}
         </div>
 
-        {/* Player */}
+        {/* Preview Player */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">Listen</p>
+            <p className="text-sm font-medium">Free Preview</p>
             <Badge variant="secondary" className="font-normal">
-              Free
+              Preview
             </Badge>
           </div>
 
@@ -81,49 +89,41 @@ function EpisodeCard({ episode }: { episode: Episode }) {
           </audio>
         </div>
 
-        <p className="text-xs text-muted-foreground">
-          Tip: headphones + low volume works best for bedtime listening.
-        </p>
-      </CardContent>
-    </Card>
-  );
-}
+        {/* Locked Full Episode */}
+        {isLocked && (
+          <div className="rounded-xl border bg-muted/40 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium">Full Episode</p>
+              <Badge className="font-normal">Locked</Badge>
+            </div>
 
-function SupportCard() {
-  return (
-    <Card className="rounded-3xl overflow-hidden border bg-background">
-      <CardContent className="p-6 sm:p-8 space-y-5">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-1">
-            <p className="text-lg font-medium">Unlock + Support</p>
-            <p className="text-sm text-muted-foreground max-w-xl">
-              Membership unlocks the growing library as new full-length episodes release. Prefer to
-              listen once? That option is available too. <span className="font-medium">Cancel anytime.</span>
+            <p className="text-sm text-muted-foreground">
+              Unlock the full bedtime-length episode with membership, or listen once.
+              <span className="block mt-1">Cancel anytime.</span>
+            </p>
+
+            <div className="space-y-2">
+              <Button asChild className="w-full">
+                <a href={STRIPE_SUBSCRIBE_URL} target="_blank" rel="noreferrer">
+                  Unlock All Episodes — $4.99/month
+                </a>
+              </Button>
+
+              <Button asChild variant="outline" className="w-full">
+                <a href={STRIPE_ONE_TIME_URL} target="_blank" rel="noreferrer">
+                  Listen Once — $2.99
+                </a>
+              </Button>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              After purchase, you’ll receive access instructions. Secure checkout powered by Stripe.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary">Secure</Badge>
-            <Badge>Stripe</Badge>
-          </div>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Button asChild className="h-11">
-            <a href={STRIPE_SUBSCRIBE_URL} target="_blank" rel="noreferrer">
-              Membership — $4.99/month
-            </a>
-          </Button>
-
-          <Button asChild variant="outline" className="h-11">
-            <a href={STRIPE_ONE_TIME_URL} target="_blank" rel="noreferrer">
-              Listen Once — $2.99
-            </a>
-          </Button>
-        </div>
+        )}
 
         <p className="text-xs text-muted-foreground">
-          You’ll complete checkout on Stripe. If you have any issues, use the Contact page and I’ll
-          help.
+          Tip: headphones + low volume works best for bedtime listening.
         </p>
       </CardContent>
     </Card>
@@ -137,10 +137,9 @@ export default function Listen() {
       title: "Why Your Mind Replays Conversations at Night",
       description:
         "A gentle bedtime reflection on rumination, emotional processing, and why your brain revisits social moments when the world gets quiet.",
-      // Update this path if you named it differently:
       thumbnailSrc: "/images/why-mind-replays-thumbnail.png",
-      // You currently have this playing as full; you can swap to a preview later:
-      previewMp3: "/audio/why-mind-replays-conversations-full.mp3",
+      previewMp3: "/audio/why-mind-replays-preview.mp3",
+      isLocked: true,
       tags: ["bedtime", "calm", "human behavior", "mind"],
     },
   ];
@@ -172,17 +171,12 @@ export default function Listen() {
         </div>
       </header>
 
-      {/* Support / Unlock */}
-      <SupportCard />
-
-      {/* Episodes */}
       <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {episodes.map((ep) => (
           <EpisodeCard key={ep.id} episode={ep} />
         ))}
       </section>
 
-      {/* Coming Next */}
       <section className="rounded-3xl border bg-background p-6 sm:p-10">
         <div className="space-y-4">
           <div className="space-y-1">
