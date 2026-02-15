@@ -1,114 +1,100 @@
-import { Link } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-function stopOtherAudio(current: HTMLAudioElement) {
-  document.querySelectorAll("audio").forEach((a) => {
-    if (a !== current) a.pause();
-  });
-}
-
 export default function Members() {
+  const [episodeId, setEpisodeId] = useState("replays-ep1");
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [status, setStatus] = useState<string>("");
+
+  async function fetchSignedUrl() {
+    setStatus("");
+    setSignedUrl(null);
+
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+
+    if (!token) {
+      setStatus("Please sign in first (magic link).");
+      return;
+    }
+
+    const r = await fetch(`/api/signed-audio?episodeId=${encodeURIComponent(episodeId)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const j = await r.json();
+    if (!r.ok) {
+      setStatus(j.error || "Not entitled");
+      return;
+    }
+
+    setSignedUrl(j.url);
+    setStatus("Unlocked ✅");
+  }
+
+  useEffect(() => {
+    fetchSignedUrl();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
-    <div className="mx-auto max-w-3xl space-y-10">
-      {/* Header */}
-      <header className="space-y-3">
-        <Badge className="w-fit">Members</Badge>
-
-        <h1 className="text-3xl font-semibold tracking-tight">
-          Your listening room
-        </h1>
-
-        <p className="text-muted-foreground max-w-xl">
-          Thank you for supporting this work. You now have access to full bedtime-length
-          episodes. New releases will appear here automatically.
+    <div className="space-y-6">
+      <header className="space-y-2">
+        <h1 className="text-3xl font-semibold tracking-tight">Members</h1>
+        <p className="text-muted-foreground max-w-2xl">
+          Full episodes live here. If you subscribed or unlocked an episode, this will load a secure signed URL.
         </p>
       </header>
 
-      {/* Episode */}
-      <Card className="overflow-hidden rounded-2xl shadow-sm">
-        
-        {/* Episode Image */}
-        <div className="relative">
-          <img
-            src="/images/why-mind-replays-thumbnail.png"
-            alt="Why Your Mind Replays Conversations at Night"
-            className="h-64 w-full object-cover"
-            loading="lazy"
-          />
-
-          <div className="absolute top-3 right-3">
-            <Badge>Full Access</Badge>
-          </div>
-        </div>
-
-        <CardContent className="space-y-5 p-6">
-          <div className="space-y-2">
-            <h2 className="text-xl font-medium">
-              Why Your Mind Replays Conversations at Night
-            </h2>
-
-            <p className="text-sm text-muted-foreground">
-              A gentle bedtime reflection on why the mind revisits moments,
-              and how those quiet replays are often an attempt to protect
-              connection and emotional safety.
-            </p>
-
-            <div className="flex flex-wrap gap-2 pt-1">
-              <Badge variant="outline">bedtime</Badge>
-              <Badge variant="outline">calm</Badge>
-              <Badge variant="outline">human behavior</Badge>
-              <Badge variant="outline">mind</Badge>
-            </div>
-          </div>
-
-          {/* Full Audio Player */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium">Full episode</p>
-              <Badge variant="secondary">Unlocked</Badge>
+      <Card className="rounded-2xl">
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Episode ID</p>
+              <p className="text-xs text-muted-foreground">Must match storage path: episodes/&lt;episodeId&gt;/full.mp3</p>
             </div>
 
-            <audio
-              controls
-              preload="none"
-              className="w-full"
-              onPlay={(e) => stopOtherAudio(e.currentTarget)}
+            <Badge variant="secondary" className="font-normal">
+              {episodeId}
+            </Badge>
+          </div>
+
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="secondary" onClick={() => setEpisodeId("replays-ep1")}>
+              replays-ep1
+            </Button>
+            {/* add more quick buttons if you want */}
+          </div>
+
+          <div className="flex gap-2">
+            <Button onClick={fetchSignedUrl}>Load / Refresh</Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setSignedUrl(null);
+                setStatus("");
+              }}
             >
-              <source
-                src="/audio/why-mind-replays-conversations-full.mp3"
-                type="audio/mpeg"
-              />
-              Your browser does not support the audio element.
-            </audio>
+              Clear
+            </Button>
           </div>
 
-          <p className="text-xs text-muted-foreground">
-            Tip: headphones + low volume works best for bedtime listening.
-          </p>
+          {status && <p className="text-sm text-muted-foreground">{status}</p>}
+
+          {signedUrl && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Full Episode</p>
+              <audio controls preload="none" className="w-full" src={signedUrl} />
+              <p className="text-xs text-muted-foreground">
+                Signed URL expires (server sets ~10 minutes). Click Refresh if it stops.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
-
-      {/* Coming Soon */}
-      <section className="rounded-3xl border bg-background p-6">
-        <p className="font-medium">More episodes coming soon</p>
-
-        <p className="text-sm text-muted-foreground mt-1">
-          Your membership gives you access to all future full-length episodes.
-        </p>
-      </section>
-
-      {/* Navigation */}
-      <div className="flex gap-3">
-        <Button asChild variant="outline">
-          <Link to="/listen">Browse previews</Link>
-        </Button>
-
-        <Button asChild variant="outline">
-          <Link to="/">Home</Link>
-        </Button>
-      </div>
     </div>
   );
 }

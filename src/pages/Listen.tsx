@@ -1,11 +1,9 @@
 import { Link } from "react-router-dom";
+import { useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
-// Stripe links (LIVE)
-const STRIPE_ONE_TIME_URL = "https://buy.stripe.com/fZu3cobIS08qh2N71p2cg03"; // $2.99 one-time
-const STRIPE_SUBSCRIBE_URL = "https://buy.stripe.com/9B64gs7sCg7o5k53Pd2cg05"; // $4.99 / month
 
 type Episode = {
   id: string;
@@ -25,16 +23,58 @@ function stopOtherAudio(current: HTMLAudioElement) {
   });
 }
 
+async function requireAccessToken() {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("Please sign in first.");
+  return token;
+}
+
+async function startCheckout(body: any) {
+  const token = await requireAccessToken();
+
+  const r = await fetch("/api/checkout", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || "Checkout failed");
+  if (!j.url) throw new Error("Missing session url");
+  window.location.href = j.url;
+}
+
 function EpisodeCard({ episode }: { episode: Episode }) {
-  const {
-    title,
-    description,
-    thumbnailSrc,
-    previewMp3,
-    previewWav,
-    isLocked = false,
-    tags = [],
-  } = episode;
+  const { id, title, description, thumbnailSrc, previewMp3, previewWav, isLocked = false, tags = [] } =
+    episode;
+
+  const [loading, setLoading] = useState<null | "sub" | "one">(null);
+
+  async function onSubscribe() {
+    try {
+      setLoading("sub");
+      await startCheckout({ mode: "subscription" });
+    } catch (e: any) {
+      alert(e?.message || "Please sign in first.");
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  async function onOneTime() {
+    try {
+      setLoading("one");
+      await startCheckout({ mode: "one_time", episodeId: id });
+    } catch (e: any) {
+      alert(e?.message || "Please sign in first.");
+    } finally {
+      setLoading(null);
+    }
+  }
 
   return (
     <Card className="transition-all hover:-translate-y-1 hover:shadow-xl rounded-2xl overflow-hidden">
@@ -77,12 +117,7 @@ function EpisodeCard({ episode }: { episode: Episode }) {
             </Badge>
           </div>
 
-          <audio
-            controls
-            preload="none"
-            className="w-full"
-            onPlay={(e) => stopOtherAudio(e.currentTarget)}
-          >
+          <audio controls preload="none" className="w-full" onPlay={(e) => stopOtherAudio(e.currentTarget)}>
             {previewMp3 && <source src={previewMp3} type="audio/mpeg" />}
             {previewWav && <source src={previewWav} type="audio/wav" />}
             Your browser does not support the audio element.
@@ -103,28 +138,22 @@ function EpisodeCard({ episode }: { episode: Episode }) {
             </p>
 
             <div className="space-y-2">
-              <Button asChild className="w-full">
-                <a href={STRIPE_SUBSCRIBE_URL} target="_blank" rel="noreferrer">
-                  Unlock All Episodes — $4.99/month
-                </a>
+              <Button className="w-full" onClick={onSubscribe} disabled={!!loading}>
+                {loading === "sub" ? "Redirecting…" : "Unlock All Episodes — $4.99/month"}
               </Button>
 
-              <Button asChild variant="outline" className="w-full">
-                <a href={STRIPE_ONE_TIME_URL} target="_blank" rel="noreferrer">
-                  Listen Once — $2.99
-                </a>
+              <Button variant="outline" className="w-full" onClick={onOneTime} disabled={!!loading}>
+                {loading === "one" ? "Redirecting…" : "Listen Once — $2.99"}
               </Button>
             </div>
 
             <p className="text-xs text-muted-foreground">
-              After purchase, you’ll receive access instructions. Secure checkout powered by Stripe.
+              Secure checkout powered by Stripe. After purchase, return here and go to Members to listen.
             </p>
           </div>
         )}
 
-        <p className="text-xs text-muted-foreground">
-          Tip: headphones + low volume works best for bedtime listening.
-        </p>
+        <p className="text-xs text-muted-foreground">Tip: headphones + low volume works best for bedtime listening.</p>
       </CardContent>
     </Card>
   );
@@ -156,8 +185,7 @@ export default function Listen() {
         <div className="space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight">Listen</h1>
           <p className="text-muted-foreground max-w-2xl">
-            Cozy late-night listening about human behavior — calm, story-driven audio designed for
-            winding down and quiet reflection.
+            Cozy late-night listening about human behavior — calm, story-driven audio designed for winding down and quiet reflection.
           </p>
         </div>
 
@@ -167,6 +195,9 @@ export default function Listen() {
           </Button>
           <Button asChild variant="secondary">
             <Link to="/contact">Collaborations / Contact</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link to="/members">Members</Link>
           </Button>
         </div>
       </header>
@@ -181,9 +212,7 @@ export default function Listen() {
         <div className="space-y-4">
           <div className="space-y-1">
             <p className="text-lg font-medium">Coming next</p>
-            <p className="text-sm text-muted-foreground">
-              New episodes are in production and will appear here soon.
-            </p>
+            <p className="text-sm text-muted-foreground">New episodes are in production and will appear here soon.</p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
@@ -196,9 +225,7 @@ export default function Listen() {
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pt-2">
-            <p className="text-sm text-muted-foreground">
-              Want early access when new episodes drop?
-            </p>
+            <p className="text-sm text-muted-foreground">Want early access when new episodes drop?</p>
             <div className="flex gap-2">
               <Button asChild>
                 <Link to="/join">Join</Link>
