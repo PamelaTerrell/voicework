@@ -3,10 +3,16 @@ import { supabaseAdmin, requireUser } from "./_lib";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
+    if (req.method !== "GET") {
+      return res.status(405).json({ error: "Method not allowed" });
+    }
 
-    const episodeId = typeof req.query.episodeId === "string" ? req.query.episodeId : "";
-    if (!episodeId) return res.status(400).json({ error: "episodeId required" });
+    const episodeId =
+      typeof req.query.episodeId === "string" ? req.query.episodeId : "";
+
+    if (!episodeId) {
+      return res.status(400).json({ error: "episodeId required" });
+    }
 
     const user = await requireUser(req);
 
@@ -16,7 +22,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq("id", user.id)
       .single();
 
-    if (pErr) return res.status(500).json({ error: pErr.message });
+    if (pErr) {
+      return res.status(500).json({ error: pErr.message });
+    }
 
     let allowed = !!profile?.is_subscriber;
 
@@ -28,19 +36,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .eq("episode_id", episodeId)
         .maybeSingle();
 
-      if (eErr) return res.status(500).json({ error: eErr.message });
+      if (eErr) {
+        return res.status(500).json({ error: eErr.message });
+      }
+
       allowed = !!ent?.id;
     }
 
-    if (!allowed) return res.status(403).json({ error: "Not entitled" });
+    if (!allowed) {
+      return res.status(403).json({ error: "Not entitled" });
+    }
 
-    const path = `episodes/${episodeId}/full.mp3`;
+    // Because the bucket is already named "episodes",
+    // the path should only be the folder/file inside that bucket.
+    const path = `${episodeId}/full.mp3`;
 
-    const { data, error } = await supabaseAdmin.storage.from("episodes").createSignedUrl(path, 60 * 10);
-    if (error) return res.status(404).json({ error: error.message });
+    const { data, error } = await supabaseAdmin.storage
+      .from("episodes")
+      .createSignedUrl(path, 60 * 10);
+
+    if (error) {
+      return res.status(404).json({ error: error.message });
+    }
 
     return res.status(200).json({ url: data.signedUrl });
   } catch (e: any) {
-    return res.status(e?.status || 500).json({ error: e?.message || "Server error" });
+    return res.status(e?.status || 500).json({
+      error: e?.message || "Server error",
+    });
   }
 }
