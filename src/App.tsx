@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 
 import Home from "@/pages/Home";
 import Listen from "@/pages/Listen";
@@ -13,10 +14,29 @@ import AuthCallback from "@/pages/AuthCallback";
 
 import { Auth } from "@/components/Auth";
 
+
+// Track page views for GA
+function AnalyticsTracker() {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (window.gtag) {
+      window.gtag("config", "G-FBR1LBB567", {
+        page_path: location.pathname,
+      });
+    }
+  }, [location]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <Router>
+      <AnalyticsTracker />
+
       <div className="min-h-screen bg-background text-foreground">
+
         {/* Header */}
         <header className="border-b">
           <div className="container mx-auto flex items-center justify-between p-4">
@@ -41,6 +61,7 @@ export default function App() {
             <Route path="/auth/callback" element={<AuthCallback />} />
           </Routes>
         </main>
+
       </div>
     </Router>
   );

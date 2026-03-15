@@ -14,6 +14,7 @@ type Episode = {
   previewWav?: string;
   isLocked?: boolean;
   tags?: string[];
+  category?: string;
 };
 
 // Prevent multiple audios playing at once
@@ -23,6 +24,19 @@ function stopOtherAudio(current: HTMLAudioElement) {
   });
 }
 
+// GA helper
+function trackEvent(eventName: string, params: Record<string, any> = {}) {
+  if (typeof window !== "undefined" && window.gtag) {
+    window.gtag("event", eventName, {
+      site: "stabileusa",
+      page_name: "listen",
+      content_type: "episode",
+      page_location: window.location.pathname,
+      ...params,
+    });
+  }
+}
+
 async function requireAccessToken() {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
@@ -30,7 +44,7 @@ async function requireAccessToken() {
   return token;
 }
 
-async function startCheckout(body: any) {
+async function startCheckout(body: Record<string, unknown>) {
   const token = await requireAccessToken();
 
   const r = await fetch("/api/checkout", {
@@ -49,14 +63,33 @@ async function startCheckout(body: any) {
 }
 
 function EpisodeCard({ episode }: { episode: Episode }) {
-  const { id, title, description, thumbnailSrc, previewMp3, previewWav, isLocked = false, tags = [] } =
-    episode;
+  const {
+    id,
+    title,
+    description,
+    thumbnailSrc,
+    previewMp3,
+    previewWav,
+    isLocked = false,
+    tags = [],
+    category = "general",
+  } = episode;
 
   const [loading, setLoading] = useState<null | "sub" | "one">(null);
 
   async function onSubscribe() {
     try {
       setLoading("sub");
+
+      trackEvent("membership_signup_click", {
+        episode_id: id,
+        episode_title: title,
+        episode_category: category,
+        plan: "monthly_membership",
+        value: 4.99,
+        currency: "USD",
+      });
+
       await startCheckout({ mode: "subscription" });
     } catch (e: any) {
       alert(e?.message || "Please sign in first.");
@@ -68,6 +101,15 @@ function EpisodeCard({ episode }: { episode: Episode }) {
   async function onOneTime() {
     try {
       setLoading("one");
+
+      trackEvent("episode_unlock_click", {
+        episode_id: id,
+        episode_title: title,
+        episode_category: category,
+        value: 2.99,
+        currency: "USD",
+      });
+
       await startCheckout({ mode: "one_time", episodeId: id });
     } catch (e: any) {
       alert(e?.message || "Please sign in first.");
@@ -76,8 +118,16 @@ function EpisodeCard({ episode }: { episode: Episode }) {
     }
   }
 
+  function onPreviewPlay() {
+    trackEvent("preview_play", {
+      episode_id: id,
+      episode_title: title,
+      episode_category: category,
+    });
+  }
+
   return (
-    <Card className="transition-all hover:-translate-y-1 hover:shadow-xl rounded-2xl overflow-hidden">
+    <Card className="overflow-hidden rounded-2xl transition-all hover:-translate-y-1 hover:shadow-xl">
       {thumbnailSrc && (
         <div className="relative">
           <img
@@ -108,7 +158,6 @@ function EpisodeCard({ episode }: { episode: Episode }) {
           )}
         </div>
 
-        {/* Preview Player */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <p className="text-sm font-medium">Free Preview</p>
@@ -117,16 +166,23 @@ function EpisodeCard({ episode }: { episode: Episode }) {
             </Badge>
           </div>
 
-          <audio controls preload="none" className="w-full" onPlay={(e) => stopOtherAudio(e.currentTarget)}>
+          <audio
+            controls
+            preload="none"
+            className="w-full"
+            onPlay={(e) => {
+              stopOtherAudio(e.currentTarget);
+              onPreviewPlay();
+            }}
+          >
             {previewMp3 && <source src={previewMp3} type="audio/mpeg" />}
             {previewWav && <source src={previewWav} type="audio/wav" />}
             Your browser does not support the audio element.
           </audio>
         </div>
 
-        {/* Locked Full Episode */}
         {isLocked && (
-          <div className="rounded-xl border bg-muted/40 p-2 space-y-6">
+          <div className="space-y-6 rounded-xl border bg-muted/40 p-4">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium">Full Episode</p>
               <Badge className="font-normal">Locked</Badge>
@@ -134,7 +190,7 @@ function EpisodeCard({ episode }: { episode: Episode }) {
 
             <p className="text-sm text-muted-foreground">
               Unlock the full bedtime-length episode with membership, or listen once.
-              <span className="block mt-1">Cancel anytime.</span>
+              <span className="mt-1 block">Cancel anytime.</span>
             </p>
 
             <div className="space-y-2">
@@ -142,7 +198,12 @@ function EpisodeCard({ episode }: { episode: Episode }) {
                 {loading === "sub" ? "Redirecting…" : "Unlock All Episodes — $4.99/month"}
               </Button>
 
-              <Button variant="outline" className="w-full" onClick={onOneTime} disabled={!!loading}>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={onOneTime}
+                disabled={!!loading}
+              >
                 {loading === "one" ? "Redirecting…" : "Listen Once — $2.99"}
               </Button>
             </div>
@@ -153,7 +214,9 @@ function EpisodeCard({ episode }: { episode: Episode }) {
           </div>
         )}
 
-        <p className="text-xs text-muted-foreground">Tip: headphones + low volume works best for bedtime listening.</p>
+        <p className="text-xs text-muted-foreground">
+          Tip: headphones + low volume works best for bedtime listening.
+        </p>
       </CardContent>
     </Card>
   );
@@ -170,6 +233,7 @@ export default function Listen() {
       previewMp3: "/audio/why-mind-replays-preview.mp3",
       isLocked: true,
       tags: ["bedtime", "calm", "human behavior", "mind"],
+      category: "human_behavior",
     },
   ];
 
@@ -184,20 +248,53 @@ export default function Listen() {
       <header className="space-y-3">
         <div className="space-y-2">
           <h1 className="text-3xl font-semibold tracking-tight">Listen</h1>
-          <p className="text-muted-foreground max-w-2xl">
-            Cozy late-night listening about human behavior — calm, story-driven audio designed for winding down and quiet reflection.
+          <p className="max-w-2xl text-muted-foreground">
+            Cozy late-night listening about human behavior — calm, story-driven audio
+            designed for winding down and quiet reflection.
           </p>
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Button asChild>
-            <Link to="/join">Join</Link>
+            <Link
+              to="/join"
+              onClick={() =>
+                trackEvent("listen_nav_click", {
+                  destination: "/join",
+                  cta_label: "Join",
+                })
+              }
+            >
+              Join
+            </Link>
           </Button>
+
           <Button asChild variant="secondary">
-            <Link to="/contact">Collaborations / Contact</Link>
+            <Link
+              to="/contact"
+              onClick={() =>
+                trackEvent("listen_nav_click", {
+                  destination: "/contact",
+                  cta_label: "Collaborations / Contact",
+                })
+              }
+            >
+              Collaborations / Contact
+            </Link>
           </Button>
+
           <Button asChild variant="outline">
-            <Link to="/members">Members</Link>
+            <Link
+              to="/members"
+              onClick={() =>
+                trackEvent("listen_nav_click", {
+                  destination: "/members",
+                  cta_label: "Members",
+                })
+              }
+            >
+              Members
+            </Link>
           </Button>
         </div>
       </header>
@@ -212,7 +309,9 @@ export default function Listen() {
         <div className="space-y-4">
           <div className="space-y-1">
             <p className="text-lg font-medium">Coming next</p>
-            <p className="text-sm text-muted-foreground">New episodes are in production and will appear here soon.</p>
+            <p className="text-sm text-muted-foreground">
+              New episodes are in production and will appear here soon.
+            </p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
@@ -224,14 +323,38 @@ export default function Listen() {
             ))}
           </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pt-2">
-            <p className="text-sm text-muted-foreground">Want early access when new episodes drop?</p>
+          <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              Want early access when new episodes drop?
+            </p>
+
             <div className="flex gap-2">
               <Button asChild>
-                <Link to="/join">Join</Link>
+                <Link
+                  to="/join"
+                  onClick={() =>
+                    trackEvent("coming_next_join_click", {
+                      location: "coming_next",
+                      cta_label: "Join",
+                    })
+                  }
+                >
+                  Join
+                </Link>
               </Button>
+
               <Button asChild variant="outline">
-                <Link to="/">Back to Home</Link>
+                <Link
+                  to="/"
+                  onClick={() =>
+                    trackEvent("listen_nav_click", {
+                      destination: "/",
+                      cta_label: "Back to Home",
+                    })
+                  }
+                >
+                  Back to Home
+                </Link>
               </Button>
             </div>
           </div>

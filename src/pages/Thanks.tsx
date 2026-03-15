@@ -1,6 +1,18 @@
 import { Link, useSearchParams } from "react-router-dom";
+import { useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+
+function trackEvent(eventName: string, params: Record<string, any> = {}) {
+  if (typeof window !== "undefined" && window.gtag) {
+    window.gtag("event", eventName, {
+      site: "stabileusa",
+      page_name: "thanks",
+      page_location: window.location.pathname + window.location.search,
+      ...params,
+    });
+  }
+}
 
 export default function Thanks() {
   const [searchParams] = useSearchParams();
@@ -14,6 +26,58 @@ export default function Thanks() {
   const isStripe = from === "stripe";
   const isMembership = product === "membership";
   const isSingle = product === "single";
+
+  useEffect(() => {
+    if (isNightList) {
+      trackEvent("night_list_signup_success", {
+        source: "night_list",
+      });
+      return;
+    }
+
+    if (isContact) {
+      trackEvent("contact_success", {
+        source: "contact_form",
+      });
+      return;
+    }
+
+    if (isStripe && isMembership) {
+      trackEvent("purchase_success", {
+        product_type: "membership",
+        value: 4.99,
+        currency: "USD",
+      });
+
+      trackEvent("membership_success", {
+        product_type: "membership",
+        plan: "monthly_membership",
+        value: 4.99,
+        currency: "USD",
+      });
+      return;
+    }
+
+    if (isStripe && isSingle) {
+      trackEvent("purchase_success", {
+        product_type: "single_episode",
+        value: 2.99,
+        currency: "USD",
+      });
+
+      trackEvent("single_episode_success", {
+        product_type: "single_episode",
+        value: 2.99,
+        currency: "USD",
+      });
+      return;
+    }
+
+    trackEvent("thanks_page_view", {
+      source: from || "unknown",
+      product_type: product || "none",
+    });
+  }, [isNightList, isContact, isStripe, isMembership, isSingle, from, product]);
 
   // Titles
   let title = "Thank you 🌙";
@@ -85,11 +149,45 @@ export default function Thanks() {
           {/* Actions */}
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button asChild className="h-11">
-              <Link to="/listen">Listen</Link>
+              <Link
+                to="/listen"
+                onClick={() =>
+                  trackEvent("thanks_nav_click", {
+                    destination: "/listen",
+                    cta_label: "Listen",
+                    context: isStripe
+                      ? "post_purchase"
+                      : isNightList
+                      ? "night_list"
+                      : isContact
+                      ? "contact"
+                      : "general",
+                  })
+                }
+              >
+                Listen
+              </Link>
             </Button>
 
             <Button asChild variant="outline" className="h-11">
-              <Link to="/">Back to home</Link>
+              <Link
+                to="/"
+                onClick={() =>
+                  trackEvent("thanks_nav_click", {
+                    destination: "/",
+                    cta_label: "Back to home",
+                    context: isStripe
+                      ? "post_purchase"
+                      : isNightList
+                      ? "night_list"
+                      : isContact
+                      ? "contact"
+                      : "general",
+                  })
+                }
+              >
+                Back to home
+              </Link>
             </Button>
           </div>
 
@@ -101,7 +199,22 @@ export default function Thanks() {
                 Join as a Night Listener to unlock the full library and support future episodes.
               </p>
               <Button asChild className="mt-3 w-full sm:w-auto">
-                <Link to="/join">View access options</Link>
+                <Link
+                  to="/join"
+                  onClick={() =>
+                    trackEvent("thanks_cta_click", {
+                      destination: "/join",
+                      cta_label: "View access options",
+                      context: isNightList
+                        ? "night_list"
+                        : isContact
+                        ? "contact"
+                        : "general",
+                    })
+                  }
+                >
+                  View access options
+                </Link>
               </Button>
             </div>
           )}
@@ -111,6 +224,19 @@ export default function Thanks() {
             <a
               className="underline underline-offset-4 hover:text-foreground"
               href="mailto:agentpamelajterrell@gmail.com"
+              onClick={() =>
+                trackEvent("thanks_cta_click", {
+                  cta_label: "email",
+                  destination: "mailto:agentpamelajterrell@gmail.com",
+                  context: isStripe
+                    ? "post_purchase"
+                    : isNightList
+                    ? "night_list"
+                    : isContact
+                    ? "contact"
+                    : "general",
+                })
+              }
             >
               agentpamelajterrell@gmail.com
             </a>
