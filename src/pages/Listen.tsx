@@ -15,6 +15,7 @@ type Episode = {
   isLocked?: boolean;
   tags?: string[];
   category?: string;
+  status?: "available" | "coming_soon";
 };
 
 // Prevent multiple audios playing at once
@@ -73,9 +74,11 @@ function EpisodeCard({ episode }: { episode: Episode }) {
     isLocked = false,
     tags = [],
     category = "general",
+    status = "available",
   } = episode;
 
   const [loading, setLoading] = useState<null | "sub" | "one">(null);
+  const hasPreview = Boolean(previewMp3 || previewWav);
 
   async function onSubscribe() {
     try {
@@ -127,30 +130,43 @@ function EpisodeCard({ episode }: { episode: Episode }) {
   }
 
   return (
-    <Card className="overflow-hidden rounded-2xl transition-all hover:-translate-y-1 hover:shadow-xl">
+    <Card className="group overflow-hidden rounded-[28px] border border-border/70 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
       {thumbnailSrc && (
-        <div className="relative">
+        <div className="relative overflow-hidden">
           <img
             src={thumbnailSrc}
             alt={`${title} thumbnail`}
-            className="h-48 w-full object-cover"
+            className="h-72 w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
             loading="lazy"
           />
-          <div className="absolute top-3 right-3">
-            <Badge>{isLocked ? "Preview" : "Free"}</Badge>
+
+          <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
+
+          <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+            <Badge className="bg-background/85 text-foreground backdrop-blur">
+              {status === "coming_soon" ? "Coming Soon" : isLocked ? "Preview" : "Free"}
+            </Badge>
+
+            {category === "night_listener_story" && (
+              <Badge variant="secondary" className="bg-background/75 backdrop-blur">
+                Night Listener
+              </Badge>
+            )}
           </div>
         </div>
       )}
 
-      <CardContent className="space-y-5 p-6">
-        <div className="space-y-2">
-          <p className="text-lg font-medium leading-snug">{title}</p>
-          <p className="text-sm text-muted-foreground">{description}</p>
+      <CardContent className="space-y-6 p-6">
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <h2 className="text-xl font-semibold leading-tight">{title}</h2>
+            <p className="text-sm leading-7 text-muted-foreground">{description}</p>
+          </div>
 
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-2 pt-1">
               {tags.map((t: string) => (
-                <Badge key={t} variant="outline" className="font-normal">
+                <Badge key={t} variant="outline" className="rounded-full px-3 py-1 font-normal">
                   {t}
                 </Badge>
               ))}
@@ -158,31 +174,47 @@ function EpisodeCard({ episode }: { episode: Episode }) {
           )}
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">Free Preview</p>
-            <Badge variant="secondary" className="font-normal">
-              Preview
-            </Badge>
-          </div>
+        {hasPreview ? (
+          <div className="space-y-3 rounded-2xl border bg-muted/30 p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium">Free Preview</p>
+              <Badge variant="secondary" className="font-normal">
+                Available
+              </Badge>
+            </div>
 
-          <audio
-            controls
-            preload="none"
-            className="w-full"
-            onPlay={(e) => {
-              stopOtherAudio(e.currentTarget);
-              onPreviewPlay();
-            }}
-          >
-            {previewMp3 && <source src={previewMp3} type="audio/mpeg" />}
-            {previewWav && <source src={previewWav} type="audio/wav" />}
-            Your browser does not support the audio element.
-          </audio>
-        </div>
+            <audio
+              controls
+              preload="none"
+              className="w-full"
+              onPlay={(e) => {
+                stopOtherAudio(e.currentTarget);
+                onPreviewPlay();
+              }}
+            >
+              {previewMp3 && <source src={previewMp3} type="audio/mpeg" />}
+              {previewWav && <source src={previewWav} type="audio/wav" />}
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+        ) : (
+          <div className="rounded-2xl border bg-muted/30 p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium">Preview coming soon</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Pamela is currently recording this episode for Night Listener.
+                </p>
+              </div>
+              <Badge variant="secondary" className="whitespace-nowrap font-normal">
+                In Production
+              </Badge>
+            </div>
+          </div>
+        )}
 
         {isLocked && (
-          <div className="space-y-6 rounded-xl border bg-muted/40 p-4">
+          <div className="space-y-5 rounded-2xl border bg-background p-5">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium">Full Episode</p>
               <Badge className="font-normal">Locked</Badge>
@@ -193,29 +225,34 @@ function EpisodeCard({ episode }: { episode: Episode }) {
               <span className="mt-1 block">Cancel anytime.</span>
             </p>
 
-            <div className="space-y-2">
-              <Button className="w-full" onClick={onSubscribe} disabled={!!loading}>
-                {loading === "sub" ? "Redirecting…" : "Unlock All Episodes — $4.99/month"}
-              </Button>
+           <div className="space-y-2">
+  <Button
+    className="min-h-12 w-full rounded-xl px-5 text-[0.95rem] sm:text-base whitespace-normal leading-snug"
+    onClick={onSubscribe}
+    disabled={!!loading}
+  >
+    {loading === "sub" ? "Redirecting…" : "Unlock All Episodes — $4.99/month"}
+  </Button>
 
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={onOneTime}
-                disabled={!!loading}
-              >
-                {loading === "one" ? "Redirecting…" : "Listen Once — $2.99"}
-              </Button>
-            </div>
+  <Button
+    variant="outline"
+    className="min-h-12 w-full rounded-xl px-5 text-[0.95rem] sm:text-base"
+    onClick={onOneTime}
+    disabled={!!loading}
+  >
+    {loading === "one" ? "Redirecting…" : "Listen Once — $2.99"}
+  </Button>
+</div>
 
-            <p className="text-xs text-muted-foreground">
+
+            <p className="text-xs leading-5 text-muted-foreground">
               Secure checkout powered by Stripe. After purchase, return here and go to Members to listen.
             </p>
           </div>
         )}
 
-        <p className="text-xs text-muted-foreground">
-          Tip: headphones + low volume works best for bedtime listening.
+        <p className="text-xs italic text-muted-foreground">
+          Tip: headphones + low volume work beautifully for late-night listening.
         </p>
       </CardContent>
     </Card>
@@ -234,28 +271,40 @@ export default function Listen() {
       isLocked: true,
       tags: ["bedtime", "calm", "human behavior", "mind"],
       category: "human_behavior",
+      status: "available",
+    },
+    {
+      id: "conversation-ep1",
+      title: "The Conversation That Never Finished",
+      description:
+        "A quiet late-night story about deep friendship, misunderstanding, and the haunting realization that what once felt like betrayal may have been something entirely different.",
+      thumbnailSrc: "/images/coffee-shop.png",
+      isLocked: true,
+      tags: ["night listener", "storytelling", "friendship", "reflection"],
+      category: "night_listener_story",
+      status: "coming_soon",
     },
   ];
 
   const comingNext: string[] = [
+    "The Letter That Was Never Sent",
     "Why Humans Crave Belonging",
-    "Why Silence Can Feel Uncomfortable",
     "The Hidden Rules of Social Norms",
   ];
 
   return (
     <div className="space-y-10">
-      <header className="space-y-3">
+      <header className="space-y-4">
         <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">Listen</h1>
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Listen</h1>
           <p className="max-w-2xl text-muted-foreground">
-            Cozy late-night listening about human behavior — calm, story-driven audio
-            designed for winding down and quiet reflection.
+            Cozy late-night listening about human behavior, quiet reflection, and stories
+            that stay with you long after the world goes still.
           </p>
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <Button asChild>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          <Button asChild className="rounded-xl">
             <Link
               to="/join"
               onClick={() =>
@@ -269,7 +318,7 @@ export default function Listen() {
             </Link>
           </Button>
 
-          <Button asChild variant="secondary">
+          <Button asChild variant="secondary" className="rounded-xl">
             <Link
               to="/contact"
               onClick={() =>
@@ -283,7 +332,7 @@ export default function Listen() {
             </Link>
           </Button>
 
-          <Button asChild variant="outline">
+          <Button asChild variant="outline" className="rounded-xl">
             <Link
               to="/members"
               onClick={() =>
@@ -299,24 +348,27 @@ export default function Listen() {
         </div>
       </header>
 
-      <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {episodes.map((ep) => (
           <EpisodeCard key={ep.id} episode={ep} />
         ))}
       </section>
 
-      <section className="rounded-3xl border bg-background p-6 sm:p-10">
-        <div className="space-y-4">
+      <section className="rounded-[28px] border bg-background p-6 sm:p-10">
+        <div className="space-y-5">
           <div className="space-y-1">
             <p className="text-lg font-medium">Coming next</p>
             <p className="text-sm text-muted-foreground">
-              New episodes are in production and will appear here soon.
+              New Night Listener episodes are in production and will appear here soon.
             </p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
             {comingNext.map((t: string) => (
-              <div key={t} className="rounded-2xl border bg-muted/30 p-4">
+              <div
+                key={t}
+                className="rounded-2xl border bg-muted/20 p-4 transition-colors hover:bg-muted/30"
+              >
                 <p className="text-sm font-medium">{t}</p>
                 <p className="mt-1 text-xs text-muted-foreground">In progress</p>
               </div>
@@ -329,7 +381,7 @@ export default function Listen() {
             </p>
 
             <div className="flex gap-2">
-              <Button asChild>
+              <Button asChild className="rounded-xl">
                 <Link
                   to="/join"
                   onClick={() =>
@@ -343,7 +395,7 @@ export default function Listen() {
                 </Link>
               </Button>
 
-              <Button asChild variant="outline">
+              <Button asChild variant="outline" className="rounded-xl">
                 <Link
                   to="/"
                   onClick={() =>
