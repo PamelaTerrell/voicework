@@ -20,7 +20,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .from("profiles")
       .select("is_subscriber")
       .eq("id", user.id)
-      .single();
+      .maybeSingle();
 
     if (pErr) {
       return res.status(500).json({ error: pErr.message });
@@ -47,8 +47,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(403).json({ error: "Not entitled" });
     }
 
-    // Because the bucket is already named "episodes",
-    // the path should only be the folder/file inside that bucket.
     const path = `${episodeId}/full.mp3`;
 
     const { data, error } = await supabaseAdmin.storage
