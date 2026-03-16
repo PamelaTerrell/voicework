@@ -74,7 +74,9 @@ export default function Members() {
 
     if (!token) {
       setSignedUrl(null);
-      setStatus("You are not signed in yet. Please use your magic link to access your full episodes.");
+      setStatus(
+        "You are not signed in yet. Please use your magic link to access your full episodes."
+      );
       setLoading(false);
       return;
     }
@@ -91,7 +93,7 @@ export default function Members() {
 
       if (!r.ok) {
         setSignedUrl(null);
-        setStatus(j.error || "This episode is not available on your account yet.");
+        setStatus(`Error ${r.status}: ${j.error || "Unknown error"}`);
         setLoading(false);
         return;
       }
@@ -108,7 +110,11 @@ export default function Members() {
       });
     } catch (error) {
       setSignedUrl(null);
-      setStatus("Something went wrong while loading your full episode.");
+      setStatus(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong while loading your full episode."
+      );
     } finally {
       setLoading(false);
     }
@@ -179,14 +185,16 @@ export default function Members() {
                 Signed in as <span className="font-semibold">{sessionEmail}</span>
               </p>
               <p className="text-sm text-muted-foreground">
-                Your member session is active. Select any episode from your library and it will load automatically.
+                Your member session is active. Select any episode from your library
+                and it will load automatically.
               </p>
             </div>
           ) : (
             <div className="space-y-1">
               <p className="text-sm font-medium">You are not signed in yet.</p>
               <p className="text-sm text-muted-foreground">
-                Use the magic link login in the site header, then return here to access your full episodes.
+                Use the magic link login in the site header, then return here to
+                access your full episodes.
               </p>
             </div>
           )}
@@ -287,7 +295,8 @@ export default function Members() {
                 <div className="space-y-1">
                   <p className="text-sm font-medium">Full member audio</p>
                   <p className="text-xs text-muted-foreground">
-                    This player loads a secure signed link for your account automatically.
+                    This player loads a secure signed link for your account
+                    automatically.
                   </p>
                 </div>
 
@@ -309,9 +318,16 @@ export default function Members() {
               ) : signedUrl ? (
                 <div className="mt-5 space-y-3">
                   <p className="text-sm font-medium">Now playing full episode</p>
-                  <audio key={signedUrl} controls preload="none" className="w-full" src={signedUrl} />
+                  <audio
+                    key={signedUrl}
+                    controls
+                    preload="none"
+                    className="w-full"
+                    src={signedUrl}
+                  />
                   <p className="text-xs leading-relaxed text-muted-foreground">
-                    Your secure link expires after a short time. If playback stops, reselect the episode or refresh the page.
+                    Your secure link expires after a short time. If playback stops,
+                    reselect the episode or refresh the page.
                   </p>
                 </div>
               ) : (
@@ -328,7 +344,9 @@ export default function Members() {
             <div className="rounded-2xl border bg-background p-5">
               <p className="text-sm font-medium">Helpful note</p>
               <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                If you unlocked a single episode, only that episode will play. If you subscribed as a member, your full listening library should be available here.
+                If you unlocked a single episode, only that episode will play. If
+                you subscribed as a member, your full listening library should be
+                available here.
               </p>
             </div>
           </CardContent>
