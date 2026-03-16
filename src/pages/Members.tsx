@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -45,24 +44,37 @@ function trackEvent(eventName: string, params: Record<string, any> = {}) {
 export default function Members() {
   const [episodeId, setEpisodeId] = useState("conversation-ep2");
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
-  const [status, setStatus] = useState<string>("");
+  const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
 
   const selectedEpisode = useMemo(
     () => EPISODES.find((ep) => ep.id === episodeId) ?? EPISODES[0],
     [episodeId]
   );
 
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSessionEmail(data.session?.user.email ?? null);
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSessionEmail(session?.user.email ?? null);
+    });
+
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
   async function fetchSignedUrl(selectedId = episodeId) {
     setLoading(true);
     setStatus("");
-    setSignedUrl(null);
 
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
 
     if (!token) {
-      setStatus("Please sign in first with your magic link.");
+      setSignedUrl(null);
+      setStatus("You are not signed in yet. Please use your magic link to access your full episodes.");
       setLoading(false);
       return;
     }
@@ -78,13 +90,14 @@ export default function Members() {
       const j = await r.json();
 
       if (!r.ok) {
-        setStatus(j.error || "Not entitled");
+        setSignedUrl(null);
+        setStatus(j.error || "This episode is not available on your account yet.");
         setLoading(false);
         return;
       }
 
       setSignedUrl(j.url);
-      setStatus("Unlocked ✅");
+      setStatus("Full access confirmed.");
 
       const loadedEpisode =
         EPISODES.find((ep) => ep.id === selectedId) ?? selectedEpisode;
@@ -94,21 +107,31 @@ export default function Members() {
         episode_title: loadedEpisode.title,
       });
     } catch (error) {
-      setStatus("Something went wrong while loading your episode.");
+      setSignedUrl(null);
+      setStatus("Something went wrong while loading your full episode.");
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    fetchSignedUrl();
+    if (sessionEmail) {
+      fetchSignedUrl(episodeId);
+    } else {
+      setSignedUrl(null);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [sessionEmail]);
+
+  useEffect(() => {
+    if (sessionEmail) {
+      fetchSignedUrl(episodeId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [episodeId]);
 
   function handleEpisodeChange(id: string) {
     setEpisodeId(id);
-    setSignedUrl(null);
-    setStatus("");
 
     const nextEpisode = EPISODES.find((ep) => ep.id === id);
 
@@ -118,16 +141,56 @@ export default function Members() {
     });
   }
 
+  const isSignedIn = Boolean(sessionEmail);
+  const hasAccess = Boolean(signedUrl);
+
   return (
     <div className="space-y-8">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          Members
-        </h1>
-        <p className="max-w-2xl text-muted-foreground">
-          Full Night Listener episodes live here. If you subscribed or unlocked an
-          episode, this page loads your secure listening link.
+      <header className="space-y-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+            Members
+          </h1>
+
+          {isSignedIn ? (
+            <Badge className="font-normal">Signed In</Badge>
+          ) : (
+            <Badge variant="secondary" className="font-normal">
+              Not Signed In
+            </Badge>
+          )}
+
+          {hasAccess && (
+            <Badge variant="secondary" className="font-normal">
+              Full Access
+            </Badge>
+          )}
+        </div>
+
+        <p className="max-w-3xl text-muted-foreground">
+          Your full Night Listener library lives here. Once signed in, your secure
+          member audio loads below automatically.
         </p>
+
+        <div className="rounded-2xl border bg-muted/20 p-4">
+          {isSignedIn ? (
+            <div className="space-y-1">
+              <p className="text-sm font-medium">
+                Signed in as <span className="font-semibold">{sessionEmail}</span>
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Your member session is active. Select any episode from your library and it will load automatically.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <p className="text-sm font-medium">You are not signed in yet.</p>
+              <p className="text-sm text-muted-foreground">
+                Use the magic link login in the site header, then return here to access your full episodes.
+              </p>
+            </div>
+          )}
+        </div>
       </header>
 
       <section className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
@@ -135,7 +198,7 @@ export default function Members() {
           <div className="border-b px-6 py-5">
             <p className="text-sm font-medium">Your library</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Select an episode to load its secure full audio.
+              Choose an episode to load its full member version.
             </p>
           </div>
 
@@ -185,8 +248,13 @@ export default function Members() {
               className="h-64 w-full object-cover sm:h-72"
               loading="lazy"
             />
-            <div className="absolute top-4 right-4">
+            <div className="absolute top-4 right-4 flex gap-2">
               <Badge className="shadow-sm">Members</Badge>
+              {hasAccess && (
+                <Badge variant="secondary" className="shadow-sm">
+                  Ready to Play
+                </Badge>
+              )}
             </div>
           </div>
 
@@ -202,10 +270,6 @@ export default function Members() {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary" className="font-normal">
-                  {selectedEpisode.id}
-                </Badge>
-
                 {selectedEpisode.tags.map((tag) => (
                   <Badge
                     key={tag}
@@ -221,49 +285,41 @@ export default function Members() {
             <div className="rounded-2xl border bg-muted/20 p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium">Secure full episode</p>
+                  <p className="text-sm font-medium">Full member audio</p>
                   <p className="text-xs text-muted-foreground">
-                    Storage path should match: episodes/{selectedEpisode.id}/full.mp3
+                    This player loads a secure signed link for your account automatically.
                   </p>
                 </div>
 
                 <Badge variant="secondary" className="font-normal">
-                  Signed URL
+                  Secure Playback
                 </Badge>
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Button
-                  onClick={() => fetchSignedUrl()}
-                  disabled={loading}
-                  className="rounded-xl"
-                >
-                  {loading ? "Loading…" : "Load / Refresh"}
-                </Button>
-
-                <Button
-                  variant="outline"
-                  className="rounded-xl"
-                  onClick={() => {
-                    setSignedUrl(null);
-                    setStatus("");
-                  }}
-                >
-                  Clear
-                </Button>
-              </div>
-
               {status && (
-                <p className="mt-4 text-sm text-muted-foreground">{status}</p>
+                <div className="mt-4 rounded-xl border bg-background p-3">
+                  <p className="text-sm text-muted-foreground">{status}</p>
+                </div>
               )}
 
-              {signedUrl && (
+              {loading ? (
+                <div className="mt-5 rounded-xl border bg-background p-4">
+                  <p className="text-sm font-medium">Loading your full episode…</p>
+                </div>
+              ) : signedUrl ? (
                 <div className="mt-5 space-y-3">
-                  <p className="text-sm font-medium">Now playing</p>
-                  <audio controls preload="none" className="w-full" src={signedUrl} />
+                  <p className="text-sm font-medium">Now playing full episode</p>
+                  <audio key={signedUrl} controls preload="none" className="w-full" src={signedUrl} />
                   <p className="text-xs leading-relaxed text-muted-foreground">
-                    Your secure link expires after a short time. If playback stops,
-                    click <span className="font-medium">Load / Refresh</span>.
+                    Your secure link expires after a short time. If playback stops, reselect the episode or refresh the page.
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-5 rounded-xl border bg-background p-4">
+                  <p className="text-sm font-medium">
+                    {isSignedIn
+                      ? "Select an episode from your library to load it."
+                      : "Sign in first to access your full member audio."}
                   </p>
                 </div>
               )}
@@ -272,8 +328,7 @@ export default function Members() {
             <div className="rounded-2xl border bg-background p-5">
               <p className="text-sm font-medium">Helpful note</p>
               <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                If you unlocked a single episode, only that episode will load. If you
-                joined as a member, your full library should be available here.
+                If you unlocked a single episode, only that episode will play. If you subscribed as a member, your full listening library should be available here.
               </p>
             </div>
           </CardContent>
