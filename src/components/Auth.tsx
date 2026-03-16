@@ -27,10 +27,15 @@ export function Auth() {
     setMessage("");
 
     try {
+      const redirectTo =
+        window.location.hostname === "localhost"
+          ? "http://localhost:5173/auth/callback"
+          : "https://stabileusa.com/auth/callback";
+
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: redirectTo,
         },
       });
 
