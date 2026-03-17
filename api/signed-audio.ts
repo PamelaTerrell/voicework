@@ -52,21 +52,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(403).json({ error: "Not entitled" });
     }
 
-    // Optional sanity check: verify the episode exists
-    const { data: episode, error: episodeErr } = await supabaseAdmin
-      .from("episodes")
-      .select("id")
-      .eq("id", episodeId)
-      .maybeSingle();
-
-    if (episodeErr) {
-      return res.status(500).json({ error: episodeErr.message });
-    }
-
-    if (!episode?.id) {
-      return res.status(404).json({ error: "Episode not found" });
-    }
-
+    // Expected storage structure in bucket "episodes":
+    // conversation-ep2/full.mp3
+    // replays-ep1/full.mp3
     const path = `${episodeId}/full.mp3`;
 
     const { data, error } = await supabaseAdmin.storage
@@ -75,7 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (error || !data?.signedUrl) {
       return res.status(404).json({
-        error: error?.message || "Unable to create signed URL",
+        error: `Audio file not found for ${path}`,
       });
     }
 
