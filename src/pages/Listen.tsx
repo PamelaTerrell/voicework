@@ -1,8 +1,9 @@
-
-import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 
 type Episode = {
@@ -135,7 +136,7 @@ function EpisodeCard({ episode }: { episode: Episode }) {
             className="h-56 w-full object-cover sm:h-64"
             loading="lazy"
           />
-          <div className="absolute top-3 right-3">
+          <div className="absolute right-3 top-3">
             <Badge className="shadow-sm">{isLocked ? "Preview" : "Free"}</Badge>
           </div>
         </div>
@@ -233,7 +234,8 @@ function EpisodeCard({ episode }: { episode: Episode }) {
             <p className="pt-1 text-xs leading-relaxed text-muted-foreground/80">
               Secure checkout powered by Stripe.
               <br />
-              After purchase, return here and go to Members to listen.
+              After purchase, sign in with the same email address you used in
+              Stripe, then go to Members to listen.
             </p>
           </div>
         )}
@@ -247,6 +249,59 @@ function EpisodeCard({ episode }: { episode: Episode }) {
 }
 
 export default function Listen() {
+  const [email, setEmail] = useState("");
+  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
+  const [loadingLink, setLoadingLink] = useState(false);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSessionEmail(data.session?.user.email ?? null);
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSessionEmail(session?.user.email ?? null);
+    });
+
+    return () => sub.subscription.unsubscribe();
+  }, []);
+
+  async function sendLink() {
+    setLoadingLink(true);
+    setMessage("");
+
+    try {
+      const redirectTo =
+        window.location.hostname === "localhost"
+          ? "http://localhost:5173/auth/callback?next=/members"
+          : "https://www.stabileusa.com/auth/callback?next=/members";
+
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: redirectTo,
+        },
+      });
+
+      if (error) {
+        setMessage(error.message);
+        return;
+      }
+
+      setMessage(
+        "Magic link sent. Check your email and use the same address you used for Stripe."
+      );
+      setEmail("");
+    } finally {
+      setLoadingLink(false);
+    }
+  }
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    setMessage("");
+  }
+
   const episodes: Episode[] = [
     {
       id: "conversation-ep2",
@@ -283,6 +338,60 @@ export default function Listen() {
           moments that shape our lives.
         </p>
       </header>
+
+      <Card className="rounded-[28px] border border-border/70">
+        <CardContent className="space-y-4 p-6">
+          <div className="space-y-1">
+            <p className="text-sm font-medium">Member sign in</p>
+            <p className="text-sm text-muted-foreground">
+              Already subscribed or unlocked an episode? Sign in with the same
+              email address you used in Stripe.
+            </p>
+          </div>
+
+          {sessionEmail ? (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-muted-foreground">
+                Signed in as{" "}
+                <span className="font-medium text-foreground">
+                  {sessionEmail}
+                </span>
+              </p>
+
+              <div className="flex flex-wrap gap-2">
+                <Button asChild>
+                  <Link to="/members">Go to Members</Link>
+                </Button>
+
+                <Button variant="outline" onClick={signOut}>
+                  Sign out
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Input
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="sm:max-w-sm"
+              />
+
+              <Button
+                onClick={sendLink}
+                disabled={!email || loadingLink}
+              >
+                {loadingLink ? "Sending…" : "Send magic link"}
+              </Button>
+            </div>
+          )}
+
+          {message && (
+            <p className="text-xs text-muted-foreground">{message}</p>
+          )}
+        </CardContent>
+      </Card>
 
       <section className="grid gap-6 md:grid-cols-2 xl:gap-8">
         {episodes.map((ep) => (

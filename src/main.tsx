@@ -9,9 +9,8 @@ import Listen from "@/pages/Listen";
 import Join from "@/pages/Join";
 import Contact from "@/pages/Contact";
 import Thanks from "@/pages/Thanks";
-
-import Members from "./pages/Members";
-
+import Members from "@/pages/Members";
+import AuthCallback from "@/pages/AuthCallback";
 
 const router = createBrowserRouter([
   {
@@ -19,20 +18,15 @@ const router = createBrowserRouter([
     element: <SiteLayout />,
     children: [
       { index: true, element: <Home /> },
-
-      // New structure
       { path: "listen", element: <Listen /> },
       { path: "join", element: <Join /> },
-
-      // Keep old route working (optional but recommended)
       { path: "demos", element: <Listen /> },
-
       { path: "contact", element: <Contact /> },
       { path: "thanks", element: <Thanks /> },
-      
-      { path: "members", element: <Members />},
-      
+      { path: "members", element: <Members /> },
 
+      // Required for magic-link auth
+      { path: "auth/callback", element: <AuthCallback /> },
     ],
   },
 ]);

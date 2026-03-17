@@ -1,4 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
 import { useEffect } from "react";
 
 import Home from "@/pages/Home";
@@ -8,13 +13,10 @@ import Join from "@/pages/Join";
 import Contact from "@/pages/Contact";
 import Thanks from "@/pages/Thanks";
 import Demos from "@/pages/Demos";
-
 import AuthCallback from "@/pages/AuthCallback";
 
-import { Auth } from "@/components/Auth";
+import { SiteHeader } from "@/components/SiteHeader";
 
-
-// Track page views for GA
 function AnalyticsTracker() {
   const location = useLocation();
 
@@ -35,17 +37,9 @@ export default function App() {
       <AnalyticsTracker />
 
       <div className="min-h-screen bg-background text-foreground">
+        <SiteHeader />
 
-        {/* Header */}
-        <header className="border-b">
-          <div className="container mx-auto flex items-center justify-between p-4">
-            <div className="font-semibold">stabileusa</div>
-            <Auth />
-          </div>
-        </header>
-
-        {/* Main */}
-        <main className="container mx-auto p-6">
+        <main className="mx-auto max-w-7xl px-6 py-8">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/listen" element={<Listen />} />
@@ -54,12 +48,9 @@ export default function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/thanks" element={<Thanks />} />
             <Route path="/demos" element={<Demos />} />
-
-            {/* REQUIRED for magic link login */}
             <Route path="/auth/callback" element={<AuthCallback />} />
           </Routes>
         </main>
-
       </div>
     </Router>
   );

@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+
 export default function Home() {
   const [email, setEmail] = useState("");
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
@@ -28,10 +29,15 @@ export default function Home() {
     setMessage("");
 
     try {
+      const redirectTo =
+        window.location.hostname === "localhost"
+          ? "http://localhost:5173/auth/callback?next=/members"
+          : "https://www.stabileusa.com/auth/callback?next=/members";
+
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: redirectTo,
         },
       });
 
@@ -40,7 +46,10 @@ export default function Home() {
         return;
       }
 
-      setMessage("Magic link sent. Check your email.");
+      setMessage(
+        "Magic link sent. Check your email and use the same address you used for Stripe."
+      );
+      setEmail("");
     } finally {
       setLoading(false);
     }
@@ -114,7 +123,10 @@ export default function Home() {
 
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span>Free 3-minute preview</span>
-                  <Link to="/listen" className="underline underline-offset-4 hover:text-foreground">
+                  <Link
+                    to="/listen"
+                    className="underline underline-offset-4 hover:text-foreground"
+                  >
                     More previews →
                   </Link>
                 </div>
@@ -131,7 +143,10 @@ export default function Home() {
               {sessionEmail ? (
                 <div className="mt-4 space-y-3">
                   <p className="text-sm text-muted-foreground">
-                    Signed in as <span className="font-medium text-foreground">{sessionEmail}</span>
+                    Signed in as{" "}
+                    <span className="font-medium text-foreground">
+                      {sessionEmail}
+                    </span>
                   </p>
 
                   <div className="flex flex-wrap gap-2">

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { Auth } from "@/components/Auth";
 
 function NavItem({ to, label }: { to: string; label: string }) {
   return (
@@ -27,8 +28,7 @@ export default function SiteLayout() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          {/* Brand */}
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
           <Link to="/" className="leading-tight">
             <div className="font-semibold tracking-tight">Stabile USA</div>
             <div className="hidden text-xs text-muted-foreground sm:block">
@@ -36,7 +36,6 @@ export default function SiteLayout() {
             </div>
           </Link>
 
-          {/* Primary nav */}
           <nav className="hidden items-center gap-6 sm:flex">
             <NavItem to="/" label="Home" />
             <NavItem to="/listen" label="Listen" />
@@ -44,8 +43,7 @@ export default function SiteLayout() {
             <NavItem to="/contact" label="Contact" />
           </nav>
 
-          {/* CTAs */}
-          <div className="flex items-center gap-2">
+          <div className="hidden items-center gap-2 lg:flex">
             <Button asChild variant="outline" className="hidden sm:inline-flex">
               <Link to="/listen">Play a preview</Link>
             </Button>
@@ -55,13 +53,28 @@ export default function SiteLayout() {
           </div>
         </div>
 
-        {/* Simple mobile nav (no menu component needed) */}
-        <div className="sm:hidden">
-          <Separator />
-          <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-2">
-            <NavItem to="/listen" label="Listen" />
-            <NavItem to="/join" label="Join" />
-            <NavItem to="/contact" label="Contact" />
+        <div className="border-t">
+          <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center justify-between sm:hidden">
+              <div className="flex items-center gap-4">
+                <NavItem to="/listen" label="Listen" />
+                <NavItem to="/join" label="Join" />
+                <NavItem to="/contact" label="Contact" />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/listen">Preview</Link>
+                </Button>
+                <Button asChild size="sm">
+                  <Link to="/join">Join</Link>
+                </Button>
+              </div>
+            </div>
+
+            <div className="w-full">
+              <Auth />
+            </div>
           </div>
         </div>
       </header>

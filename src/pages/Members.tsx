@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 type MemberEpisode = {
   id: string;
@@ -71,6 +73,10 @@ export default function Members() {
   const [cancelLoading, setCancelLoading] = useState(false);
   const [cancelMessage, setCancelMessage] = useState("");
 
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginMessage, setLoginMessage] = useState("");
+
   const selectedEpisode = useMemo(
     () => EPISODES.find((ep) => ep.id === episodeId) ?? EPISODES[0],
     [episodeId]
@@ -87,6 +93,45 @@ export default function Members() {
 
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  async function sendMagicLink() {
+    setLoginLoading(true);
+    setLoginMessage("");
+
+    try {
+      const redirectTo =
+        window.location.hostname === "localhost"
+          ? "http://localhost:5173/auth/callback?next=/members"
+          : "https://www.stabileusa.com/auth/callback?next=/members";
+
+      const { error } = await supabase.auth.signInWithOtp({
+        email: loginEmail,
+        options: {
+          emailRedirectTo: redirectTo,
+        },
+      });
+
+      if (error) {
+        setLoginMessage(error.message);
+        return;
+      }
+
+      setLoginMessage(
+        "Magic link sent. Check your email and sign in with the same address you used for Stripe."
+      );
+      setLoginEmail("");
+    } finally {
+      setLoginLoading(false);
+    }
+  }
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    setLoginMessage("");
+    setCancelMessage("");
+    setStatus("");
+    setSignedUrl(null);
+  }
 
   async function checkMemberAccess(email: string) {
     setCheckingAccess(true);
@@ -139,7 +184,7 @@ export default function Members() {
       setIsSubscriber(false);
       setSubscriptionStatus(null);
       setStatus(
-        "You are not signed in yet. Please use your magic link to access your full episodes."
+        "You are not signed in yet. Please use the sign-in form below to access your full episodes."
       );
       setLoading(false);
       return;
@@ -325,23 +370,29 @@ export default function Members() {
 
         <div className="rounded-2xl border bg-muted/20 p-4">
           {isSignedIn ? (
-            <div className="space-y-2">
-              <p className="text-sm font-medium">
-                Signed in as <span className="font-semibold">{sessionEmail}</span>
-              </p>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <p className="text-sm font-medium">
+                  Signed in as <span className="font-semibold">{sessionEmail}</span>
+                </p>
 
-              <p className="text-sm text-muted-foreground">
-                {checkingAccess
-                  ? "Checking your membership access…"
-                  : isSubscriber
-                  ? `Your membership is ${
-                      subscriptionStatus ?? "active"
-                    }. Your full library should be available here.`
-                  : "You are signed in. If you subscribed, make sure you used this same email address in Stripe."}
-              </p>
+                <p className="text-sm text-muted-foreground">
+                  {checkingAccess
+                    ? "Checking your membership access…"
+                    : isSubscriber
+                    ? `Your membership is ${
+                        subscriptionStatus ?? "active"
+                      }. Your full library should be available here.`
+                    : "You are signed in. If you subscribed, make sure you used this same email address in Stripe."}
+                </p>
+              </div>
 
-              {showCancelButton && (
-                <div className="pt-2">
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" onClick={signOut}>
+                  Sign out
+                </Button>
+
+                {showCancelButton && (
                   <button
                     type="button"
                     onClick={handleCancelMembership}
@@ -350,29 +401,58 @@ export default function Members() {
                   >
                     {cancelLoading ? "Canceling…" : "Cancel membership"}
                   </button>
+                )}
+              </div>
 
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    This should stop future renewals while preserving access
-                    through the end of your current billing period.
+              {showCancelButton && (
+                <p className="text-xs text-muted-foreground">
+                  This should stop future renewals while preserving access
+                  through the end of your current billing period.
+                </p>
+              )}
+
+              {cancelMessage && (
+                <div className="rounded-xl border bg-background p-3">
+                  <p className="text-sm text-muted-foreground">
+                    {cancelMessage}
                   </p>
-
-                  {cancelMessage && (
-                    <div className="mt-3 rounded-xl border bg-background p-3">
-                      <p className="text-sm text-muted-foreground">
-                        {cancelMessage}
-                      </p>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
           ) : (
-            <div className="space-y-1">
-              <p className="text-sm font-medium">You are not signed in yet.</p>
-              <p className="text-sm text-muted-foreground">
-                Use the magic link login in the site header, then return here to
-                access your full episodes.
-              </p>
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">You are not signed in yet.</p>
+                <p className="text-sm text-muted-foreground">
+                  Enter the same email address you used in Stripe and we’ll send
+                  you a secure magic link to open your member library.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <Input
+                  type="email"
+                  placeholder="you@example.com"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  className="sm:max-w-sm"
+                />
+
+                <Button
+                  onClick={sendMagicLink}
+                  disabled={!loginEmail || loginLoading}
+                >
+                  {loginLoading ? "Sending…" : "Send magic link"}
+                </Button>
+              </div>
+
+              {loginMessage && (
+                <div className="rounded-xl border bg-background p-3">
+                  <p className="text-sm text-muted-foreground">
+                    {loginMessage}
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
