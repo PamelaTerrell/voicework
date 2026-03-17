@@ -28,7 +28,6 @@ async function upsertProfileSubscription(args: {
 
   const normalizedEmail = normalizeEmail(email);
 
-  // 1) Best case: direct user id
   if (userId) {
     const { error } = await supabaseAdmin.from("profiles").upsert(
       {
@@ -45,7 +44,6 @@ async function upsertProfileSubscription(args: {
     return;
   }
 
-  // 2) Next best: existing profile already linked to Stripe customer
   if (stripeCustomerId) {
     const { data: profileByCustomer, error: findByCustomerErr } =
       await supabaseAdmin
@@ -71,7 +69,6 @@ async function upsertProfileSubscription(args: {
     }
   }
 
-  // 3) Final fallback: match by email
   if (normalizedEmail) {
     const { data: profileByEmail, error: findByEmailErr } = await supabaseAdmin
       .from("profiles")
@@ -94,6 +91,24 @@ async function upsertProfileSubscription(args: {
       if (error) throw error;
     }
   }
+}
+
+async function setSubscriptionByCustomerId(args: {
+  stripeCustomerId: string;
+  subscriptionStatus: string;
+  isSubscriber: boolean;
+}) {
+  const { stripeCustomerId, subscriptionStatus, isSubscriber } = args;
+
+  const { error } = await supabaseAdmin
+    .from("profiles")
+    .update({
+      subscription_status: subscriptionStatus,
+      is_subscriber: isSubscriber,
+    })
+    .eq("stripe_customer_id", stripeCustomerId);
+
+  if (error) throw error;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -136,7 +151,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         session.customer_details?.email || session.customer_email || null
       );
 
-      // Save Stripe customer id/email to profile when possible
       if (userId) {
         const { error } = await supabaseAdmin.from("profiles").upsert(
           {
@@ -170,7 +184,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
 
-      // One-time episode unlock
       if (purchaseType === "one_time") {
         if (session.payment_status === "paid" && userId && episodeId) {
           const { error } = await supabaseAdmin.from("entitlements").upsert(
@@ -186,7 +199,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
 
-      // Subscription checkout
       if (purchaseType === "subscription" && session.payment_status === "paid") {
         await upsertProfileSubscription({
           userId,
@@ -218,6 +230,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         isSubscriber: isActiveSub(sub.status),
         subscriptionStatus: sub.status,
       });
+
+      return res.status(200).json({ received: true });
+    }
+
+    if (event.type === "invoice.payment_succeeded") {
+      const invoice = event.data.object as Stripe.Invoice;
+
+      const customerId =
+        typeof invoice.customer === "string"
+          ? invoice.customer
+          : invoice.customer?.id;
+
+      if (customerId) {
+        await setSubscriptionByCustomerId({
+          stripeCustomerId: customerId,
+          subscriptionStatus: "active",
+          isSubscriber: true,
+        });
+      }
+
+      return res.status(200).json({ received: true });
+    }
+
+    if (event.type === "invoice.payment_failed") {
+      const invoice = event.data.object as Stripe.Invoice;
+
+      const customerId =
+        typeof invoice.customer === "string"
+          ? invoice.customer
+          : invoice.customer?.id;
+
+      if (customerId) {
+        await setSubscriptionByCustomerId({
+          stripeCustomerId: customerId,
+          subscriptionStatus: "past_due",
+          isSubscriber: false,
+        });
+      }
 
       return res.status(200).json({ received: true });
     }
