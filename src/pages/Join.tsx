@@ -8,7 +8,7 @@ const STRIPE_ONE_TIME_URL =
   "https://buy.stripe.com/fZu3cobIS08qh2N71p2cg03";
 
 const STRIPE_SUBSCRIBE_URL =
-  "https://buy.stripe.com/9B64gs7sCg7o5k53Pd2cg05";
+  "https://buy.stripe.com/9B64gs7o5k53Pd2cg05";
 
 export default function Join() {
   return (
@@ -16,18 +16,18 @@ export default function Join() {
       <header className="space-y-2">
         <h1 className="text-3xl font-semibold tracking-tight">Join</h1>
         <p className="text-muted-foreground">
-          Full-length cozy bedtime episodes about human behavior — calm, story-driven, and designed
-          for late-night listening.
+          Full-length cozy bedtime episodes about human behavior — calm,
+          story-driven, and designed for late-night listening.
         </p>
       </header>
 
-      {/* Checkout options */}
       <Card>
         <CardContent className="space-y-5 p-6">
           <div className="rounded-2xl border bg-muted/40 p-4 text-sm text-muted-foreground">
             <p className="font-medium text-foreground">Night Listener access</p>
             <p className="mt-1">
-              Choose membership for the full library, or unlock a single episode. Cancel anytime.
+              Choose membership for the full library, or unlock a single episode.
+              Cancel anytime.
             </p>
           </div>
 
@@ -45,27 +45,45 @@ export default function Join() {
             </Button>
 
             <p className="text-xs text-muted-foreground">
-              Secure checkout powered by Stripe. You’ll receive a receipt by email.
+              Secure checkout powered by Stripe. You’ll receive a receipt by
+              email.
             </p>
+
+            <div className="rounded-2xl border bg-background p-4 text-sm text-muted-foreground">
+              <p className="font-medium text-foreground">
+                Already subscribed?
+              </p>
+              <p className="mt-1">
+                After checkout, sign in with the same email address you used in
+                Stripe to unlock your member library and full episodes.
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Night List (email updates) */}
       <Card>
         <CardContent className="space-y-5 p-6">
           <div className="rounded-2xl border bg-muted p-4 text-sm text-muted-foreground">
             <p className="font-medium text-foreground">Night List (free)</p>
             <p className="mt-1">
-              Want a heads-up when new episodes drop? Join the Night List for release notes and
-              occasional cozy late-night updates.
+              Want a heads-up when new episodes drop? Join the Night List for
+              release notes and occasional cozy late-night updates.
             </p>
           </div>
 
           <form action={FORM_ENDPOINT} method="POST" className="space-y-4">
-            <input type="hidden" name="_subject" value="Night List signup (stabileusa.com)" />
+            <input
+              type="hidden"
+              name="_subject"
+              value="Night List signup (stabileusa.com)"
+            />
             <input type="hidden" name="type" value="night_list" />
-            <input type="hidden" name="_next" value="https://stabileusa.com/thanks" />
+            <input
+              type="hidden"
+              name="_next"
+              value="https://www.stabileusa.com/thanks"
+            />
 
             <input
               type="text"

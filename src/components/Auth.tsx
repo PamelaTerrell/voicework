@@ -29,8 +29,8 @@ export function Auth() {
     try {
       const redirectTo =
         window.location.hostname === "localhost"
-          ? "http://localhost:5173/auth/callback"
-          : "https://stabileusa.com/auth/callback";
+          ? "http://localhost:5173/auth/callback?next=/members"
+          : "https://www.stabileusa.com/auth/callback?next=/members";
 
       const { error } = await supabase.auth.signInWithOtp({
         email,
@@ -44,7 +44,10 @@ export function Auth() {
         return;
       }
 
-      setMessage("Magic link sent. Check your email.");
+      setMessage(
+        "Magic link sent. Check your email and use the same address you used for Stripe."
+      );
+      setEmail("");
     } finally {
       setLoading(false);
     }
