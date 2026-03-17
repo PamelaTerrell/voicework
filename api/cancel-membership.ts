@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { requireUser, stripe, supabaseAdmin } from "./_lib";
+import { requireUser, stripe, supabaseAdmin } from "./_lib.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {

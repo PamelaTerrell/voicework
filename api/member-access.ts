@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { stripe, supabaseAdmin } from "./_lib";
+import { stripe, supabaseAdmin } from "./_lib.js";
 
 function normalizeEmail(email?: string | null) {
   return email?.trim().toLowerCase() ?? null;

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { stripe, supabaseAdmin, requireUser } from "./_lib";
+import { stripe, supabaseAdmin, requireUser } from "./_lib.js";
 
 type Body =
   | { mode: "subscription" }

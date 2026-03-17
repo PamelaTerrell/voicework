@@ -7,7 +7,7 @@ import {
   isActiveSub,
   normalizeEmail,
   getCustomerEmail,
-} from "./_lib";
+} from "./_lib.js";
 
 export const config = { api: { bodyParser: false } };
 
