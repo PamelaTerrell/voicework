@@ -5,17 +5,6 @@ function isActiveStatus(status?: string | null) {
   return status === "active" || status === "trialing";
 }
 
-function getEpisodeAudioPath(episodeId: string) {
-  switch (episodeId) {
-    case "conversation-ep2":
-      return "conversation-ep2/conversation-full.mp3";
-    case "replays-ep1":
-      return "replays-ep1/full.mp3";
-    default:
-      return `${episodeId}/full.mp3`;
-  }
-}
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     if (req.method !== "GET") {
@@ -63,7 +52,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(403).json({ error: "Not entitled" });
     }
 
-    const path = getEpisodeAudioPath(episodeId);
+    const path = `${episodeId}/full.mp3`;
 
     const { data, error } = await supabaseAdmin.storage
       .from("episodes")
