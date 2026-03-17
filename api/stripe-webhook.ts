@@ -1,8 +1,100 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import type Stripe from "stripe";
-import { stripe, supabaseAdmin, readRawBody, isActiveSub } from "./_lib";
+import {
+  stripe,
+  supabaseAdmin,
+  readRawBody,
+  isActiveSub,
+  normalizeEmail,
+  getCustomerEmail,
+} from "./_lib";
 
 export const config = { api: { bodyParser: false } };
+
+async function upsertProfileSubscription(args: {
+  userId?: string | null;
+  email?: string | null;
+  stripeCustomerId?: string | null;
+  subscriptionStatus: string;
+  isSubscriber: boolean;
+}) {
+  const {
+    userId,
+    email,
+    stripeCustomerId,
+    subscriptionStatus,
+    isSubscriber,
+  } = args;
+
+  const normalizedEmail = normalizeEmail(email);
+
+  // 1) Best case: direct user id
+  if (userId) {
+    const { error } = await supabaseAdmin.from("profiles").upsert(
+      {
+        id: userId,
+        email: normalizedEmail,
+        stripe_customer_id: stripeCustomerId ?? null,
+        is_subscriber: isSubscriber,
+        subscription_status: subscriptionStatus,
+      },
+      { onConflict: "id" }
+    );
+
+    if (error) throw error;
+    return;
+  }
+
+  // 2) Next best: existing profile already linked to Stripe customer
+  if (stripeCustomerId) {
+    const { data: profileByCustomer, error: findByCustomerErr } =
+      await supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .eq("stripe_customer_id", stripeCustomerId)
+        .maybeSingle();
+
+    if (findByCustomerErr) throw findByCustomerErr;
+
+    if (profileByCustomer?.id) {
+      const { error } = await supabaseAdmin
+        .from("profiles")
+        .update({
+          email: normalizedEmail,
+          is_subscriber: isSubscriber,
+          subscription_status: subscriptionStatus,
+        })
+        .eq("id", profileByCustomer.id);
+
+      if (error) throw error;
+      return;
+    }
+  }
+
+  // 3) Final fallback: match by email
+  if (normalizedEmail) {
+    const { data: profileByEmail, error: findByEmailErr } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .ilike("email", normalizedEmail)
+      .maybeSingle();
+
+    if (findByEmailErr) throw findByEmailErr;
+
+    if (profileByEmail?.id) {
+      const { error } = await supabaseAdmin
+        .from("profiles")
+        .update({
+          stripe_customer_id: stripeCustomerId ?? null,
+          is_subscriber: isSubscriber,
+          subscription_status: subscriptionStatus,
+        })
+        .eq("id", profileByEmail.id);
+
+      if (error) throw error;
+    }
+  }
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
@@ -31,29 +123,57 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
 
-      const purchaseType = session.metadata?.purchaseType;
-      const userId = session.metadata?.userId;
-      const episodeId = session.metadata?.episodeId;
-      const customerId =
-        typeof session.customer === "string" ? session.customer : session.customer?.id;
+      const purchaseType = session.metadata?.purchaseType ?? null;
+      const userId = session.metadata?.userId ?? null;
+      const episodeId = session.metadata?.episodeId ?? null;
 
-      // Save Stripe customer ID to profile whenever possible
-      if (userId && customerId) {
-        await supabaseAdmin
-          .from("profiles")
-          .upsert(
-            {
-              id: userId,
+      const customerId =
+        typeof session.customer === "string"
+          ? session.customer
+          : session.customer?.id ?? null;
+
+      const email = normalizeEmail(
+        session.customer_details?.email || session.customer_email || null
+      );
+
+      // Save Stripe customer id/email to profile when possible
+      if (userId) {
+        const { error } = await supabaseAdmin.from("profiles").upsert(
+          {
+            id: userId,
+            email,
+            stripe_customer_id: customerId,
+          },
+          { onConflict: "id" }
+        );
+
+        if (error) throw error;
+      } else if (email && customerId) {
+        const { data: existingProfile, error: existingProfileErr } =
+          await supabaseAdmin
+            .from("profiles")
+            .select("id")
+            .ilike("email", email)
+            .maybeSingle();
+
+        if (existingProfileErr) throw existingProfileErr;
+
+        if (existingProfile?.id) {
+          const { error } = await supabaseAdmin
+            .from("profiles")
+            .update({
               stripe_customer_id: customerId,
-            },
-            { onConflict: "id" }
-          );
+            })
+            .eq("id", existingProfile.id);
+
+          if (error) throw error;
+        }
       }
 
-      // One-time unlock
+      // One-time episode unlock
       if (purchaseType === "one_time") {
         if (session.payment_status === "paid" && userId && episodeId) {
-          await supabaseAdmin.from("entitlements").upsert(
+          const { error } = await supabaseAdmin.from("entitlements").upsert(
             {
               user_id: userId,
               episode_id: episodeId,
@@ -61,24 +181,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             },
             { onConflict: "user_id,episode_id" }
           );
+
+          if (error) throw error;
         }
       }
 
-      // Subscription checkout completed
-      if (purchaseType === "subscription") {
-        if (userId) {
-          await supabaseAdmin
-            .from("profiles")
-            .upsert(
-              {
-                id: userId,
-                stripe_customer_id: customerId ?? null,
-                is_subscriber: true,
-                subscription_status: "active",
-              },
-              { onConflict: "id" }
-            );
-        }
+      // Subscription checkout
+      if (purchaseType === "subscription" && session.payment_status === "paid") {
+        await upsertProfileSubscription({
+          userId,
+          email,
+          stripeCustomerId: customerId,
+          isSubscriber: true,
+          subscriptionStatus: "active",
+        });
       }
 
       return res.status(200).json({ received: true });
@@ -90,34 +206,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       event.type === "customer.subscription.deleted"
     ) {
       const sub = event.data.object as Stripe.Subscription;
+
       const customerId =
         typeof sub.customer === "string" ? sub.customer : sub.customer.id;
 
-      const { data: profile, error: profileErr } = await supabaseAdmin
-        .from("profiles")
-        .select("id")
-        .eq("stripe_customer_id", customerId)
-        .maybeSingle();
+      const email = await getCustomerEmail(customerId);
 
-      if (profileErr) {
-        return res.status(500).send(profileErr.message);
-      }
-
-      if (profile?.id) {
-        await supabaseAdmin
-          .from("profiles")
-          .update({
-            is_subscriber: isActiveSub(sub.status),
-            subscription_status: sub.status,
-          })
-          .eq("id", profile.id);
-      }
+      await upsertProfileSubscription({
+        email,
+        stripeCustomerId: customerId,
+        isSubscriber: isActiveSub(sub.status),
+        subscriptionStatus: sub.status,
+      });
 
       return res.status(200).json({ received: true });
     }
 
     return res.status(200).json({ received: true });
   } catch (err: any) {
+    console.error("Stripe webhook error:", err);
     return res.status(500).send(err?.message || "Webhook handler failed");
   }
 }

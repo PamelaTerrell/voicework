@@ -11,6 +11,18 @@ type MemberEpisode = {
   tags: string[];
 };
 
+type MemberAccessResponse = {
+  ok?: boolean;
+  isSubscriber?: boolean;
+  profile?: {
+    id: string;
+    email: string | null;
+    is_subscriber: boolean | null;
+    subscription_status: string | null;
+  } | null;
+  error?: string;
+};
+
 const EPISODES: MemberEpisode[] = [
   {
     id: "conversation-ep2",
@@ -41,12 +53,23 @@ function trackEvent(eventName: string, params: Record<string, any> = {}) {
   }
 }
 
+function isActiveStatus(status?: string | null) {
+  return status === "active" || status === "trialing";
+}
+
 export default function Members() {
   const [episodeId, setEpisodeId] = useState("conversation-ep2");
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
+
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
+  const [checkingAccess, setCheckingAccess] = useState(false);
+  const [isSubscriber, setIsSubscriber] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
+
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [cancelMessage, setCancelMessage] = useState("");
 
   const selectedEpisode = useMemo(
     () => EPISODES.find((ep) => ep.id === episodeId) ?? EPISODES[0],
@@ -65,21 +88,64 @@ export default function Members() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  async function checkMemberAccess(email: string) {
+    setCheckingAccess(true);
+    setCancelMessage("");
+
+    try {
+      const r = await fetch(
+        `/api/member-access?email=${encodeURIComponent(email)}`
+      );
+      const j: MemberAccessResponse = await r.json();
+
+      if (!r.ok) {
+        setIsSubscriber(false);
+        setSubscriptionStatus(null);
+        setStatus(j.error || "Unable to verify membership.");
+        return false;
+      }
+
+      const active =
+        !!j.isSubscriber || isActiveStatus(j.profile?.subscription_status);
+
+      setIsSubscriber(active);
+      setSubscriptionStatus(j.profile?.subscription_status ?? null);
+
+      return active;
+    } catch (error) {
+      setIsSubscriber(false);
+      setSubscriptionStatus(null);
+      setStatus(
+        error instanceof Error
+          ? error.message
+          : "Unable to verify membership."
+      );
+      return false;
+    } finally {
+      setCheckingAccess(false);
+    }
+  }
+
   async function fetchSignedUrl(selectedId = episodeId) {
     setLoading(true);
     setStatus("");
 
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
+    const email = data.session?.user.email ?? null;
 
-    if (!token) {
+    if (!token || !email) {
       setSignedUrl(null);
+      setIsSubscriber(false);
+      setSubscriptionStatus(null);
       setStatus(
         "You are not signed in yet. Please use your magic link to access your full episodes."
       );
       setLoading(false);
       return;
     }
+
+    const hasMembership = await checkMemberAccess(email);
 
     try {
       const r = await fetch(
@@ -93,13 +159,26 @@ export default function Members() {
 
       if (!r.ok) {
         setSignedUrl(null);
-        setStatus(`Error ${r.status}: ${j.error || "Unknown error"}`);
+
+        if (!hasMembership && r.status === 403) {
+          setStatus(
+            "You are signed in, but we do not see an active membership or unlock for this episode yet."
+          );
+        } else {
+          setStatus(`Error ${r.status}: ${j.error || "Unknown error"}`);
+        }
+
         setLoading(false);
         return;
       }
 
       setSignedUrl(j.url);
-      setStatus("Full access confirmed.");
+
+      if (hasMembership) {
+        setStatus("Full member access confirmed.");
+      } else {
+        setStatus("Episode unlocked successfully.");
+      }
 
       const loadedEpisode =
         EPISODES.find((ep) => ep.id === selectedId) ?? selectedEpisode;
@@ -107,6 +186,7 @@ export default function Members() {
       trackEvent("member_episode_load", {
         episode_id: selectedId,
         episode_title: loadedEpisode.title,
+        is_subscriber: hasMembership,
       });
     } catch (error) {
       setSignedUrl(null);
@@ -120,11 +200,69 @@ export default function Members() {
     }
   }
 
+  async function handleCancelMembership() {
+    setCancelLoading(true);
+    setCancelMessage("");
+    setStatus("");
+
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+
+      if (!token) {
+        setCancelMessage("Please sign in first.");
+        return;
+      }
+
+      const r = await fetch("/api/cancel-membership", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const j = await r.json();
+
+      if (!r.ok) {
+        setCancelMessage(j.error || "Unable to cancel membership.");
+        return;
+      }
+
+      setCancelMessage(
+        j.message ||
+          "Your membership has been canceled. You should keep access until the end of your current billing period."
+      );
+
+      trackEvent("member_cancel_membership", {
+        email: sessionEmail,
+      });
+
+      if (sessionEmail) {
+        await checkMemberAccess(sessionEmail);
+      }
+
+      setSignedUrl(null);
+    } catch (error) {
+      setCancelMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to cancel membership."
+      );
+    } finally {
+      setCancelLoading(false);
+    }
+  }
+
   useEffect(() => {
     if (sessionEmail) {
       fetchSignedUrl(episodeId);
     } else {
       setSignedUrl(null);
+      setIsSubscriber(false);
+      setSubscriptionStatus(null);
+      setStatus("");
+      setCancelMessage("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionEmail]);
@@ -149,6 +287,7 @@ export default function Members() {
 
   const isSignedIn = Boolean(sessionEmail);
   const hasAccess = Boolean(signedUrl);
+  const showCancelButton = isSignedIn && isSubscriber;
 
   return (
     <div className="space-y-8">
@@ -166,6 +305,12 @@ export default function Members() {
             </Badge>
           )}
 
+          {isSubscriber && (
+            <Badge variant="secondary" className="font-normal">
+              Active Member
+            </Badge>
+          )}
+
           {hasAccess && (
             <Badge variant="secondary" className="font-normal">
               Full Access
@@ -180,14 +325,46 @@ export default function Members() {
 
         <div className="rounded-2xl border bg-muted/20 p-4">
           {isSignedIn ? (
-            <div className="space-y-1">
+            <div className="space-y-2">
               <p className="text-sm font-medium">
                 Signed in as <span className="font-semibold">{sessionEmail}</span>
               </p>
+
               <p className="text-sm text-muted-foreground">
-                Your member session is active. Select any episode from your library
-                and it will load automatically.
+                {checkingAccess
+                  ? "Checking your membership access…"
+                  : isSubscriber
+                  ? `Your membership is ${
+                      subscriptionStatus ?? "active"
+                    }. Your full library should be available here.`
+                  : "You are signed in. If you subscribed, make sure you used this same email address in Stripe."}
               </p>
+
+              {showCancelButton && (
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={handleCancelMembership}
+                    disabled={cancelLoading}
+                    className="rounded-xl border border-border/70 bg-background px-4 py-2 text-sm font-medium transition hover:bg-muted/30 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {cancelLoading ? "Canceling…" : "Cancel membership"}
+                  </button>
+
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    This should stop future renewals while preserving access
+                    through the end of your current billing period.
+                  </p>
+
+                  {cancelMessage && (
+                    <div className="mt-3 rounded-xl border bg-background p-3">
+                      <p className="text-sm text-muted-foreground">
+                        {cancelMessage}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-1">
@@ -256,7 +433,7 @@ export default function Members() {
               className="h-64 w-full object-cover sm:h-72"
               loading="lazy"
             />
-            <div className="absolute top-4 right-4 flex gap-2">
+            <div className="absolute right-4 top-4 flex gap-2">
               <Badge className="shadow-sm">Members</Badge>
               {hasAccess && (
                 <Badge variant="secondary" className="shadow-sm">
