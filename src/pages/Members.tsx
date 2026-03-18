@@ -117,7 +117,7 @@ export default function Members() {
       }
 
       setLoginMessage(
-        "Magic link sent. Check your email and sign in with the same address you used for Stripe."
+        "Your quiet sign-in link is on its way. Open your email and return with the same address you used in Stripe."
       );
       setLoginEmail("");
     } finally {
@@ -184,7 +184,7 @@ export default function Members() {
       setIsSubscriber(false);
       setSubscriptionStatus(null);
       setStatus(
-        "You are not signed in yet. Please use the sign-in form below to access your full episodes."
+        "Your library is waiting. Sign in below to continue listening."
       );
       setLoading(false);
       return;
@@ -207,7 +207,7 @@ export default function Members() {
 
         if (!hasMembership && r.status === 403) {
           setStatus(
-            "You are signed in, but we do not see an active membership or unlock for this episode yet."
+            "You’re signed in, but we don’t yet see an active membership or unlock on this email address."
           );
         } else {
           setStatus(`Error ${r.status}: ${j.error || "Unknown error"}`);
@@ -220,9 +220,9 @@ export default function Members() {
       setSignedUrl(j.url);
 
       if (hasMembership) {
-        setStatus("Full member access confirmed.");
+        setStatus("Your full Night Listener library is open.");
       } else {
-        setStatus("Episode unlocked successfully.");
+        setStatus("This episode is now ready for you.");
       }
 
       const loadedEpisode =
@@ -238,7 +238,7 @@ export default function Members() {
       setStatus(
         error instanceof Error
           ? error.message
-          : "Something went wrong while loading your full episode."
+          : "Something went wrong while opening your story."
       );
     } finally {
       setLoading(false);
@@ -336,54 +336,59 @@ export default function Members() {
 
   return (
     <div className="space-y-8">
-      <header className="space-y-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-            Members
-          </h1>
+      <header className="space-y-4">
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="rounded-full border bg-muted/30 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              Night Listener
+            </div>
 
-          {isSignedIn ? (
-            <Badge className="font-normal">Signed In</Badge>
-          ) : (
-            <Badge variant="secondary" className="font-normal">
-              Not Signed In
-            </Badge>
-          )}
+            {isSignedIn ? (
+              <Badge className="font-normal">Signed In</Badge>
+            ) : (
+              <Badge variant="secondary" className="font-normal">
+                Not Signed In
+              </Badge>
+            )}
 
-          {isSubscriber && (
-            <Badge variant="secondary" className="font-normal">
-              Active Member
-            </Badge>
-          )}
+            {isSubscriber && (
+              <Badge variant="secondary" className="font-normal">
+                Active Member
+              </Badge>
+            )}
 
-          {hasAccess && (
-            <Badge variant="secondary" className="font-normal">
-              Full Access
-            </Badge>
-          )}
+            {hasAccess && (
+              <Badge variant="secondary" className="font-normal">
+                Full Access
+              </Badge>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+              Your library
+            </h1>
+            <p className="max-w-3xl text-muted-foreground">
+              A quiet place for the full Night Listener experience — thoughtful
+              stories, gentle reflection, and late-night listening made to meet
+              you softly.
+            </p>
+          </div>
         </div>
 
-        <p className="max-w-3xl text-muted-foreground">
-          Your full Night Listener library lives here. Once signed in, your secure
-          member audio loads below automatically.
-        </p>
-
-        <div className="rounded-2xl border bg-muted/20 p-4">
+        <div className="rounded-[28px] border border-border/70 bg-muted/20 p-5 shadow-sm">
           {isSignedIn ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="space-y-2">
-                <p className="text-sm font-medium">
-                  Signed in as <span className="font-semibold">{sessionEmail}</span>
-                </p>
+                <p className="text-sm font-medium">Welcome back.</p>
+                <p className="text-xs text-muted-foreground">{sessionEmail}</p>
 
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground leading-7">
                   {checkingAccess
-                    ? "Checking your membership access…"
+                    ? "Checking your library access…"
                     : isSubscriber
-                    ? `Your membership is ${
-                        subscriptionStatus ?? "active"
-                      }. Your full library should be available here.`
-                    : "You are signed in. If you subscribed, make sure you used this same email address in Stripe."}
+                    ? "Your membership is active. Your full Night Listener library is open."
+                    : "You’re signed in, but we don’t yet see an active membership on this email address. If you subscribed, make sure you used this same email in Stripe."}
                 </p>
               </div>
 
@@ -405,9 +410,9 @@ export default function Members() {
               </div>
 
               {showCancelButton && (
-                <p className="text-xs text-muted-foreground">
-                  This should stop future renewals while preserving access
-                  through the end of your current billing period.
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  If you cancel, your library should remain open through the end
+                  of your current billing period.
                 </p>
               )}
 
@@ -422,10 +427,12 @@ export default function Members() {
           ) : (
             <div className="space-y-4">
               <div className="space-y-1">
-                <p className="text-sm font-medium">You are not signed in yet.</p>
-                <p className="text-sm text-muted-foreground">
-                  Enter the same email address you used in Stripe and we’ll send
-                  you a secure magic link to open your member library.
+                <p className="text-sm font-medium">
+                  Your Night Listener library is waiting.
+                </p>
+                <p className="text-sm text-muted-foreground leading-7">
+                  Enter your email and we’ll send you a quiet link back to your
+                  stories.
                 </p>
               </div>
 
@@ -461,9 +468,9 @@ export default function Members() {
       <section className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
         <Card className="overflow-hidden rounded-[28px] border border-border/70">
           <div className="border-b px-6 py-5">
-            <p className="text-sm font-medium">Your library</p>
+            <p className="text-sm font-medium">Tonight’s shelf</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Choose an episode to load its full member version.
+              Choose a story and settle in.
             </p>
           </div>
 
@@ -490,10 +497,22 @@ export default function Members() {
                       loading="lazy"
                     />
 
-                    <div className="min-w-0 flex-1 space-y-1">
-                      <p className="line-clamp-2 text-sm font-medium leading-snug">
-                        {ep.title}
-                      </p>
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="line-clamp-2 text-sm font-medium leading-snug">
+                          {ep.title}
+                        </p>
+
+                        {!isSubscriber && (
+                          <Badge
+                            variant="outline"
+                            className="rounded-full px-2 py-0.5 text-[10px] font-normal"
+                          >
+                            Library
+                          </Badge>
+                        )}
+                      </div>
+
                       <p className="line-clamp-2 text-xs text-muted-foreground">
                         {ep.description}
                       </p>
@@ -526,6 +545,9 @@ export default function Members() {
           <CardContent className="space-y-6 p-6">
             <div className="space-y-3">
               <div className="space-y-2">
+                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                  Tonight’s story
+                </p>
                 <h2 className="text-2xl font-semibold leading-tight tracking-tight">
                   {selectedEpisode.title}
                 </h2>
@@ -550,10 +572,10 @@ export default function Members() {
             <div className="rounded-2xl border bg-muted/20 p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium">Full member audio</p>
+                  <p className="text-sm font-medium">Your full story</p>
                   <p className="text-xs text-muted-foreground">
-                    This player loads a secure signed link for your account
-                    automatically.
+                    Your listening session opens here automatically once access
+                    is confirmed.
                   </p>
                 </div>
 
@@ -570,11 +592,15 @@ export default function Members() {
 
               {loading ? (
                 <div className="mt-5 rounded-xl border bg-background p-4">
-                  <p className="text-sm font-medium">Loading your full episode…</p>
+                  <p className="text-sm font-medium">Preparing your story…</p>
                 </div>
               ) : signedUrl ? (
                 <div className="mt-5 space-y-3">
-                  <p className="text-sm font-medium">Now playing full episode</p>
+                  <p className="text-sm font-medium">Now playing</p>
+                  <p className="text-xs text-muted-foreground">
+                    Settle in. This is your full Night Listener experience.
+                  </p>
+
                   <audio
                     key={signedUrl}
                     controls
@@ -582,28 +608,29 @@ export default function Members() {
                     className="w-full"
                     src={signedUrl}
                   />
+
                   <p className="text-xs leading-relaxed text-muted-foreground">
-                    Your secure link expires after a short time. If playback stops,
-                    reselect the episode or refresh the page.
+                    Your secure link expires after a short time. If playback
+                    stops, reselect the episode or refresh the page.
                   </p>
                 </div>
               ) : (
                 <div className="mt-5 rounded-xl border bg-background p-4">
                   <p className="text-sm font-medium">
                     {isSignedIn
-                      ? "Select an episode from your library to load it."
-                      : "Sign in first to access your full member audio."}
+                      ? "Choose a story from your shelf to begin listening."
+                      : "This story is part of your Night Listener library. Sign in to continue listening."}
                   </p>
                 </div>
               )}
             </div>
 
             <div className="rounded-2xl border bg-background p-5">
-              <p className="text-sm font-medium">Helpful note</p>
+              <p className="text-sm font-medium">A quiet note</p>
               <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                If you unlocked a single episode, only that episode will play. If
-                you subscribed as a member, your full listening library should be
-                available here.
+                If you unlocked a single episode, only that story will play
+                here. If you subscribed as a member, your full library should be
+                ready whenever you return.
               </p>
             </div>
           </CardContent>
