@@ -164,27 +164,38 @@ export default function Home() {
                   </div>
                 </div>
               ) : (
-                <div className="mt-4 space-y-3">
-                  <Input
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="rounded-xl bg-background"
-                  />
+                <div className="mt-4 space-y-4">
+  <div className="space-y-1">
+    <p className="text-sm font-medium">
+      Welcome in.
+    </p>
+    <p className="text-sm text-muted-foreground leading-6">
+      Enter your email to receive your private access link.
+    </p>
+  </div>
 
-                  <Button
-                    onClick={sendLink}
-                    disabled={!email || loading}
-                    className="w-full sm:w-auto"
-                  >
-                    {loading ? "Sending…" : "Send magic link"}
-                  </Button>
+  <div className="space-y-3">
+    <Input
+      type="email"
+      placeholder="you@example.com"
+      value={email}
+      onChange={(e) => setEmail(e.target.value)}
+      className="rounded-xl bg-background"
+    />
 
-                  {message && (
-                    <p className="text-xs text-muted-foreground">{message}</p>
-                  )}
-                </div>
+    <Button
+      onClick={sendLink}
+      disabled={!email || loading}
+      className="w-full sm:w-auto"
+    >
+      {loading ? "Sending…" : "Send magic link"}
+    </Button>
+
+    {message && (
+      <p className="text-xs text-muted-foreground">{message}</p>
+    )}
+  </div>
+</div>
               )}
             </div>
           </div>

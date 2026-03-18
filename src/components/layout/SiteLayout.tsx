@@ -83,42 +83,50 @@ export default function SiteLayout() {
         <Outlet />
       </main>
 
-      <footer className="mt-10">
-        <Separator />
-        <div className="mx-auto max-w-5xl px-4 py-8 text-sm text-muted-foreground">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p>
-              Created by{" "}
-              <a
-                href="https://pamelajterrell.com"
-                target="_blank"
-                rel="noreferrer"
-                className="underline underline-offset-4 hover:text-foreground"
-              >
-                Pamela J. Terrell
-              </a>
-              <span className="ml-2 text-muted-foreground/70">
-                (BA Sociology)
-              </span>
-            </p>
+      <footer className="mt-16">
+  <Separator />
 
-            <p className="flex gap-4">
-              <a
-                className="hover:text-foreground underline underline-offset-4"
-                href="mailto:agentpamelajterrell@gmail.com"
-              >
-                Email
-              </a>
-              <Link
-                className="hover:text-foreground underline underline-offset-4"
-                to="/contact"
-              >
-                Contact
-              </Link>
-            </p>
-          </div>
-        </div>
-      </footer>
+  <div className="mx-auto max-w-5xl px-4 py-10 text-sm text-muted-foreground">
+    <div className="flex flex-col items-center gap-6 text-center">
+
+      {/* Brand */}
+      <div className="space-y-2">
+        <p className="text-base font-medium text-foreground">
+          Stabile USA
+        </p>
+        <p className="max-w-md text-sm leading-6 text-muted-foreground">
+          A quiet space for late-night stories, reflection, and the moments
+          we carry with us.
+        </p>
+      </div>
+
+      {/* Links */}
+      <div className="flex gap-6 text-sm">
+        <a
+          href="mailto:agentpamelajterrell@gmail.com"
+          className="hover:text-foreground transition"
+        >
+          Email
+        </a>
+
+        <a
+          href="https://pamelajterrell.com"
+          target="_blank"
+          rel="noreferrer"
+          className="hover:text-foreground transition"
+        >
+          Creator
+        </a>
+      </div>
+
+      {/* Signature */}
+      <p className="text-xs text-muted-foreground/70">
+        Created by Pamela J. Terrell
+      </p>
+
+    </div>
+  </div>
+</footer>
 
       <Analytics />
       <SpeedInsights />
