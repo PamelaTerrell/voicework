@@ -68,8 +68,7 @@ export default function Members() {
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   const [checkingAccess, setCheckingAccess] = useState(false);
   const [isSubscriber, setIsSubscriber] = useState(false);
-  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
-
+  const [, setSubscriptionStatus] = useState<string | null>(null);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [cancelMessage, setCancelMessage] = useState("");
 
