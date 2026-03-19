@@ -1,10 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function AuthCallback() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const [status, setStatus] = useState("Finishing sign-in...");
 
   useEffect(() => {
     let isMounted = true;
@@ -13,9 +14,15 @@ export default function AuthCallback() {
       const next = searchParams.get("next") || "/members";
       const code = searchParams.get("code");
 
+      console.log("FULL URL:", window.location.href);
+      console.log("CODE:", code);
+      console.log("NEXT:", next);
+
+      // 🚨 DO NOT redirect away — show the issue instead
       if (!code) {
-        console.error("Auth callback error: missing code");
-        navigate("/join", { replace: true });
+        const msg = "Missing auth code in callback URL.";
+        console.error(msg);
+        if (isMounted) setStatus(msg);
         return;
       }
 
@@ -24,11 +31,12 @@ export default function AuthCallback() {
       if (!isMounted) return;
 
       if (error) {
-        console.error("Auth callback error:", error.message);
-        navigate("/join", { replace: true });
+        console.error("Auth callback error:", error);
+        setStatus(`Auth error: ${error.message}`);
         return;
       }
 
+      setStatus("Success! Redirecting to your library...");
       navigate(next, { replace: true });
     }
 
@@ -45,9 +53,9 @@ export default function AuthCallback() {
         <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
           Signing you in…
         </h1>
+
         <p className="mt-3 text-sm leading-6 text-slate-600">
-          Please wait while we finish your secure sign-in and take you to your
-          listening library.
+          {status}
         </p>
       </div>
     </div>
