@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
+import { sendMagicLink } from "@/lib/sendMagicLink";
 
 export default function Home() {
   const [email, setEmail] = useState("");
@@ -29,17 +29,7 @@ export default function Home() {
     setMessage("");
 
     try {
-      const redirectTo =
-        window.location.hostname === "localhost"
-          ? "http://localhost:5173/auth/callback?next=/members"
-          : "https://www.stabileusa.com/auth/callback?next=/members";
-
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: redirectTo,
-        },
-      });
+      const { error } = await sendMagicLink(email);
 
       if (error) {
         setMessage(error.message);
@@ -68,32 +58,28 @@ export default function Home() {
 
         <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
           <div className="space-y-6">
-      <div className="space-y-6">
+            <div className="space-y-6">
+              <div className="w-fit rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+                Night Listener • Late-night stories • Human behavior
+              </div>
 
-  {/* Top label (refined) */}
-  <div className="w-fit rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-    Night Listener • Late-night stories • Human behavior
-  </div>
+              <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
+                Calm bedtime stories inspired by{" "}
+                <span className="bg-gradient-to-r from-[#b49a7a] to-[#8f7a60] bg-clip-text text-transparent">
+                  real emotions, familiar moments, and why we do what we do
+                </span>
+                .
+              </h1>
 
-  {/* Headline */}
-  <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl leading-tight">
-    Calm bedtime stories inspired by{" "}
-    <span className="bg-gradient-to-r from-[#b49a7a] to-[#8f7a60] bg-clip-text text-transparent">
-      real emotions, familiar moments, and why we do what we do
-    </span>
-    .
-  </h1>
-
-  {/* Supporting line */}
-  <p className="max-w-xl text-sm italic leading-7 text-muted-foreground/90">
-    Stories inspired by real emotions, quiet moments, and the human experiences we all recognize.
-  </p>
-
-</div>
+              <p className="max-w-xl text-sm italic leading-7 text-muted-foreground/90">
+                Stories inspired by real emotions, quiet moments, and the human
+                experiences we all recognize.
+              </p>
+            </div>
 
             <p className="text-lg text-muted-foreground">
-              Gentle, story-driven reflections on human behavior—made for winding down,
-              getting curious, and feeling a little less alone at night.
+              Gentle, story-driven reflections on human behavior—made for winding
+              down, getting curious, and feeling a little less alone at night.
             </p>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
@@ -122,13 +108,16 @@ export default function Home() {
                 The Conversation That Never Finished
               </p>
               <p className="mt-2 text-sm text-muted-foreground">
-                A quiet late-night story about misunderstanding, belief, and the words
-                we never get the chance to finish.
+                A quiet late-night story about misunderstanding, belief, and the
+                words we never get the chance to finish.
               </p>
 
               <div className="mt-4 space-y-2">
                 <audio controls preload="metadata" className="w-full">
-                  <source src="/audio/conversation-preview.mp3" type="audio/mpeg" />
+                  <source
+                    src="/audio/conversation-preview.mp3"
+                    type="audio/mpeg"
+                  />
                   Your browser does not support the audio element.
                 </audio>
 
@@ -147,8 +136,8 @@ export default function Home() {
             <div className="rounded-2xl border bg-muted p-5">
               <p className="text-sm font-medium">Member login</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Already subscribed or unlocked an episode? Sign in with your email to
-                access your full episodes.
+                Already subscribed or unlocked an episode? Sign in with your email
+                to access your full episodes.
               </p>
 
               {sessionEmail ? (
@@ -176,37 +165,35 @@ export default function Home() {
                 </div>
               ) : (
                 <div className="mt-4 space-y-4">
-  <div className="space-y-1">
-    <p className="text-sm font-medium">
-      Welcome in.
-    </p>
-    <p className="text-sm text-muted-foreground leading-6">
-      Enter your email to receive your private access link.
-    </p>
-  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Welcome in.</p>
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      Enter your email to receive your private access link.
+                    </p>
+                  </div>
 
-  <div className="space-y-3">
-    <Input
-      type="email"
-      placeholder="you@example.com"
-      value={email}
-      onChange={(e) => setEmail(e.target.value)}
-      className="rounded-xl bg-background"
-    />
+                  <div className="space-y-3">
+                    <Input
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="rounded-xl bg-background"
+                    />
 
-    <Button
-      onClick={sendLink}
-      disabled={!email || loading}
-      className="w-full sm:w-auto"
-    >
-      {loading ? "Sending…" : "Send magic link"}
-    </Button>
+                    <Button
+                      onClick={sendLink}
+                      disabled={!email || loading}
+                      className="w-full sm:w-auto"
+                    >
+                      {loading ? "Sending…" : "Send magic link"}
+                    </Button>
 
-    {message && (
-      <p className="text-xs text-muted-foreground">{message}</p>
-    )}
-  </div>
-</div>
+                    {message && (
+                      <p className="text-xs text-muted-foreground">{message}</p>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -218,8 +205,8 @@ export default function Home() {
           <CardContent className="space-y-2 p-6">
             <p className="font-medium">Cozy late-night tone</p>
             <p className="text-sm text-muted-foreground">
-              Calm, unhurried narration designed for bedtime listening—gentle pacing and
-              a soft landing.
+              Calm, unhurried narration designed for bedtime listening—gentle
+              pacing and a soft landing.
             </p>
           </CardContent>
         </Card>
@@ -228,8 +215,8 @@ export default function Home() {
           <CardContent className="space-y-2 p-6">
             <p className="font-medium">Sociology-inspired insight</p>
             <p className="text-sm text-muted-foreground">
-              Human behavior explained through stories and everyday examples—curious,
-              comforting, and easy to follow.
+              Human behavior explained through stories and everyday
+              examples—curious, comforting, and easy to follow.
             </p>
           </CardContent>
         </Card>
@@ -238,8 +225,8 @@ export default function Home() {
           <CardContent className="space-y-2 p-6">
             <p className="font-medium">A growing library</p>
             <p className="text-sm text-muted-foreground">
-              Short previews now, full episodes for members. Join the Night List to get
-              new releases and early access.
+              Short previews now, full episodes for members. Join the Night List
+              to get new releases and early access.
             </p>
           </CardContent>
         </Card>
@@ -250,7 +237,8 @@ export default function Home() {
           <div className="space-y-1">
             <p className="text-lg font-medium">Want new episodes in your inbox?</p>
             <p className="text-sm text-muted-foreground">
-              Join the Night List for release notes, early access, and founding-listener perks.
+              Join the Night List for release notes, early access, and
+              founding-listener perks.
             </p>
           </div>
 

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { sendMagicLink } from "@/lib/sendMagicLink";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -271,20 +272,7 @@ export default function Listen() {
     setMessage("");
 
     try {
-      const redirectTo =
-        window.location.hostname === "localhost"
-          ? "http://localhost:5173/auth/callback?next=/members"
-          : "https://www.stabileusa.com/auth/callback?next=/members";
-
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: redirectTo,
-          data: {
-            isSubscriber: true,
-          },
-        },
-      });
+      const { error } = await sendMagicLink(email);
 
       if (error) {
         setMessage(error.message);
