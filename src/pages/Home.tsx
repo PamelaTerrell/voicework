@@ -68,17 +68,28 @@ export default function Home() {
 
         <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
           <div className="space-y-6">
-            <div className="w-fit rounded-full border bg-muted px-3 py-1 text-xs text-muted-foreground">
-              Cozy late-night listening • Human behavior • Sociology-inspired
-            </div>
+      <div className="space-y-6">
 
-            <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-              Calm bedtime stories about{" "}
-              <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                why we do what we do
-              </span>
-              .
-            </h1>
+  {/* Top label (refined) */}
+  <div className="w-fit rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
+    Night Listener • Late-night stories • Human behavior
+  </div>
+
+  {/* Headline */}
+  <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl leading-tight">
+    Calm bedtime stories inspired by{" "}
+    <span className="bg-gradient-to-r from-[#b49a7a] to-[#8f7a60] bg-clip-text text-transparent">
+      real emotions, familiar moments, and why we do what we do
+    </span>
+    .
+  </h1>
+
+  {/* Supporting line */}
+  <p className="max-w-xl text-sm italic leading-7 text-muted-foreground/90">
+    Stories inspired by real emotions, quiet moments, and the human experiences we all recognize.
+  </p>
+
+</div>
 
             <p className="text-lg text-muted-foreground">
               Gentle, story-driven reflections on human behavior—made for winding down,

@@ -11,10 +11,15 @@ export default function AuthCallback() {
 
     async function finishAuth() {
       const next = searchParams.get("next") || "/members";
+      const code = searchParams.get("code");
 
-      const { error } = await supabase.auth.exchangeCodeForSession(
-        window.location.href
-      );
+      if (!code) {
+        console.error("Auth callback error: missing code");
+        navigate("/join", { replace: true });
+        return;
+      }
+
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
 
       if (!isMounted) return;
 

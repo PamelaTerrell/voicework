@@ -36,6 +36,9 @@ export function Auth() {
         email,
         options: {
           emailRedirectTo: redirectTo,
+          data: {
+            isSubscriber: true,
+          },
         },
       });
 
