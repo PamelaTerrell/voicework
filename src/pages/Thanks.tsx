@@ -4,8 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 function trackEvent(eventName: string, params: Record<string, any> = {}) {
-  if (typeof window !== "undefined" && window.gtag) {
-    window.gtag("event", eventName, {
+  if (typeof window !== "undefined" && (window as any).gtag) {
+    (window as any).gtag("event", eventName, {
       site: "stabileusa",
       page_name: "thanks",
       page_location: window.location.pathname + window.location.search,
@@ -20,7 +20,6 @@ export default function Thanks() {
   const from = searchParams.get("from");
   const product = searchParams.get("product");
 
-  // Determine context
   const isNightList = from === "night_list";
   const isContact = from === "contact";
   const isStripe = from === "stripe";
@@ -79,7 +78,6 @@ export default function Thanks() {
     });
   }, [isNightList, isContact, isStripe, isMembership, isSingle, from, product]);
 
-  // Titles
   let title = "Thank you 🌙";
   let subtitle = "You’re all set.";
 
@@ -110,7 +108,6 @@ export default function Thanks() {
 
       <Card>
         <CardContent className="space-y-5 p-6">
-          {/* What happens next */}
           <div className="rounded-2xl border bg-background p-5">
             <p className="text-sm font-medium">What happens next</p>
 
@@ -132,9 +129,9 @@ export default function Thanks() {
 
             {isStripe && (
               <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
-                <li>• A receipt has been sent to your email</li>
-                <li>• Full episodes will be delivered shortly</li>
-                <li>• Keep an eye on your inbox for access details</li>
+                <li>• A Stripe receipt has been sent to your email</li>
+                <li>• Sign in with the same email address you used at checkout</li>
+                <li>• Then open your Members library to listen</li>
               </ul>
             )}
 
@@ -146,28 +143,42 @@ export default function Thanks() {
             )}
           </div>
 
-          {/* Actions */}
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Button asChild className="h-11">
-              <Link
-                to="/listen"
-                onClick={() =>
-                  trackEvent("thanks_nav_click", {
-                    destination: "/listen",
-                    cta_label: "Listen",
-                    context: isStripe
-                      ? "post_purchase"
-                      : isNightList
-                      ? "night_list"
-                      : isContact
-                      ? "contact"
-                      : "general",
-                  })
-                }
-              >
-                Listen
-              </Link>
-            </Button>
+            {isStripe ? (
+              <Button asChild className="h-11">
+                <Link
+                  to="/members"
+                  onClick={() =>
+                    trackEvent("thanks_nav_click", {
+                      destination: "/members",
+                      cta_label: "Go to Members",
+                      context: "post_purchase",
+                    })
+                  }
+                >
+                  Go to Members
+                </Link>
+              </Button>
+            ) : (
+              <Button asChild className="h-11">
+                <Link
+                  to="/listen"
+                  onClick={() =>
+                    trackEvent("thanks_nav_click", {
+                      destination: "/listen",
+                      cta_label: "Listen",
+                      context: isNightList
+                        ? "night_list"
+                        : isContact
+                        ? "contact"
+                        : "general",
+                    })
+                  }
+                >
+                  Listen
+                </Link>
+              </Button>
+            )}
 
             <Button asChild variant="outline" className="h-11">
               <Link
@@ -191,7 +202,6 @@ export default function Thanks() {
             </Button>
           </div>
 
-          {/* Gentle CTA */}
           {!isStripe && (
             <div className="rounded-2xl border bg-muted/30 p-5">
               <p className="text-sm font-medium">Want full episodes?</p>

@@ -464,12 +464,14 @@ export default function Members() {
         </div>
       </header>
 
+      
+
       <section className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
         <Card className="overflow-hidden rounded-[28px] border border-border/70">
           <div className="border-b px-6 py-5">
             <p className="text-sm font-medium">Tonight’s shelf</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Choose a story and settle in.
+              Welcome back 🌙 Choose a story and settle in.
             </p>
           </div>
 
