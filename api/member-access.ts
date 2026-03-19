@@ -33,6 +33,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: error.message });
     }
 
+    let stripeCustomerId = profile?.stripe_customer_id ?? null;
+
+    // Fallback: if no Stripe customer is linked yet, look one up by email.
+    if (!stripeCustomerId) {
+      const customers = await stripe.customers.list({
+        email,
+        limit: 10,
+      });
+
+      const matchingCustomer =
+        customers.data.find((c) => normalizeEmail(c.email) === email) ?? null;
+
+      if (matchingCustomer) {
+        stripeCustomerId = matchingCustomer.id;
+
+        // Backfill the profile so future checks are fast and stable.
+        if (profile?.id) {
+          const { error: updateErr } = await supabaseAdmin
+            .from("profiles")
+            .update({
+              stripe_customer_id: stripeCustomerId,
+            })
+            .eq("id", profile.id);
+
+          if (updateErr) {
+            console.error("Failed to backfill stripe_customer_id:", updateErr);
+          }
+        }
+      }
+    }
+
     let stripeSubscription: {
       id: string;
       status: string;
@@ -41,9 +72,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       current_period_end: number | null;
     } | null = null;
 
-    if (profile?.stripe_customer_id) {
+    if (stripeCustomerId) {
       const subscriptions = await stripe.subscriptions.list({
-        customer: profile.stripe_customer_id,
+        customer: stripeCustomerId,
         status: "all",
         limit: 10,
       });
@@ -74,6 +105,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       isActiveStatus(profile?.subscription_status) ||
       isActiveStatus(stripeSubscription?.status);
 
+    // If Stripe proves the user is active, backfill profile membership fields.
+    if (profile?.id && stripeCustomerId && stripeSubscription) {
+      const derivedIsSubscriber = isActiveStatus(stripeSubscription.status);
+
+      const { error: syncErr } = await supabaseAdmin
+        .from("profiles")
+        .update({
+          stripe_customer_id: stripeCustomerId,
+          is_subscriber: derivedIsSubscriber,
+          subscription_status: stripeSubscription.status,
+        })
+        .eq("id", profile.id);
+
+      if (syncErr) {
+        console.error("Failed to sync profile subscription state:", syncErr);
+      }
+    }
+
     return res.status(200).json({
       ok: true,
       isSubscriber,
@@ -84,7 +133,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             email: profile.email,
             is_subscriber: profile.is_subscriber,
             subscription_status: profile.subscription_status,
-            stripe_customer_id: profile.stripe_customer_id,
+            stripe_customer_id: stripeCustomerId,
           }
         : null,
       subscription: stripeSubscription,
