@@ -1,17 +1,15 @@
+import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabaseClient";
 import { sendMagicLink } from "@/lib/sendMagicLink";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const FORM_ENDPOINT = "https://formspree.io/f/xykjjvdb";
 
-const STRIPE_ONE_TIME_URL =
-  "https://buy.stripe.com/fZu3cobIS08qh2N71p2cg03";
-
 const STRIPE_SUBSCRIBE_URL =
-  "https://buy.stripe.com/9B64gs7o5k53Pd2cg05";
+  "https://buy.stripe.com/9B64gs7sCg7o5k53Pd2cg05";
 
 export default function Join() {
   const [email, setEmail] = useState("");
@@ -44,7 +42,7 @@ export default function Join() {
       }
 
       setMessage(
-        "Magic link sent. Check your email and use the same address you used for Stripe."
+        "Magic link sent. Check your email and use the same address you used for membership."
       );
       setEmail("");
     } finally {
@@ -70,32 +68,27 @@ export default function Join() {
       <Card>
         <CardContent className="space-y-5 p-6">
           <div className="rounded-2xl border bg-muted/40 p-4 text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">Night Listener access</p>
+            <p className="font-medium text-foreground">Night Listener membership</p>
             <p className="mt-1">
-              Choose membership for the full library.
+              Unlock the full Night Listener library with one simple membership.
               Cancel anytime.
             </p>
           </div>
 
           <div className="space-y-3">
-           <div className="space-y-3">
-  <Button asChild className="w-full">
-    <a href={STRIPE_SUBSCRIBE_URL} target="_blank" rel="noreferrer">
-      Unlock the Full Night Listener Library — $4.99/month
-    </a>
-  </Button>
+            <Button asChild className="w-full">
+              <a href={STRIPE_SUBSCRIBE_URL} target="_blank" rel="noreferrer">
+                Unlock the Full Night Listener Library — $4.99/month
+              </a>
+            </Button>
 
-  <div className="rounded-2xl border bg-background p-4 text-sm text-muted-foreground">
-    <p className="font-medium text-foreground">
-      Not ready to subscribe?
-    </p>
-    <p className="mt-1">
-      You can listen to a full episode for free — no sign-up required.
-    </p>
-  </div>
-</div>
-
-           
+            <div className="rounded-2xl border bg-background p-4 text-sm text-muted-foreground">
+              <p className="font-medium text-foreground">Not ready to subscribe?</p>
+              <p className="mt-1">
+                Start with the free full story on the home page — no sign-in
+                required.
+              </p>
+            </div>
 
             <p className="text-xs text-muted-foreground">
               Secure checkout powered by Stripe. You’ll receive a receipt by
@@ -110,8 +103,8 @@ export default function Join() {
           <div className="rounded-2xl border bg-background p-4 text-sm text-muted-foreground">
             <p className="font-medium text-foreground">Already subscribed?</p>
             <p className="mt-1">
-              After checkout, sign in with the same email address you used in
-              Stripe to unlock your member library and full episodes.
+              After checkout, sign in with the same email address you used for
+              membership to open your full library.
             </p>
           </div>
 
@@ -126,7 +119,7 @@ export default function Join() {
 
               <div className="flex flex-wrap gap-2">
                 <Button asChild>
-                  <a href="/members">Go to Members</a>
+                  <Link to="/members">Go to Members</Link>
                 </Button>
 
                 <Button variant="outline" onClick={signOut}>
@@ -139,8 +132,8 @@ export default function Join() {
               <div className="space-y-1">
                 <p className="text-sm font-medium">Member sign in</p>
                 <p className="text-sm text-muted-foreground">
-                  Enter the same email address you used in Stripe and we’ll send
-                  your private access link.
+                  Enter the same email address you used for membership and we’ll
+                  send your private access link.
                 </p>
               </div>
 
@@ -153,10 +146,7 @@ export default function Join() {
                   className="sm:max-w-sm"
                 />
 
-                <Button
-                  onClick={handleSendLink}
-                  disabled={!email || loading}
-                >
+                <Button onClick={handleSendLink} disabled={!email || loading}>
                   {loading ? "Sending…" : "Send magic link"}
                 </Button>
               </div>
@@ -209,7 +199,10 @@ export default function Join() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="night-list-email">
+                <label
+                  className="text-sm font-medium"
+                  htmlFor="night-list-email"
+                >
                   Email
                 </label>
                 <Input
