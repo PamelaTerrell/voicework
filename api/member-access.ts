@@ -19,11 +19,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       typeof req.query.email === "string" ? req.query.email : null
     );
 
+    const userId =
+      typeof req.query.userId === "string" ? req.query.userId : null;
+
     if (!email) {
       return res.status(400).json({ error: "Missing email" });
     }
 
-    const { data: profile, error } = await supabaseAdmin
+    let { data: profile, error } = await supabaseAdmin
       .from("profiles")
       .select("id, email, is_subscriber, subscription_status, stripe_customer_id")
       .ilike("email", email)
@@ -35,7 +38,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     let stripeCustomerId = profile?.stripe_customer_id ?? null;
 
-    // Fallback: if no Stripe customer is linked yet, look one up by email.
     if (!stripeCustomerId) {
       const customers = await stripe.customers.list({
         email,
@@ -47,20 +49,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (matchingCustomer) {
         stripeCustomerId = matchingCustomer.id;
-
-        // Backfill the profile so future checks are fast and stable.
-        if (profile?.id) {
-          const { error: updateErr } = await supabaseAdmin
-            .from("profiles")
-            .update({
-              stripe_customer_id: stripeCustomerId,
-            })
-            .eq("id", profile.id);
-
-          if (updateErr) {
-            console.error("Failed to backfill stripe_customer_id:", updateErr);
-          }
-        }
       }
     }
 
@@ -105,21 +93,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       isActiveStatus(profile?.subscription_status) ||
       isActiveStatus(stripeSubscription?.status);
 
-    // If Stripe proves the user is active, backfill profile membership fields.
-    if (profile?.id && stripeCustomerId && stripeSubscription) {
-      const derivedIsSubscriber = isActiveStatus(stripeSubscription.status);
-
-      const { error: syncErr } = await supabaseAdmin
-        .from("profiles")
-        .update({
+    // Critical fix: if Stripe proves access, ensure a profile row exists for this signed-in user
+    if (userId && stripeCustomerId && stripeSubscription) {
+      const { error: upsertErr } = await supabaseAdmin.from("profiles").upsert(
+        {
+          id: userId,
+          email,
           stripe_customer_id: stripeCustomerId,
-          is_subscriber: derivedIsSubscriber,
+          is_subscriber: isActiveStatus(stripeSubscription.status),
           subscription_status: stripeSubscription.status,
-        })
-        .eq("id", profile.id);
+        },
+        { onConflict: "id" }
+      );
 
-      if (syncErr) {
-        console.error("Failed to sync profile subscription state:", syncErr);
+      if (upsertErr) {
+        console.error("Failed to upsert profile from member-access:", upsertErr);
+      } else {
+        const refreshed = await supabaseAdmin
+          .from("profiles")
+          .select("id, email, is_subscriber, subscription_status, stripe_customer_id")
+          .eq("id", userId)
+          .maybeSingle();
+
+        if (!refreshed.error) {
+          profile = refreshed.data ?? profile;
+        }
       }
     }
 
@@ -133,7 +131,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             email: profile.email,
             is_subscriber: profile.is_subscriber,
             subscription_status: profile.subscription_status,
-            stripe_customer_id: stripeCustomerId,
+            stripe_customer_id: profile.stripe_customer_id,
           }
         : null,
       subscription: stripeSubscription,

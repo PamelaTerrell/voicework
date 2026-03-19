@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { sendMagicLink } from "@/lib/sendMagicLink";
@@ -22,6 +23,14 @@ type MemberAccessResponse = {
     email: string | null;
     is_subscriber: boolean | null;
     subscription_status: string | null;
+    stripe_customer_id?: string | null;
+  } | null;
+  subscription?: {
+    id: string;
+    status: string;
+    cancel_at_period_end: boolean;
+    cancel_at: number | null;
+    current_period_end: number | null;
   } | null;
   error?: string;
 };
@@ -69,6 +78,7 @@ export default function Members() {
   const [loading, setLoading] = useState(false);
 
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
   const [checkingAccess, setCheckingAccess] = useState(false);
   const [isSubscriber, setIsSubscriber] = useState(false);
   const [, setSubscriptionStatus] = useState<string | null>(null);
@@ -89,10 +99,12 @@ export default function Members() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSessionEmail(data.session?.user.email ?? null);
+      setSessionUserId(data.session?.user.id ?? null);
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setSessionEmail(session?.user.email ?? null);
+      setSessionUserId(session?.user.id ?? null);
     });
 
     return () => sub.subscription.unsubscribe();
@@ -111,7 +123,7 @@ export default function Members() {
       }
 
       setLoginMessage(
-        "Your quiet sign-in link is on its way. Open your email and return with the same address you used in Stripe."
+        "Your quiet sign-in link is on its way. Open your email and return with the same address you used for membership."
       );
       setLoginEmail("");
     } finally {
@@ -132,8 +144,11 @@ export default function Members() {
     setCancelMessage("");
 
     try {
+      const { data } = await supabase.auth.getSession();
+      const userId = data.session?.user.id ?? sessionUserId ?? "";
+
       const r = await fetch(
-        `/api/member-access?email=${encodeURIComponent(email)}`
+        `/api/member-access?email=${encodeURIComponent(email)}&userId=${encodeURIComponent(userId)}`
       );
       const j: MemberAccessResponse = await r.json();
 
@@ -145,10 +160,14 @@ export default function Members() {
       }
 
       const active =
-        !!j.isSubscriber || isActiveStatus(j.profile?.subscription_status);
+        !!j.isSubscriber ||
+        isActiveStatus(j.profile?.subscription_status) ||
+        isActiveStatus(j.subscription?.status);
 
       setIsSubscriber(active);
-      setSubscriptionStatus(j.profile?.subscription_status ?? null);
+      setSubscriptionStatus(
+        j.profile?.subscription_status ?? j.subscription?.status ?? null
+      );
 
       return active;
     } catch (error) {
@@ -421,7 +440,7 @@ export default function Members() {
 
                 {!isSubscriber && (
                   <Button asChild>
-                    <a href="/join">Unlock the full library</a>
+                    <Link to="/join">Unlock the full library</Link>
                   </Button>
                 )}
 
