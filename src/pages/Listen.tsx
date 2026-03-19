@@ -280,6 +280,9 @@ export default function Listen() {
         email,
         options: {
           emailRedirectTo: redirectTo,
+          data: {
+            isSubscriber: true,
+          },
         },
       });
 
@@ -378,10 +381,7 @@ export default function Listen() {
                 className="sm:max-w-sm"
               />
 
-              <Button
-                onClick={sendLink}
-                disabled={!email || loadingLink}
-              >
+              <Button onClick={sendLink} disabled={!email || loadingLink}>
                 {loadingLink ? "Sending…" : "Send magic link"}
               </Button>
             </div>
