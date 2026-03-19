@@ -72,23 +72,30 @@ export default function Join() {
           <div className="rounded-2xl border bg-muted/40 p-4 text-sm text-muted-foreground">
             <p className="font-medium text-foreground">Night Listener access</p>
             <p className="mt-1">
-              Choose membership for the full library, or unlock a single episode.
+              Choose membership for the full library.
               Cancel anytime.
             </p>
           </div>
 
           <div className="space-y-3">
-            <Button asChild className="w-full">
-              <a href={STRIPE_SUBSCRIBE_URL} target="_blank" rel="noreferrer">
-                Unlock All Episodes — $4.99/month
-              </a>
-            </Button>
+           <div className="space-y-3">
+  <Button asChild className="w-full">
+    <a href={STRIPE_SUBSCRIBE_URL} target="_blank" rel="noreferrer">
+      Unlock the Full Night Listener Library — $4.99/month
+    </a>
+  </Button>
 
-            <Button asChild variant="outline" className="w-full">
-              <a href={STRIPE_ONE_TIME_URL} target="_blank" rel="noreferrer">
-                Listen Once — $2.99
-              </a>
-            </Button>
+  <div className="rounded-2xl border bg-background p-4 text-sm text-muted-foreground">
+    <p className="font-medium text-foreground">
+      Not ready to subscribe?
+    </p>
+    <p className="mt-1">
+      You can listen to a full episode for free — no sign-up required.
+    </p>
+  </div>
+</div>
+
+           
 
             <p className="text-xs text-muted-foreground">
               Secure checkout powered by Stripe. You’ll receive a receipt by

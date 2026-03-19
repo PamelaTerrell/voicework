@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { sendMagicLink } from "@/lib/sendMagicLink";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,8 @@ type MemberAccessResponse = {
   } | null;
   error?: string;
 };
+
+const FREE_EPISODE_ID = "conversation-ep2";
 
 const EPISODES: MemberEpisode[] = [
   {
@@ -60,7 +63,7 @@ function isActiveStatus(status?: string | null) {
 }
 
 export default function Members() {
-  const [episodeId, setEpisodeId] = useState("conversation-ep2");
+  const [episodeId, setEpisodeId] = useState(FREE_EPISODE_ID);
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
@@ -81,6 +84,8 @@ export default function Members() {
     [episodeId]
   );
 
+  const isFreeEpisode = episodeId === FREE_EPISODE_ID;
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSessionEmail(data.session?.user.email ?? null);
@@ -93,22 +98,12 @@ export default function Members() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  async function sendMagicLink() {
+  async function handleSendMagicLink() {
     setLoginLoading(true);
     setLoginMessage("");
 
     try {
-      const redirectTo =
-        window.location.hostname === "localhost"
-          ? "http://localhost:5173/auth/callback?next=/members"
-          : "https://www.stabileusa.com/auth/callback?next=/members";
-
-      const { error } = await supabase.auth.signInWithOtp({
-        email: loginEmail,
-        options: {
-          emailRedirectTo: redirectTo,
-        },
-      });
+      const { error } = await sendMagicLink(loginEmail);
 
       if (error) {
         setLoginMessage(error.message);
@@ -177,14 +172,23 @@ export default function Members() {
     const { data } = await supabase.auth.getSession();
     const token = data.session?.access_token;
     const email = data.session?.user.email ?? null;
+    const selectedIsFree = selectedId === FREE_EPISODE_ID;
 
     if (!token || !email) {
       setSignedUrl(null);
       setIsSubscriber(false);
       setSubscriptionStatus(null);
-      setStatus(
-        "Your library is waiting. Sign in below to continue listening."
-      );
+
+      if (selectedIsFree) {
+        setStatus(
+          "This story is free to enjoy. Sign in below if you’d like to open it here in your library."
+        );
+      } else {
+        setStatus(
+          "Your library is waiting. Sign in below to continue listening."
+        );
+      }
+
       setLoading(false);
       return;
     }
@@ -204,9 +208,13 @@ export default function Members() {
       if (!r.ok) {
         setSignedUrl(null);
 
-        if (!hasMembership && r.status === 403) {
+        if (!hasMembership && selectedIsFree && r.status === 403) {
           setStatus(
-            "You’re signed in, but we don’t yet see an active membership or unlock on this email address."
+            "This story is marked as free, but secure playback is still blocking it. Update /api/signed-audio to allow the free episode."
+          );
+        } else if (!hasMembership && r.status === 403) {
+          setStatus(
+            "This story is part of the full Night Listener library. Subscribe to unlock every episode."
           );
         } else {
           setStatus(`Error ${r.status}: ${j.error || "Unknown error"}`);
@@ -220,8 +228,10 @@ export default function Members() {
 
       if (hasMembership) {
         setStatus("Your full Night Listener library is open.");
+      } else if (selectedIsFree) {
+        setStatus("This free story is ready for you. Settle in.");
       } else {
-        setStatus("This episode is now ready for you.");
+        setStatus("Your story is ready.");
       }
 
       const loadedEpisode =
@@ -231,6 +241,7 @@ export default function Members() {
         episode_id: selectedId,
         episode_title: loadedEpisode.title,
         is_subscriber: hasMembership,
+        is_free_episode: selectedIsFree,
       });
     } catch (error) {
       setSignedUrl(null);
@@ -305,7 +316,11 @@ export default function Members() {
       setSignedUrl(null);
       setIsSubscriber(false);
       setSubscriptionStatus(null);
-      setStatus("");
+      setStatus(
+        episodeId === FREE_EPISODE_ID
+          ? "Choose the free story to begin, or sign in to open your library."
+          : ""
+      );
       setCancelMessage("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -314,6 +329,13 @@ export default function Members() {
   useEffect(() => {
     if (sessionEmail) {
       fetchSignedUrl(episodeId);
+    } else {
+      setSignedUrl(null);
+      setStatus(
+        episodeId === FREE_EPISODE_ID
+          ? "This story is free to enjoy. Sign in below if you’d like to open it here in your library."
+          : "This story is part of the full Night Listener library. Sign in or subscribe to continue."
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [episodeId]);
@@ -326,6 +348,7 @@ export default function Members() {
     trackEvent("member_episode_select", {
       episode_id: id,
       episode_title: nextEpisode?.title,
+      is_free_episode: id === FREE_EPISODE_ID,
     });
   }
 
@@ -358,7 +381,7 @@ export default function Members() {
 
             {hasAccess && (
               <Badge variant="secondary" className="font-normal">
-                Full Access
+                Ready to Play
               </Badge>
             )}
           </div>
@@ -382,12 +405,12 @@ export default function Members() {
                 <p className="text-sm font-medium">Welcome back.</p>
                 <p className="text-xs text-muted-foreground">{sessionEmail}</p>
 
-                <p className="text-sm text-muted-foreground leading-7">
+                <p className="text-sm leading-7 text-muted-foreground">
                   {checkingAccess
                     ? "Checking your library access…"
                     : isSubscriber
                     ? "Your membership is active. Your full Night Listener library is open."
-                    : "You’re signed in, but we don’t yet see an active membership on this email address. If you subscribed, make sure you used this same email in Stripe."}
+                    : "You’re signed in. You can enjoy the free featured story below, or subscribe to unlock the full library."}
                 </p>
               </div>
 
@@ -395,6 +418,12 @@ export default function Members() {
                 <Button variant="outline" onClick={signOut}>
                   Sign out
                 </Button>
+
+                {!isSubscriber && (
+                  <Button asChild>
+                    <a href="/join">Unlock the full library</a>
+                  </Button>
+                )}
 
                 {showCancelButton && (
                   <button
@@ -429,7 +458,7 @@ export default function Members() {
                 <p className="text-sm font-medium">
                   Your Night Listener library is waiting.
                 </p>
-                <p className="text-sm text-muted-foreground leading-7">
+                <p className="text-sm leading-7 text-muted-foreground">
                   Enter your email and we’ll send you a quiet link back to your
                   stories.
                 </p>
@@ -445,7 +474,7 @@ export default function Members() {
                 />
 
                 <Button
-                  onClick={sendMagicLink}
+                  onClick={handleSendMagicLink}
                   disabled={!loginEmail || loginLoading}
                 >
                   {loginLoading ? "Sending…" : "Send magic link"}
@@ -459,25 +488,28 @@ export default function Members() {
                   </p>
                 </div>
               )}
+
+              <p className="text-xs text-muted-foreground">
+                Want the full library? Membership unlocks every episode.
+              </p>
             </div>
           )}
         </div>
       </header>
-
-      
 
       <section className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
         <Card className="overflow-hidden rounded-[28px] border border-border/70">
           <div className="border-b px-6 py-5">
             <p className="text-sm font-medium">Tonight’s shelf</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Welcome back 🌙 Choose a story and settle in.
+              Start with the free story, or unlock the full library.
             </p>
           </div>
 
           <CardContent className="space-y-3 p-4">
             {EPISODES.map((ep) => {
               const isActive = ep.id === episodeId;
+              const epIsFree = ep.id === FREE_EPISODE_ID;
 
               return (
                 <button
@@ -504,14 +536,21 @@ export default function Members() {
                           {ep.title}
                         </p>
 
-                        {!isSubscriber && (
+                        {epIsFree ? (
+                          <Badge
+                            variant="secondary"
+                            className="rounded-full px-2 py-0.5 text-[10px] font-normal"
+                          >
+                            Free
+                          </Badge>
+                        ) : !isSubscriber ? (
                           <Badge
                             variant="outline"
                             className="rounded-full px-2 py-0.5 text-[10px] font-normal"
                           >
-                            Library
+                            Members
                           </Badge>
-                        )}
+                        ) : null}
                       </div>
 
                       <p className="line-clamp-2 text-xs text-muted-foreground">
@@ -534,7 +573,9 @@ export default function Members() {
               loading="lazy"
             />
             <div className="absolute right-4 top-4 flex gap-2">
-              <Badge className="shadow-sm">Members</Badge>
+              <Badge className="shadow-sm">
+                {isFreeEpisode ? "Free Story" : "Members"}
+              </Badge>
               {hasAccess && (
                 <Badge variant="secondary" className="shadow-sm">
                   Ready to Play
@@ -573,10 +614,13 @@ export default function Members() {
             <div className="rounded-2xl border bg-muted/20 p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium">Your full story</p>
+                  <p className="text-sm font-medium">
+                    {isFreeEpisode ? "Your free story" : "Your full story"}
+                  </p>
                   <p className="text-xs text-muted-foreground">
-                    Your listening session opens here automatically once access
-                    is confirmed.
+                    {isFreeEpisode
+                      ? "This featured story is free to enjoy."
+                      : "Membership unlocks this full listening session."}
                   </p>
                 </div>
 
@@ -599,7 +643,9 @@ export default function Members() {
                 <div className="mt-5 space-y-3">
                   <p className="text-sm font-medium">Now playing</p>
                   <p className="text-xs text-muted-foreground">
-                    Settle in. This is your full Night Listener experience.
+                    {isFreeEpisode
+                      ? "Settle in. This featured story is ready."
+                      : "Settle in. This is your full Night Listener experience."}
                   </p>
 
                   <audio
@@ -618,9 +664,11 @@ export default function Members() {
               ) : (
                 <div className="mt-5 rounded-xl border bg-background p-4">
                   <p className="text-sm font-medium">
-                    {isSignedIn
-                      ? "Choose a story from your shelf to begin listening."
-                      : "This story is part of your Night Listener library. Sign in to continue listening."}
+                    {isFreeEpisode
+                      ? "This featured story is free to enjoy. Open it here once access is ready."
+                      : isSignedIn
+                      ? "This story is part of the full Night Listener library. Subscribe to unlock it."
+                      : "This story is part of the full Night Listener library. Sign in or subscribe to continue listening."}
                   </p>
                 </div>
               )}
@@ -629,9 +677,9 @@ export default function Members() {
             <div className="rounded-2xl border bg-background p-5">
               <p className="text-sm font-medium">A quiet note</p>
               <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                If you unlocked a single episode, only that story will play
-                here. If you subscribed as a member, your full library should be
-                ready whenever you return.
+                Start with the free featured story whenever you like. When
+                you’re ready for the full Night Listener experience, membership
+                unlocks the entire growing library.
               </p>
             </div>
           </CardContent>

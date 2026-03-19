@@ -14,7 +14,7 @@ type Episode = {
   thumbnailSrc?: string;
   previewMp3?: string;
   previewWav?: string;
-  isLocked?: boolean;
+  isMembersOnly?: boolean;
   tags?: string[];
   category?: string;
 };
@@ -37,33 +37,6 @@ function trackEvent(eventName: string, params: Record<string, any> = {}) {
   }
 }
 
-async function requireAccessToken() {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  if (!token) throw new Error("Please sign in first.");
-  return token;
-}
-
-async function startCheckout(body: Record<string, unknown>) {
-  const token = await requireAccessToken();
-
-  const r = await fetch("/api/checkout", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(body),
-  });
-
-  const j = await r.json();
-
-  if (!r.ok) throw new Error(j.error || "Checkout failed");
-  if (!j.url) throw new Error("Missing session url");
-
-  window.location.href = j.url;
-}
-
 function EpisodeCard({ episode }: { episode: Episode }) {
   const {
     id,
@@ -72,52 +45,12 @@ function EpisodeCard({ episode }: { episode: Episode }) {
     thumbnailSrc,
     previewMp3,
     previewWav,
-    isLocked = false,
+    isMembersOnly = false,
     tags = [],
     category = "general",
   } = episode;
 
-  const [loading, setLoading] = useState<null | "sub" | "one">(null);
-
-  async function onSubscribe() {
-    try {
-      setLoading("sub");
-
-      trackEvent("membership_signup_click", {
-        episode_id: id,
-        episode_title: title,
-        episode_category: category,
-        value: 4.99,
-        currency: "USD",
-      });
-
-      await startCheckout({ mode: "subscription" });
-    } catch (e: any) {
-      alert(e?.message || "Please sign in first.");
-    } finally {
-      setLoading(null);
-    }
-  }
-
-  async function onOneTime() {
-    try {
-      setLoading("one");
-
-      trackEvent("episode_unlock_click", {
-        episode_id: id,
-        episode_title: title,
-        episode_category: category,
-        value: 2.99,
-        currency: "USD",
-      });
-
-      await startCheckout({ mode: "one_time", episodeId: id });
-    } catch (e: any) {
-      alert(e?.message || "Please sign in first.");
-    } finally {
-      setLoading(null);
-    }
-  }
+  const [loading, setLoading] = useState(false);
 
   function onPreviewPlay() {
     trackEvent("preview_play", {
@@ -125,6 +58,20 @@ function EpisodeCard({ episode }: { episode: Episode }) {
       episode_title: title,
       episode_category: category,
     });
+  }
+
+  function onMembershipClick() {
+    setLoading(true);
+
+    trackEvent("membership_signup_click", {
+      episode_id: id,
+      episode_title: title,
+      episode_category: category,
+      value: 4.99,
+      currency: "USD",
+    });
+
+    window.location.href = "/join";
   }
 
   return (
@@ -138,7 +85,9 @@ function EpisodeCard({ episode }: { episode: Episode }) {
             loading="lazy"
           />
           <div className="absolute right-3 top-3">
-            <Badge className="shadow-sm">{isLocked ? "Preview" : "Free"}</Badge>
+            <Badge className="shadow-sm">
+              {isMembersOnly ? "Preview + Members" : "Free"}
+            </Badge>
           </div>
         </div>
       )}
@@ -172,9 +121,9 @@ function EpisodeCard({ episode }: { episode: Episode }) {
 
         <div className="space-y-3 rounded-2xl border bg-muted/20 p-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">Free Preview</p>
+            <p className="text-sm font-medium">Preview</p>
             <Badge variant="secondary" className="font-normal">
-              Preview
+              Free
             </Badge>
           </div>
 
@@ -193,17 +142,18 @@ function EpisodeCard({ episode }: { episode: Episode }) {
           </audio>
         </div>
 
-        {isLocked && (
+        {isMembersOnly && (
           <div className="space-y-4 rounded-2xl border border-border/70 bg-muted/20 p-5">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium tracking-tight">Full Episode</p>
+              <p className="text-sm font-medium tracking-tight">Full Library Access</p>
               <Badge variant="secondary" className="font-normal">
-                Locked
+                Members
               </Badge>
             </div>
 
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Unlock the full episode with membership, or listen once.
+              Love the preview? Membership unlocks the full Night Listener
+              library so you can listen whenever you need a quiet place to land.
               <span className="block text-muted-foreground/80">
                 Cancel anytime.
               </span>
@@ -212,31 +162,20 @@ function EpisodeCard({ episode }: { episode: Episode }) {
             <div className="space-y-2 pt-1">
               <Button
                 className="min-h-12 w-full rounded-xl px-5 text-[0.95rem] leading-snug whitespace-normal sm:text-base"
-                onClick={onSubscribe}
-                disabled={!!loading}
+                onClick={onMembershipClick}
+                disabled={loading}
               >
-                {loading === "sub"
-                  ? "Redirecting…"
-                  : "Unlock All Episodes — $4.99/month"}
-              </Button>
-
-              <Button
-                variant="outline"
-                className="min-h-12 w-full rounded-xl px-5 text-[0.95rem] sm:text-base"
-                onClick={onOneTime}
-                disabled={!!loading}
-              >
-                {loading === "one"
-                  ? "Redirecting…"
-                  : "Listen Once — $2.99"}
+                {loading
+                  ? "Opening…"
+                  : "Unlock the Full Library — $4.99/month"}
               </Button>
             </div>
 
             <p className="pt-1 text-xs leading-relaxed text-muted-foreground/80">
               Secure checkout powered by Stripe.
               <br />
-              After purchase, sign in with the same email address you used in
-              Stripe, then go to Members to listen.
+              After joining, sign in with the same email address you used for
+              membership, then open your Members library.
             </p>
           </div>
         )}
@@ -280,7 +219,7 @@ export default function Listen() {
       }
 
       setMessage(
-        "Magic link sent. Check your email and use the same address you used for Stripe."
+        "Magic link sent. Check your email and use the same address you used for membership."
       );
       setEmail("");
     } finally {
@@ -301,7 +240,7 @@ export default function Listen() {
         "A quiet story about misunderstanding, belief, and the words we never get the chance to finish.",
       thumbnailSrc: "/images/coffee-shop.png",
       previewMp3: "/audio/conversation-preview.mp3",
-      isLocked: true,
+      isMembersOnly: true,
       tags: ["story", "reflection", "relationships"],
       category: "night_story",
     },
@@ -312,7 +251,7 @@ export default function Listen() {
         "A gentle reflection on rumination and why the mind revisits social moments when the world becomes quiet.",
       thumbnailSrc: "/images/why-mind-replays-thumbnail.png",
       previewMp3: "/audio/why-mind-replays-preview.mp3",
-      isLocked: true,
+      isMembersOnly: true,
       tags: ["bedtime", "calm", "human behavior"],
       category: "human_behavior",
     },
@@ -325,8 +264,9 @@ export default function Listen() {
           Listen
         </h1>
         <p className="max-w-2xl text-muted-foreground">
-          Cozy late-night stories about human behavior, reflection, and the quiet
-          moments that shape our lives.
+          Explore late-night previews from the Night Listener library. Start with
+          a free full story on the home page, then unlock the full library with
+          membership.
         </p>
       </header>
 
@@ -335,8 +275,8 @@ export default function Listen() {
           <div className="space-y-1">
             <p className="text-sm font-medium">Member sign in</p>
             <p className="text-sm text-muted-foreground">
-              Already subscribed or unlocked an episode? Sign in with the same
-              email address you used in Stripe.
+              Already a member? Sign in with the same email address you used for
+              membership to open your full library.
             </p>
           </div>
 

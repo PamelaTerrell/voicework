@@ -37,7 +37,7 @@ export default function Home() {
       }
 
       setMessage(
-        "Magic link sent. Check your email and use the same address you used for Stripe."
+        "Magic link sent. Check your email and use the same address you used for membership."
       );
       setEmail("");
     } finally {
@@ -84,11 +84,11 @@ export default function Home() {
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Button asChild className="h-11 px-6">
-                <Link to="/listen">Play a free preview</Link>
+                <a href="#featured-story">Listen free now</a>
               </Button>
 
               <Button asChild variant="outline" className="h-11 px-6">
-                <Link to="/join">Join the Night List</Link>
+                <Link to="/join">Explore membership</Link>
               </Button>
 
               <Button asChild variant="secondary" className="h-11 px-6">
@@ -97,13 +97,22 @@ export default function Home() {
             </div>
 
             <p className="text-sm text-muted-foreground">
-              New episodes coming regularly • Calm bedtime voice • BA in Sociology
+              Start with one full story free • Full library for members • Calm bedtime voice • BA in Sociology
             </p>
           </div>
 
           <div className="space-y-4">
-            <div className="rounded-2xl border bg-background p-5 shadow-sm">
-              <p className="text-sm text-muted-foreground">Tonight’s preview</p>
+            <div
+              id="featured-story"
+              className="rounded-2xl border bg-background p-5 shadow-sm"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm text-muted-foreground">Featured free story</p>
+                <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
+                  Full episode
+                </span>
+              </div>
+
               <p className="mt-1 text-xl font-medium">
                 The Conversation That Never Finished
               </p>
@@ -122,12 +131,12 @@ export default function Home() {
                 </audio>
 
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Free 3-minute preview</span>
+                  <span>Free full story</span>
                   <Link
-                    to="/listen"
+                    to="/join"
                     className="underline underline-offset-4 hover:text-foreground"
                   >
-                    More previews →
+                    Unlock the full library →
                   </Link>
                 </div>
               </div>
@@ -136,8 +145,8 @@ export default function Home() {
             <div className="rounded-2xl border bg-muted p-5">
               <p className="text-sm font-medium">Member login</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Already subscribed or unlocked an episode? Sign in with your email
-                to access your full episodes.
+                Already a member? Sign in with your email to open your full Night
+                Listener library.
               </p>
 
               {sessionEmail ? (
@@ -203,10 +212,10 @@ export default function Home() {
       <section className="grid gap-4 md:grid-cols-3">
         <Card className="transition-all hover:-translate-y-0.5 hover:shadow-lg">
           <CardContent className="space-y-2 p-6">
-            <p className="font-medium">Cozy late-night tone</p>
+            <p className="font-medium">One full story free</p>
             <p className="text-sm text-muted-foreground">
-              Calm, unhurried narration designed for bedtime listening—gentle
-              pacing and a soft landing.
+              Start with a complete Night Listener episode at no cost and get a
+              feel for the tone, pacing, and emotional rhythm.
             </p>
           </CardContent>
         </Card>
@@ -215,18 +224,18 @@ export default function Home() {
           <CardContent className="space-y-2 p-6">
             <p className="font-medium">Sociology-inspired insight</p>
             <p className="text-sm text-muted-foreground">
-              Human behavior explained through stories and everyday
-              examples—curious, comforting, and easy to follow.
+              Human behavior explored through stories and everyday moments—curious,
+              comforting, and easy to follow late at night.
             </p>
           </CardContent>
         </Card>
 
         <Card className="transition-all hover:-translate-y-0.5 hover:shadow-lg">
           <CardContent className="space-y-2 p-6">
-            <p className="font-medium">A growing library</p>
+            <p className="font-medium">A members-only library</p>
             <p className="text-sm text-muted-foreground">
-              Short previews now, full episodes for members. Join the Night List
-              to get new releases and early access.
+              Membership unlocks the full growing Night Listener library, so you
+              can return whenever you need a quiet place to land.
             </p>
           </CardContent>
         </Card>
@@ -235,20 +244,20 @@ export default function Home() {
       <section className="rounded-3xl border bg-background p-6 sm:p-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
-            <p className="text-lg font-medium">Want new episodes in your inbox?</p>
+            <p className="text-lg font-medium">Want the full Night Listener experience?</p>
             <p className="text-sm text-muted-foreground">
-              Join the Night List for release notes, early access, and
-              founding-listener perks.
+              Explore membership for full-library access, or join the Night List for
+              updates and early access.
             </p>
           </div>
 
           <div className="flex flex-wrap gap-2">
             <Button asChild>
-              <Link to="/join">Join the Night List</Link>
+              <Link to="/join">Explore membership</Link>
             </Button>
 
             <Button asChild variant="outline">
-              <Link to="/listen">Listen</Link>
+              <Link to="/listen">More previews</Link>
             </Button>
 
             <Button asChild variant="secondary">

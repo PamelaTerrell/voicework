@@ -1,6 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { supabaseAdmin, requireUser } from "./_lib.js";
 
+const FREE_EPISODE_ID = "conversation-ep2";
+
 function isActiveStatus(status?: string | null) {
   return status === "active" || status === "trialing";
 }
@@ -20,32 +22,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const user = await requireUser(req);
 
-    const { data: profile, error: pErr } = await supabaseAdmin
-      .from("profiles")
-      .select("is_subscriber, subscription_status")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (pErr) {
-      return res.status(500).json({ error: pErr.message });
-    }
-
-    let allowed =
-      !!profile?.is_subscriber || isActiveStatus(profile?.subscription_status);
+    // Allow one featured episode for any signed-in user
+    let allowed = episodeId === FREE_EPISODE_ID;
 
     if (!allowed) {
-      const { data: ent, error: eErr } = await supabaseAdmin
-        .from("entitlements")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("episode_id", episodeId)
+      const { data: profile, error: pErr } = await supabaseAdmin
+        .from("profiles")
+        .select("is_subscriber, subscription_status")
+        .eq("id", user.id)
         .maybeSingle();
 
-      if (eErr) {
-        return res.status(500).json({ error: eErr.message });
+      if (pErr) {
+        return res.status(500).json({ error: pErr.message });
       }
 
-      allowed = !!ent?.id;
+      allowed =
+        !!profile?.is_subscriber || isActiveStatus(profile?.subscription_status);
+
+      if (!allowed) {
+        const { data: ent, error: eErr } = await supabaseAdmin
+          .from("entitlements")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("episode_id", episodeId)
+          .maybeSingle();
+
+        if (eErr) {
+          return res.status(500).json({ error: eErr.message });
+        }
+
+        allowed = !!ent?.id;
+      }
     }
 
     if (!allowed) {
