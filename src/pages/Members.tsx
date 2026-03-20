@@ -18,6 +18,7 @@ type MemberEpisode = {
 type MemberAccessResponse = {
   ok?: boolean;
   isSubscriber?: boolean;
+  cancellationScheduled?: boolean;
   profile?: {
     id: string;
     email: string | null;
@@ -81,6 +82,7 @@ export default function Members() {
   const [sessionUserId, setSessionUserId] = useState<string | null>(null);
   const [checkingAccess, setCheckingAccess] = useState(false);
   const [isSubscriber, setIsSubscriber] = useState(false);
+  const [cancellationScheduled, setCancellationScheduled] = useState(false);
   const [, setSubscriptionStatus] = useState<string | null>(null);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [cancelMessage, setCancelMessage] = useState("");
@@ -137,6 +139,7 @@ export default function Members() {
     setCancelMessage("");
     setStatus("");
     setSignedUrl(null);
+    setCancellationScheduled(false);
   }
 
   async function checkMemberAccess(email: string) {
@@ -148,12 +151,15 @@ export default function Members() {
       const userId = data.session?.user.id ?? sessionUserId ?? "";
 
       const r = await fetch(
-        `/api/member-access?email=${encodeURIComponent(email)}&userId=${encodeURIComponent(userId)}`
+        `/api/member-access?email=${encodeURIComponent(
+          email
+        )}&userId=${encodeURIComponent(userId)}`
       );
       const j: MemberAccessResponse = await r.json();
 
       if (!r.ok) {
         setIsSubscriber(false);
+        setCancellationScheduled(false);
         setSubscriptionStatus(null);
         setStatus(j.error || "Unable to verify membership.");
         return false;
@@ -165,6 +171,7 @@ export default function Members() {
         isActiveStatus(j.subscription?.status);
 
       setIsSubscriber(active);
+      setCancellationScheduled(!!j.cancellationScheduled);
       setSubscriptionStatus(
         j.profile?.subscription_status ?? j.subscription?.status ?? null
       );
@@ -172,6 +179,7 @@ export default function Members() {
       return active;
     } catch (error) {
       setIsSubscriber(false);
+      setCancellationScheduled(false);
       setSubscriptionStatus(null);
       setStatus(
         error instanceof Error
@@ -196,6 +204,7 @@ export default function Members() {
     if (!token || !email) {
       setSignedUrl(null);
       setIsSubscriber(false);
+      setCancellationScheduled(false);
       setSubscriptionStatus(null);
 
       if (selectedIsFree) {
@@ -334,6 +343,7 @@ export default function Members() {
     } else {
       setSignedUrl(null);
       setIsSubscriber(false);
+      setCancellationScheduled(false);
       setSubscriptionStatus(null);
       setStatus(
         episodeId === FREE_EPISODE_ID
@@ -373,7 +383,8 @@ export default function Members() {
 
   const isSignedIn = Boolean(sessionEmail);
   const hasAccess = Boolean(signedUrl);
-  const showCancelButton = isSignedIn && isSubscriber;
+  const showCancelButton =
+    isSignedIn && isSubscriber && !cancellationScheduled;
 
   return (
     <div className="space-y-8">
@@ -392,9 +403,15 @@ export default function Members() {
               </Badge>
             )}
 
-            {isSubscriber && (
+            {isSubscriber && !cancellationScheduled && (
               <Badge variant="secondary" className="font-normal">
                 Active Member
+              </Badge>
+            )}
+
+            {isSubscriber && cancellationScheduled && (
+              <Badge variant="secondary" className="font-normal">
+                Ends Soon
               </Badge>
             )}
 
@@ -427,6 +444,8 @@ export default function Members() {
                 <p className="text-sm leading-7 text-muted-foreground">
                   {checkingAccess
                     ? "Checking your library access…"
+                    : isSubscriber && cancellationScheduled
+                    ? "Your membership is still active and your library remains open, but cancellation is scheduled at the end of your current billing period."
                     : isSubscriber
                     ? "Your membership is active. Your full Night Listener library is open."
                     : "You’re signed in. You can enjoy the free featured story below, or subscribe to unlock the full library."}
@@ -455,6 +474,13 @@ export default function Members() {
                   </button>
                 )}
               </div>
+
+              {isSubscriber && cancellationScheduled && (
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  Your membership remains active until the end of your current
+                  billing period.
+                </p>
+              )}
 
               {showCancelButton && (
                 <p className="text-xs leading-relaxed text-muted-foreground">
