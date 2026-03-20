@@ -19,6 +19,7 @@ type MemberAccessResponse = {
   ok?: boolean;
   isSubscriber?: boolean;
   cancellationScheduled?: boolean;
+  cancellationEffectiveAt?: number | null;
   profile?: {
     id: string;
     email: string | null;
@@ -72,6 +73,27 @@ function isActiveStatus(status?: string | null) {
   return status === "active" || status === "trialing";
 }
 
+function formatDate(timestamp?: number | null) {
+  if (!timestamp) return null;
+  return new Date(timestamp * 1000).toLocaleDateString(undefined, {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function getDaysRemaining(timestamp?: number | null) {
+  if (!timestamp) return null;
+
+  const now = Date.now();
+  const end = timestamp * 1000;
+  const diff = end - now;
+
+  if (diff <= 0) return 0;
+
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
 export default function Members() {
   const [episodeId, setEpisodeId] = useState(FREE_EPISODE_ID);
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
@@ -83,6 +105,7 @@ export default function Members() {
   const [checkingAccess, setCheckingAccess] = useState(false);
   const [isSubscriber, setIsSubscriber] = useState(false);
   const [cancellationScheduled, setCancellationScheduled] = useState(false);
+  const [cancellationEffectiveAt, setCancellationEffectiveAt] = useState<number | null>(null);
   const [, setSubscriptionStatus] = useState<string | null>(null);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [cancelMessage, setCancelMessage] = useState("");
@@ -97,6 +120,8 @@ export default function Members() {
   );
 
   const isFreeEpisode = episodeId === FREE_EPISODE_ID;
+  const formattedEndDate = formatDate(cancellationEffectiveAt);
+  const daysRemaining = getDaysRemaining(cancellationEffectiveAt);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -140,6 +165,7 @@ export default function Members() {
     setStatus("");
     setSignedUrl(null);
     setCancellationScheduled(false);
+    setCancellationEffectiveAt(null);
   }
 
   async function checkMemberAccess(email: string) {
@@ -160,6 +186,7 @@ export default function Members() {
       if (!r.ok) {
         setIsSubscriber(false);
         setCancellationScheduled(false);
+        setCancellationEffectiveAt(null);
         setSubscriptionStatus(null);
         setStatus(j.error || "Unable to verify membership.");
         return false;
@@ -172,6 +199,7 @@ export default function Members() {
 
       setIsSubscriber(active);
       setCancellationScheduled(!!j.cancellationScheduled);
+      setCancellationEffectiveAt(j.cancellationEffectiveAt ?? null);
       setSubscriptionStatus(
         j.profile?.subscription_status ?? j.subscription?.status ?? null
       );
@@ -180,6 +208,7 @@ export default function Members() {
     } catch (error) {
       setIsSubscriber(false);
       setCancellationScheduled(false);
+      setCancellationEffectiveAt(null);
       setSubscriptionStatus(null);
       setStatus(
         error instanceof Error
@@ -205,6 +234,7 @@ export default function Members() {
       setSignedUrl(null);
       setIsSubscriber(false);
       setCancellationScheduled(false);
+      setCancellationEffectiveAt(null);
       setSubscriptionStatus(null);
 
       if (selectedIsFree) {
@@ -344,6 +374,7 @@ export default function Members() {
       setSignedUrl(null);
       setIsSubscriber(false);
       setCancellationScheduled(false);
+      setCancellationEffectiveAt(null);
       setSubscriptionStatus(null);
       setStatus(
         episodeId === FREE_EPISODE_ID
@@ -445,7 +476,15 @@ export default function Members() {
                   {checkingAccess
                     ? "Checking your library access…"
                     : isSubscriber && cancellationScheduled
-                    ? "Your membership is still active and your library remains open, but cancellation is scheduled at the end of your current billing period."
+                    ? `Your membership remains active until ${
+                        formattedEndDate ?? "the end of your billing period"
+                      }${
+                        daysRemaining !== null
+                          ? ` (${daysRemaining} day${
+                              daysRemaining === 1 ? "" : "s"
+                            } remaining)`
+                          : ""
+                      }.`
                     : isSubscriber
                     ? "Your membership is active. Your full Night Listener library is open."
                     : "You’re signed in. You can enjoy the free featured story below, or subscribe to unlock the full library."}
@@ -463,6 +502,12 @@ export default function Members() {
                   </Button>
                 )}
 
+                {isSubscriber && cancellationScheduled && (
+                  <Button asChild>
+                    <Link to="/join">Resume membership</Link>
+                  </Button>
+                )}
+
                 {showCancelButton && (
                   <button
                     type="button"
@@ -477,8 +522,11 @@ export default function Members() {
 
               {isSubscriber && cancellationScheduled && (
                 <p className="text-xs leading-relaxed text-muted-foreground">
-                  Your membership remains active until the end of your current
-                  billing period.
+                  Access continues until{" "}
+                  <span className="font-medium">
+                    {formattedEndDate ?? "the end of your billing period"}
+                  </span>
+                  .
                 </p>
               )}
 

@@ -26,9 +26,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: "Missing email" });
     }
 
+    // ---------------------------------------
+    // 1. Lookup profile
+    // ---------------------------------------
     let { data: profile, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, email, is_subscriber, subscription_status, stripe_customer_id")
+      .select(
+        "id, email, is_subscriber, subscription_status, stripe_customer_id"
+      )
       .ilike("email", email)
       .maybeSingle();
 
@@ -38,20 +43,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     let stripeCustomerId = profile?.stripe_customer_id ?? null;
 
+    // ---------------------------------------
+    // 2. Fallback: find Stripe customer by email
+    // ---------------------------------------
     if (!stripeCustomerId) {
       const customers = await stripe.customers.list({
         email,
         limit: 10,
       });
 
-      const matchingCustomer =
+      const match =
         customers.data.find((c) => normalizeEmail(c.email) === email) ?? null;
 
-      if (matchingCustomer) {
-        stripeCustomerId = matchingCustomer.id;
+      if (match) {
+        stripeCustomerId = match.id;
       }
     }
 
+    // ---------------------------------------
+    // 3. Get subscription from Stripe
+    // ---------------------------------------
     let stripeSubscription: {
       id: string;
       status: string;
@@ -73,7 +84,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             sub.status === "active" ||
             sub.status === "trialing" ||
             sub.status === "past_due" ||
-            sub.status === "unpaid" ||
             (sub.status === "canceled" && !!sub.cancel_at_period_end)
         ) ?? null;
 
@@ -88,30 +98,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    // ---------------------------------------
+    // 4. Determine access
+    // ---------------------------------------
     const isSubscriber =
       !!profile?.is_subscriber ||
       isActiveStatus(profile?.subscription_status) ||
       isActiveStatus(stripeSubscription?.status);
 
-    // Critical fix: if Stripe proves access, ensure a profile row exists for this signed-in user
+    // ---------------------------------------
+    // 5. Self-heal profile (CRITICAL)
+    // ---------------------------------------
     if (userId && stripeCustomerId && stripeSubscription) {
-      const { error: upsertErr } = await supabaseAdmin.from("profiles").upsert(
-        {
-          id: userId,
-          email,
-          stripe_customer_id: stripeCustomerId,
-          is_subscriber: isActiveStatus(stripeSubscription.status),
-          subscription_status: stripeSubscription.status,
-        },
-        { onConflict: "id" }
-      );
+      const { error: upsertErr } = await supabaseAdmin
+        .from("profiles")
+        .upsert(
+          {
+            id: userId,
+            email,
+            stripe_customer_id: stripeCustomerId,
+            is_subscriber: isActiveStatus(stripeSubscription.status),
+            subscription_status: stripeSubscription.status,
+          },
+          { onConflict: "id" }
+        );
 
       if (upsertErr) {
-        console.error("Failed to upsert profile from member-access:", upsertErr);
+        console.error("Profile upsert failed:", upsertErr);
       } else {
         const refreshed = await supabaseAdmin
           .from("profiles")
-          .select("id, email, is_subscriber, subscription_status, stripe_customer_id")
+          .select(
+            "id, email, is_subscriber, subscription_status, stripe_customer_id"
+          )
           .eq("id", userId)
           .maybeSingle();
 
@@ -121,10 +140,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    // ---------------------------------------
+    // 6. Response
+    // ---------------------------------------
     return res.status(200).json({
       ok: true,
       isSubscriber,
       cancellationScheduled: !!stripeSubscription?.cancel_at_period_end,
+      cancellationEffectiveAt:
+        stripeSubscription?.cancel_at ??
+        stripeSubscription?.current_period_end ??
+        null,
       profile: profile
         ? {
             id: profile.id,
