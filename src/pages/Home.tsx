@@ -114,19 +114,16 @@ export default function Home() {
               </div>
 
               <p className="mt-1 text-xl font-medium">
-                The Conversation That Never Finished
+                You Were Right… But You Never Said Sorry
               </p>
               <p className="mt-2 text-sm text-muted-foreground">
-                A quiet late-night story about misunderstanding, belief, and the
-                words we never get the chance to finish.
+                A quiet reflection on being right, the moment you almost said
+                sorry, and what it cost you not to.
               </p>
 
               <div className="mt-4 space-y-2">
                 <audio controls preload="metadata" className="w-full">
-                  <source
-                    src="/audio/conversation-preview.mp3"
-                    type="audio/mpeg"
-                  />
+                  <source src="/audio/say-sorry-ep3.mp3" type="audio/mpeg" />
                   Your browser does not support the audio element.
                 </audio>
 
