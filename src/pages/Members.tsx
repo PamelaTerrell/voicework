@@ -56,6 +56,15 @@ const EPISODES: MemberEpisode[] = [
     thumbnailSrc: "/images/why-mind-replays-thumbnail.png",
     tags: ["bedtime", "calm", "human behavior"],
   },
+
+  {
+  id: "say-sorry-ep3",
+  title: "You Were Right… But You Never Said Sorry",
+  description:
+    "A quiet reflection on being right, the moment you almost apologized, and what it cost you not to.",
+  thumbnailSrc: "/images/say-sorry.png",
+  tags: ["story", "reflection", "relationships"],
+},
 ];
 
 function trackEvent(eventName: string, params: Record<string, any> = {}) {
@@ -109,6 +118,8 @@ export default function Members() {
   const [, setSubscriptionStatus] = useState<string | null>(null);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [cancelMessage, setCancelMessage] = useState("");
+
+  const [stripeCustomerId, setStripeCustomerId] = useState<string | null>(null);
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
@@ -166,6 +177,7 @@ export default function Members() {
     setSignedUrl(null);
     setCancellationScheduled(false);
     setCancellationEffectiveAt(null);
+    setStripeCustomerId(null);
   }
 
   async function checkMemberAccess(email: string) {
@@ -187,10 +199,13 @@ export default function Members() {
         setIsSubscriber(false);
         setCancellationScheduled(false);
         setCancellationEffectiveAt(null);
+        setStripeCustomerId(null);
         setSubscriptionStatus(null);
         setStatus(j.error || "Unable to verify membership.");
         return false;
       }
+
+      setStripeCustomerId(j.profile?.stripe_customer_id ?? null);
 
       const active =
         !!j.isSubscriber ||
@@ -209,6 +224,7 @@ export default function Members() {
       setIsSubscriber(false);
       setCancellationScheduled(false);
       setCancellationEffectiveAt(null);
+      setStripeCustomerId(null);
       setSubscriptionStatus(null);
       setStatus(
         error instanceof Error
@@ -235,6 +251,7 @@ export default function Members() {
       setIsSubscriber(false);
       setCancellationScheduled(false);
       setCancellationEffectiveAt(null);
+      setStripeCustomerId(null);
       setSubscriptionStatus(null);
 
       if (selectedIsFree) {
@@ -367,6 +384,44 @@ export default function Members() {
     }
   }
 
+  async function handleResumeMembership() {
+    if (!stripeCustomerId) {
+      setCancelMessage(
+        "Unable to resume membership right now. Please refresh and try again."
+      );
+      return;
+    }
+
+    try {
+      const r = await fetch("/api/resume-membership", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          customerId: stripeCustomerId,
+        }),
+      });
+
+      const j = await r.json();
+
+      if (!r.ok) {
+        setCancelMessage(j.error || "Unable to resume membership.");
+        return;
+      }
+
+      if (j.url) {
+        window.location.href = j.url;
+      }
+    } catch (error) {
+      setCancelMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to resume membership."
+      );
+    }
+  }
+
   useEffect(() => {
     if (sessionEmail) {
       fetchSignedUrl(episodeId);
@@ -375,6 +430,7 @@ export default function Members() {
       setIsSubscriber(false);
       setCancellationScheduled(false);
       setCancellationEffectiveAt(null);
+      setStripeCustomerId(null);
       setSubscriptionStatus(null);
       setStatus(
         episodeId === FREE_EPISODE_ID
@@ -503,8 +559,8 @@ export default function Members() {
                 )}
 
                 {isSubscriber && cancellationScheduled && (
-                  <Button asChild>
-                    <Link to="/join">Resume membership</Link>
+                  <Button onClick={handleResumeMembership}>
+                    Resume membership
                   </Button>
                 )}
 
