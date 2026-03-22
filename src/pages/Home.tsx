@@ -113,6 +113,12 @@ export default function Home() {
                 </span>
               </div>
 
+              <img
+  src="/images/say-sorry.png"
+  alt="You Were Right… But You Never Said Sorry"
+  className="w-full h-48 object-cover rounded-xl mb-4"
+/>
+
               <p className="mt-1 text-xl font-medium">
                 You Were Right… But You Never Said Sorry
               </p>
