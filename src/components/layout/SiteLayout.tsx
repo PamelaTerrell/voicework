@@ -29,12 +29,20 @@ export default function SiteLayout() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
-          <Link to="/" className="leading-tight">
-            <div className="font-semibold tracking-tight">Stabile USA</div>
-            <div className="hidden text-xs text-muted-foreground sm:block">
-              Cozy late-night stories about human behavior
-            </div>
-          </Link>
+          <Link to="/" className="flex items-center gap-3">
+  <img
+    src="/images/night-listener.png"
+    alt="Night Listener"
+    className="h-9 w-9 rounded-full object-cover"
+  />
+
+  <div className="leading-tight">
+    <div className="font-semibold tracking-tight">Stabile USA</div>
+    <div className="hidden text-xs text-muted-foreground sm:block">
+      Cozy late-night stories about human behavior
+    </div>
+  </div>
+</Link>
 
           <nav className="hidden items-center gap-6 sm:flex">
             <NavItem to="/" label="Home" />
@@ -91,9 +99,16 @@ export default function SiteLayout() {
 
       {/* Brand */}
       <div className="space-y-2">
-        <p className="text-base font-medium text-foreground">
-          Stabile USA
-        </p>
+        <div className="flex flex-col items-center gap-2">
+  <img
+    src="/images/night-listener.png"
+    alt="Night Listener"
+    className="h-10 w-10 rounded-full"
+  />
+  <p className="text-base font-medium text-foreground">
+    Stabile USA
+  </p>
+</div>
         <p className="max-w-md text-sm leading-6 text-muted-foreground">
           A quiet space for late-night stories, reflection, and the moments
           we carry with us.
