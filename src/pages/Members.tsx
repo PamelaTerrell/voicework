@@ -37,7 +37,7 @@ type MemberAccessResponse = {
   error?: string;
 };
 
-const FREE_EPISODE_ID = "conversation-ep2";
+const FREE_EPISODE_ID = "say-sorry-ep3";
 
 const EPISODES: MemberEpisode[] = [
   {
@@ -256,7 +256,7 @@ export default function Members() {
 
       if (selectedIsFree) {
         setStatus(
-          "This story is free to enjoy. Sign in below if you’d like to open it here in your library."
+          "Sign in below if you’d like to open it here in your library."
         );
       } else {
         setStatus(
@@ -304,7 +304,7 @@ export default function Members() {
       if (hasMembership) {
         setStatus("Your full Night Listener library is open.");
       } else if (selectedIsFree) {
-        setStatus("This free story is ready for you. Settle in.");
+        setStatus("This story is ready for you. Settle in.");
       } else {
         setStatus("Your story is ready.");
       }
@@ -449,7 +449,7 @@ export default function Members() {
       setSignedUrl(null);
       setStatus(
         episodeId === FREE_EPISODE_ID
-          ? "This story is free to enjoy. Sign in below if you’d like to open it here in your library."
+          ? "Sign in below if you’d like to open it here in your library."
           : "This story is part of the full Night Listener library. Sign in or subscribe to continue."
       );
     }
@@ -651,7 +651,7 @@ export default function Members() {
           <div className="border-b px-6 py-5">
             <p className="text-sm font-medium">Tonight’s shelf</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Start with the free story, or unlock the full library.
+              Unlock the full library.
             </p>
           </div>
 
@@ -723,7 +723,7 @@ export default function Members() {
             />
             <div className="absolute right-4 top-4 flex gap-2">
               <Badge className="shadow-sm">
-                {isFreeEpisode ? "Free Story" : "Members"}
+                {isFreeEpisode ? "Story" : "Members"}
               </Badge>
               {hasAccess && (
                 <Badge variant="secondary" className="shadow-sm">
@@ -764,11 +764,11 @@ export default function Members() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="space-y-1">
                   <p className="text-sm font-medium">
-                    {isFreeEpisode ? "Your free story" : "Your full story"}
+                    {isFreeEpisode ? "Your story" : "Your full story"}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {isFreeEpisode
-                      ? "This featured story is free to enjoy."
+                      ? "This featured story is also available for free on the home page."
                       : "Membership unlocks this full listening session."}
                   </p>
                 </div>
@@ -814,7 +814,7 @@ export default function Members() {
                 <div className="mt-5 rounded-xl border bg-background p-4">
                   <p className="text-sm font-medium">
                     {isFreeEpisode
-                      ? "This featured story is free to enjoy. Open it here once access is ready."
+                      ? "This featured story is part of the full Night Listener Library. Open it here once access is ready."
                       : isSignedIn
                       ? "This story is part of the full Night Listener library. Subscribe to unlock it."
                       : "This story is part of the full Night Listener library. Sign in or subscribe to continue listening."}
