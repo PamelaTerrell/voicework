@@ -812,14 +812,14 @@ export default function Members() {
                 </div>
               ) : (
                 <div className="mt-5 rounded-xl border bg-background p-4">
-                  <p className="text-sm font-medium">
-                    {isFreeEpisode
-                      ? "This featured story is part of the full Night Listener Library. Open it here once access is ready."
-                      : isSignedIn
-                      ? "This story is part of the full Night Listener library. Subscribe to unlock it."
-                      : "This story is part of the full Night Listener library. Sign in or subscribe to continue listening."}
-                  </p>
-                </div>
+  <p className="text-sm font-medium">
+    {isFreeEpisode
+      ? "This featured story is available for free on the home page. Sign in if you'd like to open it here in your library."
+      : isSignedIn
+      ? "This story is part of the full Night Listener library. Subscribe to unlock it."
+      : "This story is part of the full Night Listener library. Sign in or subscribe to continue listening."}
+  </p>
+</div>
               )}
             </div>
 
