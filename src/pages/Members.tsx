@@ -56,15 +56,22 @@ const EPISODES: MemberEpisode[] = [
     thumbnailSrc: "/images/why-mind-replays-thumbnail.png",
     tags: ["bedtime", "calm", "human behavior"],
   },
-
   {
-  id: "say-sorry-ep3",
-  title: "You Were Right… But You Never Said Sorry",
-  description:
-    "A quiet reflection on being right, the moment you almost apologized, and what it cost you not to.",
-  thumbnailSrc: "/images/say-sorry.png",
-  tags: ["story", "reflection", "relationships"],
-},
+    id: "say-sorry-ep3",
+    title: "You Were Right… But You Never Said Sorry",
+    description:
+      "A quiet reflection on being right, the moment you almost apologized, and what it cost you not to.",
+    thumbnailSrc: "/images/say-sorry.png",
+    tags: ["story", "reflection", "relationships"],
+  },
+  {
+    id: "resentment-ep4",
+    title: "The Quiet Weight of Resentment",
+    description:
+      "A quiet story about what builds when nothing is said—and how distance can grow without either person realizing it.",
+    thumbnailSrc: "/images/resentment.png",
+    tags: ["story", "reflection", "relationships"],
+  },
 ];
 
 function trackEvent(eventName: string, params: Record<string, any> = {}) {
@@ -718,7 +725,7 @@ export default function Members() {
             <img
               src={selectedEpisode.thumbnailSrc}
               alt={selectedEpisode.title}
-              className="h-64 w-full object-cover sm:h-72"
+              className="h-64 w-full object-contain sm:h-72"
               loading="lazy"
             />
             <div className="absolute right-4 top-4 flex gap-2">
