@@ -720,26 +720,36 @@ export default function Members() {
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden rounded-[28px] border border-border/70 shadow-sm">
-          <div className="relative">
-            <img
-              src={selectedEpisode.thumbnailSrc}
-              alt={selectedEpisode.title}
-              className="h-64 w-full object-contain sm:h-72"
-              loading="lazy"
-            />
-            <div className="absolute right-4 top-4 flex gap-2">
-              <Badge className="shadow-sm">
-                {isFreeEpisode ? "Story" : "Members"}
-              </Badge>
-              {hasAccess && (
-                <Badge variant="secondary" className="shadow-sm">
-                  Ready to Play
-                </Badge>
-              )}
-            </div>
-          </div>
+        <Card className="overflow-hidden rounded-[28px] border border-border/70 shadow-[0_10px_40px_rgba(0,0,0,0.25)]">
+  <div className="relative bg-[#0b0f19]">
 
+    {/* Image */}
+    <img
+      src={selectedEpisode.thumbnailSrc}
+      alt={selectedEpisode.title}
+      className="w-full max-h-[420px] object-contain mx-auto"
+      loading="lazy"
+    />
+
+    {/* Soft gradient overlay */}
+    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
+
+    {/* Top badges */}
+    <div className="absolute right-4 top-4 flex gap-2">
+      <Badge className="shadow-sm backdrop-blur bg-black/40 text-white border-white/20">
+        {isFreeEpisode ? "Story" : "Members"}
+      </Badge>
+
+      {hasAccess && (
+        <Badge
+          variant="secondary"
+          className="shadow-sm backdrop-blur bg-white/80"
+        >
+          Ready to Play
+        </Badge>
+      )}
+    </div>
+  </div>
           <CardContent className="space-y-6 p-6">
             <div className="space-y-3">
               <div className="space-y-2">
