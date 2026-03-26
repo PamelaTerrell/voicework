@@ -41,6 +41,14 @@ const FREE_EPISODE_ID = "say-sorry-ep3";
 
 const EPISODES: MemberEpisode[] = [
   {
+    id: "versions-ep5",
+    title: "The Versions We Never Meant to See",
+    description:
+      "A quiet story about how two people can care deeply for each other—yet slowly begin responding to versions of each other that were never really there.",
+    thumbnailSrc: "/images/never-meant-to-see.png",
+    tags: ["story", "reflection", "relationships"],
+  },
+  {
     id: "conversation-ep2",
     title: "The Conversation That Never Finished",
     description:
