@@ -118,7 +118,7 @@ export default function SiteLayout() {
       {/* Links */}
       <div className="flex gap-6 text-sm">
         <a
-          href="mailto:agentpamelajterrell@gmail.com"
+          href="mailto:listen@stabileusa.com"
           className="hover:text-foreground transition"
         >
           Email
