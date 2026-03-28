@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Auth } from "@/components/Auth";
 
+
 function NavItem({ to, label }: { to: string; label: string }) {
   return (
     <NavLink

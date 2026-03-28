@@ -6,21 +6,16 @@ export default function ContactThanks() {
   return (
     <div className="flex min-h-screen items-center justify-center px-6">
       <Card className="w-full max-w-xl rounded-2xl border bg-background shadow-sm">
-        <CardContent className="p-10 text-center space-y-6">
+        <CardContent className="space-y-6 p-10 text-center">
           <div className="text-2xl">✉️</div>
 
           <h1 className="text-3xl font-semibold tracking-tight">
             Message received
           </h1>
 
-          <p className="text-muted-foreground leading-7">
+          <p className="leading-7 text-muted-foreground">
             Thank you for reaching out. Your message has been sent, and I’ll get
             back to you as soon as I can.
-          </p>
-
-          <p className="text-sm text-muted-foreground">
-            In the meantime, you can continue exploring stories or return to the
-            home page.
           </p>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
