@@ -30,19 +30,19 @@ export default function SiteLayout() {
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
           <Link to="/" className="flex items-center gap-3">
-  <img
-    src="/images/night-listener.png"
-    alt="Night Listener"
-    className="h-9 w-9 rounded-full object-cover"
-  />
+            <img
+              src="/images/night-listener.png"
+              alt="Night Listener"
+              className="h-9 w-9 rounded-full object-cover"
+            />
 
-  <div className="leading-tight">
-    <div className="font-semibold tracking-tight">Stabile USA</div>
-    <div className="hidden text-xs text-muted-foreground sm:block">
-      Cozy late-night stories about human behavior
-    </div>
-  </div>
-</Link>
+            <div className="leading-tight">
+              <div className="font-semibold tracking-tight">Stabile USA</div>
+              <div className="hidden text-xs text-muted-foreground sm:block">
+                Calm, reflective stories about human behavior
+              </div>
+            </div>
+          </Link>
 
           <nav className="hidden items-center gap-6 sm:flex">
             <NavItem to="/" label="Home" />
@@ -56,7 +56,7 @@ export default function SiteLayout() {
               <Link to="/listen">Play a preview</Link>
             </Button>
             <Button asChild>
-              <Link to="/join">Join the Night List</Link>
+              <Link to="/join">Unlock Membership</Link>
             </Button>
           </div>
         </div>
@@ -92,56 +92,59 @@ export default function SiteLayout() {
       </main>
 
       <footer className="mt-16">
-  <Separator />
+        <Separator />
 
-  <div className="mx-auto max-w-5xl px-4 py-10 text-sm text-muted-foreground">
-    <div className="flex flex-col items-center gap-6 text-center">
+        <div className="mx-auto max-w-5xl px-4 py-10 text-sm text-muted-foreground">
+          <div className="flex flex-col items-center gap-6 text-center">
+            <div className="space-y-2">
+              <div className="flex flex-col items-center gap-2">
+                <img
+                  src="/images/night-listener.png"
+                  alt="Night Listener"
+                  className="h-10 w-10 rounded-full"
+                />
+                <p className="text-base font-medium text-foreground">
+                  Stabile USA
+                </p>
+              </div>
 
-      {/* Brand */}
-      <div className="space-y-2">
-        <div className="flex flex-col items-center gap-2">
-  <img
-    src="/images/night-listener.png"
-    alt="Night Listener"
-    className="h-10 w-10 rounded-full"
-  />
-  <p className="text-base font-medium text-foreground">
-    Stabile USA
-  </p>
-</div>
-        <p className="max-w-md text-sm leading-6 text-muted-foreground">
-          A quiet space for late-night stories, reflection, and the moments
-          we carry with us.
-        </p>
-      </div>
+              <p className="max-w-md text-sm leading-6 text-muted-foreground">
+                A quiet space for reflective stories, human behavior, and the
+                moments that stay with us.
+              </p>
+            </div>
 
-      {/* Links */}
-      <div className="flex gap-6 text-sm">
-        <a
-          href="mailto:listen@stabileusa.com"
-          className="hover:text-foreground transition"
-        >
-          Email
-        </a>
+            <div className="flex flex-wrap justify-center gap-6 text-sm">
+              <a
+                href="mailto:listen@stabileusa.com"
+                className="transition hover:text-foreground"
+              >
+                Email
+              </a>
 
-        <a
-          href="https://pamelajterrell.com"
-          target="_blank"
-          rel="noreferrer"
-          className="hover:text-foreground transition"
-        >
-          Creator
-        </a>
-      </div>
+              <Link
+                to="/contact"
+                className="transition hover:text-foreground"
+              >
+                Voice Work
+              </Link>
 
-      {/* Signature */}
-      <p className="text-xs text-muted-foreground/70">
-        Created by Pamela J. Terrell
-      </p>
+              <a
+                href="https://pamelajterrell.com"
+                target="_blank"
+                rel="noreferrer"
+                className="transition hover:text-foreground"
+              >
+                Creator
+              </a>
+            </div>
 
-    </div>
-  </div>
-</footer>
+            <p className="text-xs text-muted-foreground/70">
+              Created and narrated by Pamela J. Terrell
+            </p>
+          </div>
+        </div>
+      </footer>
 
       <Analytics />
       <SpeedInsights />

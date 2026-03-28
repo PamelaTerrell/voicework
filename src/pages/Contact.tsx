@@ -8,31 +8,39 @@ const FORM_ENDPOINT = "https://formspree.io/f/xykjjvdb";
 export default function Contact() {
   return (
     <div className="max-w-2xl space-y-8">
-      <header className="space-y-2">
+      <header className="space-y-3">
         <h1 className="text-3xl font-semibold tracking-tight">Contact</h1>
-        <p className="text-muted-foreground">
-          Tell me what you’re making and what you need. I’ll reply with next steps and timing.
+        <p className="max-w-xl leading-7 text-muted-foreground">
+          For questions, collaborations, membership support, or voice narration
+          inquiries, send a note below. I’d love to hear from you.
         </p>
       </header>
 
-      <Card>
-        <CardContent className="space-y-4 p-6">
+      <Card className="rounded-2xl border">
+        <CardContent className="space-y-5 p-6">
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-foreground">
+              Get in touch
+            </p>
+            <p className="text-sm text-muted-foreground">
+              This form is open for listener messages, creative collaborations,
+              and voice work inquiries.
+            </p>
+          </div>
+
           <form action={FORM_ENDPOINT} method="POST" className="space-y-4">
-            {/* Helpful subject line in your inbox */}
             <input
               type="hidden"
               name="_subject"
               value="New message from stabileusa.com"
             />
 
-            {/* Optional: redirect after submit (create /thanks later or remove this) */}
             <input
               type="hidden"
               name="_next"
-              value="https://stabileusa.com/thanks"
+              value="https://stabileusa.com/contact-thanks"
             />
 
-            {/* Honeypot field to reduce spam */}
             <input
               type="text"
               name="_gotcha"
@@ -56,8 +64,8 @@ export default function Contact() {
                 <Input
                   id="email"
                   name="email"
-                  placeholder="you@example.com"
                   type="email"
+                  placeholder="you@example.com"
                   required
                 />
               </div>
@@ -65,29 +73,32 @@ export default function Contact() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="message">
-                What do you need?
+                Message
               </label>
               <Textarea
                 id="message"
                 name="message"
-                placeholder="IVR prompts, narration, explainer, etc. Include word count + deadline if you have it."
+                placeholder="Tell me a little about your inquiry. For voice work, you can include project type, word count, usage, and timeline."
+                className="min-h-[150px]"
                 required
               />
             </div>
 
-            <div className="flex items-center gap-3">
-              <Button type="submit">Send</Button>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Button type="submit">Send message</Button>
 
               <a
-                className="text-sm text-muted-foreground hover:text-foreground"
-                href="mailto:agentpamelajterrell@gmail.com"
+                className="text-sm text-muted-foreground transition hover:text-foreground"
+                href="mailto:listen@stabileusa.com"
               >
-                or email: agentpamelajterrell@gmail.com
+                or email: listen@stabileusa.com
               </a>
             </div>
 
-            <p className="text-xs text-muted-foreground">
-              After sending, you’ll see a confirmation page.
+            <p className="text-xs leading-5 text-muted-foreground">
+              You can use this form for general questions, collaborations,
+              membership help, or narration inquiries. After sending, you’ll see
+              a confirmation page.
             </p>
           </form>
         </CardContent>
