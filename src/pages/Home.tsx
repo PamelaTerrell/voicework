@@ -60,28 +60,25 @@ export default function Home() {
           <div className="space-y-6">
             <div className="space-y-6">
               <div className="w-fit rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                Night Listener • Calm story audio • Human behavior
+               Night Listener • Human behavior • Story-driven audio
               </div>
 
               <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-                Calm, reflective stories inspired by{" "}
-                <span className="bg-gradient-to-r from-[#b49a7a] to-[#8f7a60] bg-clip-text text-transparent">
-                  the emotions, conversations, and moments that stay with us
-                </span>
-                .
-              </h1>
+  Story-driven reflections on{" "}
+  <span className="bg-gradient-to-r from-[#b49a7a] to-[#8f7a60] bg-clip-text text-transparent">
+    human behavior, relationships, and the moments we replay
+  </span>
+  .
+</h1>
 
               <p className="max-w-xl text-sm italic leading-7 text-muted-foreground/90">
-                For the thoughts you replay, the feelings you cannot quite explain,
-                and the quiet moments when you want something that feels human.
-              </p>
+  For the conversations you replay, the things you didn’t say, and the moments that stay with you longer than expected.
+</p>
             </div>
 
             <p className="text-lg text-muted-foreground">
-              Start with one full story free, then unlock a growing library of
-              thoughtful audio stories about conflict, regret, connection, memory,
-              and the patterns behind everyday life.
-            </p>
+  Start with one full story free, then explore a growing library of calm, thoughtful audio stories about emotional patterns, social behavior, and the quiet dynamics behind everyday life.
+</p>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Button asChild className="h-11 px-6">
@@ -98,7 +95,7 @@ export default function Home() {
             </div>
 
             <p className="text-sm text-muted-foreground">
-              One full story free • Full library for members • Calm storytelling voice • Sociology-inspired perspective
+              One full story free • Full library for members • Calm storytelling voice • Sociology-informed perspective
             </p>
           </div>
 
@@ -125,8 +122,7 @@ export default function Home() {
               </p>
 
               <p className="mt-2 text-sm text-muted-foreground">
-                A quiet story about being right, holding back an apology, and the
-                kind of moment that can follow you longer than expected.
+                A quiet story about being right, holding back an apology, and the kind of moment people replay long after it happens.
               </p>
 
               <div className="mt-4 space-y-2">
