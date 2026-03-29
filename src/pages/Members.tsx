@@ -80,6 +80,15 @@ const EPISODES: MemberEpisode[] = [
     thumbnailSrc: "/images/resentment.png",
     tags: ["story", "reflection", "relationships"],
   },
+
+  {
+  id: "im-fine-ep6",
+  title: "Why We Say “I’m Fine” When It’s Not",
+  description:
+    "A quiet story about the small moments we dismiss, the things we don’t say, and how something subtle can quietly shift a connection.",
+  thumbnailSrc: "/images/im-fine.png",
+  tags: ["story", "relationships", "human behavior"],
+}
 ];
 
 function trackEvent(eventName: string, params: Record<string, any> = {}) {

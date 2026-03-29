@@ -15,6 +15,7 @@ type Episode = {
   previewMp3?: string;
   previewWav?: string;
   isMembersOnly?: boolean;
+  isFreeFullEpisode?: boolean;
   tags?: string[];
   category?: string;
 };
@@ -46,6 +47,7 @@ function EpisodeCard({ episode }: { episode: Episode }) {
     previewMp3,
     previewWav,
     isMembersOnly = false,
+    isFreeFullEpisode = false,
     tags = [],
     category = "general",
   } = episode;
@@ -57,6 +59,7 @@ function EpisodeCard({ episode }: { episode: Episode }) {
       episode_id: id,
       episode_title: title,
       episode_category: category,
+      is_free_full_episode: isFreeFullEpisode,
     });
   }
 
@@ -74,6 +77,15 @@ function EpisodeCard({ episode }: { episode: Episode }) {
     window.location.href = "/join";
   }
 
+  const badgeLabel = isFreeFullEpisode
+    ? "Free full episode"
+    : isMembersOnly
+    ? "Preview + Members"
+    : "Free";
+
+  const playerLabel = isFreeFullEpisode ? "Listen free" : "Preview";
+  const playerBadge = isFreeFullEpisode ? "Free" : "Preview";
+
   return (
     <Card className="overflow-hidden rounded-[28px] border border-border/70 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
       {thumbnailSrc && (
@@ -85,9 +97,7 @@ function EpisodeCard({ episode }: { episode: Episode }) {
             loading="lazy"
           />
           <div className="absolute right-3 top-3">
-            <Badge className="shadow-sm">
-              {isMembersOnly ? "Preview + Members" : "Free"}
-            </Badge>
+            <Badge className="shadow-sm">{badgeLabel}</Badge>
           </div>
         </div>
       )}
@@ -121,9 +131,9 @@ function EpisodeCard({ episode }: { episode: Episode }) {
 
         <div className="space-y-3 rounded-2xl border bg-muted/20 p-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium">Preview</p>
+            <p className="text-sm font-medium">{playerLabel}</p>
             <Badge variant="secondary" className="font-normal">
-              Free
+              {playerBadge}
             </Badge>
           </div>
 
@@ -142,10 +152,12 @@ function EpisodeCard({ episode }: { episode: Episode }) {
           </audio>
         </div>
 
-        {isMembersOnly && (
+        {isMembersOnly && !isFreeFullEpisode && (
           <div className="space-y-4 rounded-2xl border border-border/70 bg-muted/20 p-5">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium tracking-tight">Full Library Access</p>
+              <p className="text-sm font-medium tracking-tight">
+                Full Library Access
+              </p>
               <Badge variant="secondary" className="font-normal">
                 Members
               </Badge>
@@ -153,7 +165,8 @@ function EpisodeCard({ episode }: { episode: Episode }) {
 
             <p className="text-sm leading-relaxed text-muted-foreground">
               Love the preview? Membership unlocks the full Night Listener
-              library so you can listen whenever you need a quiet place to land.
+              library so you can listen whenever you want something thoughtful,
+              calm, and deeply human.
               <span className="block text-muted-foreground/80">
                 Cancel anytime.
               </span>
@@ -181,7 +194,7 @@ function EpisodeCard({ episode }: { episode: Episode }) {
         )}
 
         <p className="text-xs italic text-muted-foreground">
-          Tip: headphones + low volume work beautifully for late-night listening.
+          Tip: headphones + low volume work beautifully for quiet listening.
         </p>
       </CardContent>
     </Card>
@@ -234,6 +247,28 @@ export default function Listen() {
 
   const episodes: Episode[] = [
     {
+      id: "say-sorry-ep3",
+      title: "You Were Right… But You Never Said Sorry",
+      description:
+        "A quiet story about being right, holding back an apology, and the kind of moment people replay long after it happens.",
+      thumbnailSrc: "/images/say-sorry.png",
+      previewMp3: "/audio/say-sorry-ep3.mp3",
+      isFreeFullEpisode: true,
+      tags: ["story", "reflection", "relationships"],
+      category: "free_story",
+    },
+    {
+      id: "im-fine-ep6",
+      title: "Why We Say “I’m Fine” When It’s Not",
+      description:
+        "A quiet story about the moment something shifts—and why we often say “I’m fine” instead of what we actually feel.",
+      thumbnailSrc: "/images/im-fine.png",
+      previewMp3: "/audio/imfine.mp3",
+      isFreeFullEpisode: true,
+      tags: ["story", "relationships", "human behavior"],
+      category: "free_story",
+    },
+    {
       id: "conversation-ep2",
       title: "The Conversation That Never Finished",
       description:
@@ -252,7 +287,7 @@ export default function Listen() {
       thumbnailSrc: "/images/why-mind-replays-thumbnail.png",
       previewMp3: "/audio/why-mind-replays-preview.mp3",
       isMembersOnly: true,
-      tags: ["bedtime", "calm", "human behavior"],
+      tags: ["calm", "reflection", "human behavior"],
       category: "human_behavior",
     },
   ];
@@ -264,9 +299,9 @@ export default function Listen() {
           Listen
         </h1>
         <p className="max-w-2xl text-muted-foreground">
-          Explore late-night previews from the Night Listener library. Start with
-          a free full story on the home page, then unlock the full library with
-          membership.
+          Start with free full stories, explore more previews, and discover the
+          Night Listener library through human behavior, relationships, and the
+          moments that stay with us.
         </p>
       </header>
 
