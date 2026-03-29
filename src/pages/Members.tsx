@@ -62,7 +62,7 @@ const EPISODES: MemberEpisode[] = [
     description:
       "A gentle reflection on rumination and why the mind revisits social moments when the world becomes quiet.",
     thumbnailSrc: "/images/why-mind-replays-thumbnail.png",
-    tags: ["bedtime", "calm", "human behavior"],
+    tags: ["story", "calm", "human behavior"],
   },
   {
     id: "say-sorry-ep3",
@@ -176,7 +176,7 @@ export default function Members() {
       }
 
       setLoginMessage(
-        "Your quiet sign-in link is on its way. Open your email and return with the same address you used for membership."
+        "Your sign-in link is on its way. Open your email and return with the same address you used for membership."
       );
       setLoginEmail("");
     } finally {
@@ -269,15 +269,11 @@ export default function Members() {
       setStripeCustomerId(null);
       setSubscriptionStatus(null);
 
-      if (selectedIsFree) {
-        setStatus(
-          "Sign in below if you’d like to open it here in your library."
-        );
-      } else {
-        setStatus(
-          "Your library is waiting. Sign in below to continue listening."
-        );
-      }
+      setStatus(
+        selectedIsFree
+          ? "Sign in below if you'd like to open this story here in your library."
+          : "This story is waiting inside the full Night Listener library."
+      );
 
       setLoading(false);
       return;
@@ -300,11 +296,11 @@ export default function Members() {
 
         if (!hasMembership && selectedIsFree && r.status === 403) {
           setStatus(
-            "This story is marked as free, but secure playback is still blocking it. Update /api/signed-audio to allow the free episode."
+            "This story is marked as free, but playback is still being blocked. Update /api/signed-audio to allow the free episode."
           );
         } else if (!hasMembership && r.status === 403) {
           setStatus(
-            "This story is part of the full Night Listener library. Subscribe to unlock every episode."
+            "This story is waiting inside the full Night Listener library. Unlock membership to continue."
           );
         } else {
           setStatus(`Error ${r.status}: ${j.error || "Unknown error"}`);
@@ -317,9 +313,9 @@ export default function Members() {
       setSignedUrl(j.url);
 
       if (hasMembership) {
-        setStatus("Your full Night Listener library is open.");
+        setStatus("Your library is open.");
       } else if (selectedIsFree) {
-        setStatus("This story is ready for you. Settle in.");
+        setStatus("This story is ready for you.");
       } else {
         setStatus("Your story is ready.");
       }
@@ -449,7 +445,7 @@ export default function Members() {
       setSubscriptionStatus(null);
       setStatus(
         episodeId === FREE_EPISODE_ID
-          ? "Choose the free story to begin, or sign in to open your library."
+          ? "Choose the free featured story to begin, or sign in to open your library."
           : ""
       );
       setCancelMessage("");
@@ -464,8 +460,8 @@ export default function Members() {
       setSignedUrl(null);
       setStatus(
         episodeId === FREE_EPISODE_ID
-          ? "Sign in below if you’d like to open it here in your library."
-          : "This story is part of the full Night Listener library. Sign in or subscribe to continue."
+          ? "Sign in below if you'd like to open this story here in your library."
+          : "This story is waiting inside the full Night Listener library. Sign in or subscribe to continue."
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -529,9 +525,8 @@ export default function Members() {
               Your library
             </h1>
             <p className="max-w-3xl text-muted-foreground">
-              A quiet place for the full Night Listener experience — thoughtful
-              stories, gentle reflection, and late-night listening made to meet
-              you softly.
+              A quiet place for the full Night Listener experience—thoughtful
+              stories, gentle reflection, and the moments that stay with us.
             </p>
           </div>
         </div>
@@ -557,8 +552,8 @@ export default function Members() {
                           : ""
                       }.`
                     : isSubscriber
-                    ? "Your membership is active. Your full Night Listener library is open."
-                    : "You’re signed in. You can enjoy the free featured story below, or subscribe to unlock the full library."}
+                    ? "Your library is open. You have access to the full Night Listener collection."
+                    : "You're signed in. You can begin with the free featured story below, or unlock the full library anytime."}
                 </p>
               </div>
 
@@ -623,8 +618,7 @@ export default function Members() {
                   Your Night Listener library is waiting.
                 </p>
                 <p className="text-sm leading-7 text-muted-foreground">
-                  Enter your email and we’ll send you a quiet link back to your
-                  stories.
+                  Enter your email and we’ll send you a link back to your stories.
                 </p>
               </div>
 
@@ -664,9 +658,9 @@ export default function Members() {
       <section className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
         <Card className="overflow-hidden rounded-[28px] border border-border/70">
           <div className="border-b px-6 py-5">
-            <p className="text-sm font-medium">Tonight’s shelf</p>
+            <p className="text-sm font-medium">Library shelf</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Unlock the full library.
+              Browse stories and select where to begin.
             </p>
           </div>
 
@@ -729,40 +723,37 @@ export default function Members() {
         </Card>
 
         <Card className="overflow-hidden rounded-[28px] border border-border/70 shadow-[0_10px_40px_rgba(0,0,0,0.25)]">
-  <div className="relative bg-[#0b0f19]">
+          <div className="relative bg-[#0b0f19]">
+            <img
+              src={selectedEpisode.thumbnailSrc}
+              alt={selectedEpisode.title}
+              className="mx-auto max-h-[420px] w-full object-contain"
+              loading="lazy"
+            />
 
-    {/* Image */}
-    <img
-      src={selectedEpisode.thumbnailSrc}
-      alt={selectedEpisode.title}
-      className="w-full max-h-[420px] object-contain mx-auto"
-      loading="lazy"
-    />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
 
-    {/* Soft gradient overlay */}
-    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
+            <div className="absolute right-4 top-4 flex gap-2">
+              <Badge className="border-white/20 bg-black/40 text-white shadow-sm backdrop-blur">
+                {isFreeEpisode ? "Story" : "Members"}
+              </Badge>
 
-    {/* Top badges */}
-    <div className="absolute right-4 top-4 flex gap-2">
-      <Badge className="shadow-sm backdrop-blur bg-black/40 text-white border-white/20">
-        {isFreeEpisode ? "Story" : "Members"}
-      </Badge>
+              {hasAccess && (
+                <Badge
+                  variant="secondary"
+                  className="bg-white/80 shadow-sm backdrop-blur"
+                >
+                  Ready to Play
+                </Badge>
+              )}
+            </div>
+          </div>
 
-      {hasAccess && (
-        <Badge
-          variant="secondary"
-          className="shadow-sm backdrop-blur bg-white/80"
-        >
-          Ready to Play
-        </Badge>
-      )}
-    </div>
-  </div>
           <CardContent className="space-y-6 p-6">
             <div className="space-y-3">
               <div className="space-y-2">
                 <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                  Tonight’s story
+                  Selected story
                 </p>
                 <h2 className="text-2xl font-semibold leading-tight tracking-tight">
                   {selectedEpisode.title}
@@ -789,12 +780,12 @@ export default function Members() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="space-y-1">
                   <p className="text-sm font-medium">
-                    {isFreeEpisode ? "Your story" : "Your full story"}
+                    {isFreeEpisode ? "Your featured story" : "Your listening session"}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {isFreeEpisode
-                      ? "This featured story is also available for free on the home page."
-                      : "Membership unlocks this full listening session."}
+                      ? "This featured story is also available on the home page."
+                      : "Membership unlocks this full story and the rest of the library."}
                   </p>
                 </div>
 
@@ -819,7 +810,7 @@ export default function Members() {
                   <p className="text-xs text-muted-foreground">
                     {isFreeEpisode
                       ? "Settle in. This featured story is ready."
-                      : "Settle in. This is your full Night Listener experience."}
+                      : "Settle in. Your full Night Listener experience is ready."}
                   </p>
 
                   <audio
@@ -836,24 +827,30 @@ export default function Members() {
                   </p>
                 </div>
               ) : (
-                <div className="mt-5 rounded-xl border bg-background p-4">
-  <p className="text-sm font-medium">
-    {isFreeEpisode
-      ? "This featured story is available for free on the home page. Sign in if you'd like to open it here in your library."
-      : isSignedIn
-      ? "This story is part of the full Night Listener library. Subscribe to unlock it."
-      : "This story is part of the full Night Listener library. Sign in or subscribe to continue listening."}
-  </p>
-</div>
+                <div className="mt-5 space-y-4 rounded-xl border bg-background p-4">
+                  <p className="text-sm font-medium">
+                    {isFreeEpisode
+                      ? "This featured story is available for free on the home page. Sign in if you'd like to open it here in your library."
+                      : isSignedIn
+                      ? "This story is waiting inside the full Night Listener library. Unlock membership to continue."
+                      : "This story is waiting inside the full Night Listener library. Sign in or subscribe to continue."}
+                  </p>
+
+                  {!isSubscriber && !isFreeEpisode && (
+                    <Button asChild className="w-full sm:w-auto">
+                      <Link to="/join">Unlock the full library</Link>
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
 
             <div className="rounded-2xl border bg-background p-5">
               <p className="text-sm font-medium">A quiet note</p>
               <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                Start with the free featured story whenever you like. When
-                you’re ready for the full Night Listener experience, membership
-                unlocks the entire growing library.
+                Begin with the free featured story whenever you like. When
+                you’re ready for more, membership unlocks the full growing
+                Night Listener library.
               </p>
             </div>
           </CardContent>

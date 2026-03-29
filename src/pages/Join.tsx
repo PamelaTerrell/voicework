@@ -57,36 +57,37 @@ export default function Join() {
 
   return (
     <div className="max-w-2xl space-y-8">
-      <header className="space-y-2">
+      <header className="space-y-3">
         <h1 className="text-3xl font-semibold tracking-tight">Join</h1>
         <p className="text-muted-foreground">
-          Full-length cozy bedtime episodes about human behavior — calm,
-          story-driven, and designed for late-night listening.
+          Unlock calm, story-driven reflections on human behavior, relationships,
+          and the moments that stay with us.
         </p>
       </header>
 
-      <Card>
+      <Card className="rounded-2xl border">
         <CardContent className="space-y-5 p-6">
           <div className="rounded-2xl border bg-muted/40 p-4 text-sm text-muted-foreground">
             <p className="font-medium text-foreground">Night Listener membership</p>
             <p className="mt-1">
               Unlock the full Night Listener library with one simple membership.
-              Cancel anytime.
+              Listen to the complete collection and return whenever you want
+              something thoughtful, calm, and deeply human.
             </p>
           </div>
 
           <div className="space-y-3">
             <Button asChild className="w-full">
               <a href={STRIPE_SUBSCRIBE_URL} target="_blank" rel="noreferrer">
-                Unlock the Full Night Listener Library — $4.99/month
+                Unlock the Full Library — $4.99/month
               </a>
             </Button>
 
             <div className="rounded-2xl border bg-background p-4 text-sm text-muted-foreground">
               <p className="font-medium text-foreground">Not ready to subscribe?</p>
               <p className="mt-1">
-                Start with the free full story on the home page — no sign-in
-                required.
+                Start with the free full story on the home page and get a feel
+                for Night Listener first.
               </p>
             </div>
 
@@ -98,7 +99,7 @@ export default function Join() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="rounded-2xl border">
         <CardContent className="space-y-5 p-6">
           <div className="rounded-2xl border bg-background p-4 text-sm text-muted-foreground">
             <p className="font-medium text-foreground">Already subscribed?</p>
@@ -159,13 +160,13 @@ export default function Join() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="rounded-2xl border">
         <CardContent className="space-y-5 p-6">
           <div className="rounded-2xl border bg-muted p-4 text-sm text-muted-foreground">
             <p className="font-medium text-foreground">Night List (free)</p>
             <p className="mt-1">
               Want a heads-up when new episodes drop? Join the Night List for
-              release notes and occasional cozy late-night updates.
+              release notes, new story updates, and occasional thoughtful notes.
             </p>
           </div>
 
@@ -179,7 +180,7 @@ export default function Join() {
             <input
               type="hidden"
               name="_next"
-              value="https://www.stabileusa.com/thanks"
+              value="https://stabileusa.com/contact-thanks"
             />
 
             <input
@@ -222,7 +223,7 @@ export default function Join() {
               <Input
                 id="interest"
                 name="interest"
-                placeholder="Loneliness, belonging, social norms, identity, relationships…"
+                placeholder="Relationships, social behavior, emotional patterns, identity…"
               />
             </div>
 
@@ -231,7 +232,7 @@ export default function Join() {
             </Button>
 
             <p className="text-xs text-muted-foreground">
-              No spam. Just new episodes and occasional cozy notes.
+              No spam. Just new episodes and occasional notes.
             </p>
           </form>
         </CardContent>
@@ -241,7 +242,7 @@ export default function Join() {
         Prefer email?{" "}
         <a
           className="underline underline-offset-4 hover:text-foreground"
-          href="mailto:agentpamelajterrell@gmail.com?subject=Night%20List"
+          href="mailto:listen@stabileusa.com?subject=Night%20List"
         >
           Send a quick note
         </a>
