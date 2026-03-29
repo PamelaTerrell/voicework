@@ -1,17 +1,11 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { supabaseAdmin, requireUser } from "./_lib.js";
 
-// ✅ Allow multiple free episodes
-const FREE_EPISODE_IDS = [
-  "say-sorry-ep3",
-  "imfine-ep6", // 👈 new episode
-];
+// Allow multiple free episodes
+const FREE_EPISODE_IDS = ["say-sorry-ep3", "im-fine-ep6"];
 
-// ✅ Centralized episode file mapping
-const EPISODE_FILE_MAP: Record<
-  string,
-  { preview: string; full: string }
-> = {
+// Centralized episode file mapping
+const EPISODE_FILE_MAP: Record<string, { preview: string; full: string }> = {
   "versions-ep5": {
     preview: "never-meant-to-see-ep5/preview.mp3",
     full: "versions-ep5/full.mp3",
@@ -32,10 +26,8 @@ const EPISODE_FILE_MAP: Record<
     preview: "resentment-ep4/preview.mp3",
     full: "resentment-ep4/full.mp3",
   },
-
-  // ✅ NEW EPISODE
-  "imfine-ep6": {
-    preview: "imfine-ep6/preview.mp3", // optional if you create one later
+  "im-fine-ep6": {
+    preview: "im-fine-ep6/preview.mp3",
     full: "im-fine-ep6/full.mp3",
   },
 };
@@ -70,8 +62,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const user = await requireUser(req);
 
-    // Allow one featured/free episode for any signed-in user
-    let allowed = episodeId === FREE_EPISODE_ID || type === "preview";
+    // Allow free episodes for any signed-in user, and allow previews
+    let allowed = FREE_EPISODE_IDS.includes(episodeId) || type === "preview";
 
     if (!allowed) {
       const { data: profile, error: pErr } = await supabaseAdmin
