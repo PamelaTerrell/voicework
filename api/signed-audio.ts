@@ -1,8 +1,13 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { supabaseAdmin, requireUser } from "./_lib.js";
 
-const FREE_EPISODE_ID = "conversation-ep2";
+// ✅ Allow multiple free episodes
+const FREE_EPISODE_IDS = [
+  "say-sorry-ep3",
+  "imfine-ep6", // 👈 new episode
+];
 
+// ✅ Centralized episode file mapping
 const EPISODE_FILE_MAP: Record<
   string,
   { preview: string; full: string }
@@ -26,6 +31,12 @@ const EPISODE_FILE_MAP: Record<
   "resentment-ep4": {
     preview: "resentment-ep4/preview.mp3",
     full: "resentment-ep4/full.mp3",
+  },
+
+  // ✅ NEW EPISODE
+  "imfine-ep6": {
+    preview: "imfine-ep6/preview.mp3", // optional if you create one later
+    full: "imfine-ep6/full.mp3",
   },
 };
 
