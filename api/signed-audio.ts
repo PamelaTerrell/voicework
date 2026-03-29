@@ -36,7 +36,7 @@ const EPISODE_FILE_MAP: Record<
   // ✅ NEW EPISODE
   "imfine-ep6": {
     preview: "imfine-ep6/preview.mp3", // optional if you create one later
-    full: "imfine-ep6/full.mp3",
+    full: "imfine-ep6.mp3",
   },
 };
 
