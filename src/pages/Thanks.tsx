@@ -41,11 +41,19 @@ export default function Thanks() {
               Welcome, Night Listener
             </h1>
 
-            <p className="mt-4 text-base leading-7 text-[#6b645c] sm:text-lg">
-              You now have full access to the Night Listener library—
-              a collection of stories about the moments, emotions, and patterns
-              we all recognize.
-            </p>
+           <p className="mt-4 text-base leading-7 text-[#6b645c] sm:text-lg">
+  You now have full access to the Night Listener library—
+  a collection of stories about the moments, emotions, and patterns
+  we all recognize.
+</p>
+
+<div className="mt-6 rounded-2xl border border-[#d8cfc4] bg-[#fdfaf3] px-5 py-4 shadow-sm">
+  <p className="text-sm leading-6 text-[#5c554d] sm:text-base">
+    <span className="font-medium text-[#4b3f2f]">Note:</span>  
+    To begin listening, sign in using the same email address you used during checkout.  
+    Your magic link will be sent to that email so you can access your membership.
+  </p>
+</div>
 
             <div className="mx-auto mt-8 h-px w-20 bg-gradient-to-r from-transparent via-[#d8cfc4] to-transparent" />
 
