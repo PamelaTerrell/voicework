@@ -38,10 +38,12 @@ export default function Thanks() {
       return;
     }
 
+    const safeSessionId = sessionId;
+
     async function loadCheckoutEmail() {
       try {
         const res = await fetch(
-          `/api/checkout-session?session_id=${encodeURIComponent(sessionId)}`
+          `/api/checkout-session?session_id=${encodeURIComponent(safeSessionId)}`
         );
         const data = await res.json();
 
@@ -180,8 +182,6 @@ export default function Thanks() {
             </p>
 
             <div className="mt-10 flex flex-col items-center gap-3">
-              
-
               <Link
                 to="/listen"
                 className="text-sm text-[#8a8175] transition hover:text-[#2d2a26]"
