@@ -180,23 +180,7 @@ export default function Thanks() {
             </p>
 
             <div className="mt-10 flex flex-col items-center gap-3">
-              <Button
-                asChild
-                size="lg"
-                className="h-12 rounded-xl bg-[#2d2a26] px-8 text-white shadow-[0_10px_24px_rgba(45,42,38,0.12)] transition hover:bg-[#1f1c19]"
-              >
-                <Link
-                  to="/members"
-                  onClick={() =>
-                    trackEvent("thanks_nav_click", {
-                      destination: "/members",
-                      cta_label: "Start Listening",
-                    })
-                  }
-                >
-                  Start listening
-                </Link>
-              </Button>
+              
 
               <Link
                 to="/listen"
