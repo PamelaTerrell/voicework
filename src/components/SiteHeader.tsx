@@ -32,11 +32,19 @@ export function SiteHeader() {
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-4">
         <div className="flex min-w-0 items-center gap-8">
           <Link to="/" className="min-w-0">
-            <div className="text-2xl font-semibold tracking-tight text-foreground">
-              Stabile USA
-            </div>
-            <div className="text-sm text-muted-foreground">
-              Cozy late-night stories about human behavior
+            <div className="flex min-w-0 flex-col leading-tight">
+              <div className="flex min-w-0 flex-wrap items-baseline gap-2">
+                <span className="text-2xl font-semibold tracking-tight text-foreground">
+                  Night Listener
+                </span>
+                <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                  by Stabile USA
+                </span>
+              </div>
+
+              <div className="text-sm text-muted-foreground">
+                Story-driven reflections on human behavior
+              </div>
             </div>
           </Link>
 
@@ -54,7 +62,7 @@ export function SiteHeader() {
           </Button>
 
           <Button asChild className="hidden sm:inline-flex">
-            <Link to="/join">Join the Night List</Link>
+            <Link to="/join">Unlock Membership</Link>
           </Button>
 
           <div className="hidden lg:block">
