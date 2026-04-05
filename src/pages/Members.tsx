@@ -45,7 +45,7 @@ const EPISODES: MemberEpisode[] = [
   id: "lonely-night-ep7",
   title: "The Night It Ended (Or So She Thought)",
   description:
-    "She sat outside his apartment, staring at a message that felt final. But the truth of that night… wasn’t as complete as she believed.",
+    "Part 1: Her Version — She sat outside his apartment, staring at a message that felt final. But the truth of that night… wasn’t as complete as she believed.",
   thumbnailSrc: "/images/lonely-night.png",
   tags: ["story", "relationships", "perspective"],
 },
