@@ -40,6 +40,16 @@ type MemberAccessResponse = {
 const FREE_EPISODE_ID = "say-sorry-ep3";
 
 const EPISODES: MemberEpisode[] = [
+
+  {
+  id: "lonely-night-ep7",
+  title: "The Night It Ended (Or So She Thought)",
+  description:
+    "She sat outside his apartment, staring at a message that felt final. But the truth of that night… wasn’t as complete as she believed.",
+  thumbnailSrc: "/images/lonely-night.png",
+  tags: ["story", "relationships", "perspective"],
+},
+
   {
     id: "versions-ep5",
     title: "The Versions We Never Meant to See",
@@ -89,6 +99,9 @@ const EPISODES: MemberEpisode[] = [
   thumbnailSrc: "/images/im-fine.png",
   tags: ["story", "relationships", "human behavior"],
 }
+
+
+
 ];
 
 function trackEvent(eventName: string, params: Record<string, any> = {}) {
