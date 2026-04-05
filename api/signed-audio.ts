@@ -30,6 +30,11 @@ const EPISODE_FILE_MAP: Record<string, { preview: string; full: string }> = {
     preview: "im-fine-ep6/preview.mp3",
     full: "im-fine-ep6/full.mp3",
   },
+
+  "lonely-night-ep7": {
+  preview: "lonely-night-ep7/preview.mp3",
+  full: "lonely-night-ep7/full.mp3",
+},
 };
 
 function isActiveStatus(status?: string | null) {
