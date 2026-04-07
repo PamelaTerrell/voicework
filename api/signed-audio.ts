@@ -35,6 +35,11 @@ const EPISODE_FILE_MAP: Record<string, { preview: string; full: string }> = {
   preview: "lonely-night-ep7/preview.mp3",
   full: "lonely-night-ep7/full.mp3",
 },
+
+"lonely-night-part2-ep8": {
+  preview: "lonely-night-part2-ep8/preview.mp3",
+  full: "lonely-night-part2-ep8/full.mp3",
+},
 };
 
 function isActiveStatus(status?: string | null) {

@@ -50,6 +50,15 @@ const EPISODES: MemberEpisode[] = [
   tags: ["story", "relationships", "perspective"],
 },
 
+{
+  id: "lonely-night-part2-ep8",
+  title: "The Night He Stayed Inside",
+  description:
+    "Part 2: His Version — While she sat outside believing the silence meant he didn’t care, he was inside facing something he didn’t yet know how to hold.",
+  thumbnailSrc: "/images/lonely-night-part2.png",
+  tags: ["story", "relationships", "perspective"],
+},
+
   {
     id: "versions-ep5",
     title: "The Versions We Never Meant to See",
