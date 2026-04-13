@@ -56,7 +56,7 @@ export default function Home() {
         <div className="pointer-events-none absolute -top-24 right-[-6rem] h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 left-[-6rem] h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
 
-        <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
+        <div className="grid gap-10 lg:grid-cols-2 lg:items-start">
           <div className="space-y-6">
             <div className="space-y-6">
               <div className="w-fit rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -101,47 +101,51 @@ export default function Home() {
 
           <div className="space-y-4">
             <div
-              id="featured-story"
-              className="rounded-2xl border bg-background p-5 shadow-sm"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm text-muted-foreground">Start here</p>
-                <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
-                  Free full episode
-                </span>
-              </div>
+  id="featured-story"
+  className="rounded-2xl border bg-background p-5 shadow-sm"
+>
+  <div className="flex items-center justify-between gap-3">
+    <p className="text-sm text-muted-foreground">Start here</p>
+    <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
+      Free full episode
+    </span>
+  </div>
 
-              <img
-                src="/images/say-sorry.png"
-                alt="You Were Right… But You Never Said Sorry"
-                className="mb-4 h-48 w-full rounded-xl object-cover"
-              />
+  <img
+    src="/images/she-had-everything-part1.png"
+    alt="She Had Everything… Part 1"
+    className="mb-4 h-65 w-full rounded-xl object-cover"
+  />
 
-              <p className="mt-1 text-xl font-medium">
-                You Were Right… But You Never Said Sorry
-              </p>
+  <p className="mt-1 text-xl font-medium">
+    She Had Everything… (Part 1)
+  </p>
 
-              <p className="mt-2 text-sm text-muted-foreground">
-                A quiet story about being right, holding back an apology, and the kind of moment people replay long after it happens.
-              </p>
+  <p className="mt-2 text-sm text-muted-foreground">
+    A quiet story about control, escape, and the kind of shift no one sees until everything begins to change.
+  </p>
 
-              <div className="mt-4 space-y-2">
-                <audio controls preload="metadata" className="w-full">
-                  <source src="/audio/say-sorry-ep3.mp3" type="audio/mpeg" />
-                  Your browser does not support the audio element.
-                </audio>
+  <div className="mt-4 space-y-2">
+    <audio controls preload="metadata" className="w-full">
+      <source src="/audio/had-everything-part1-ep9.mp3" type="audio/mpeg" />
+      Your browser does not support the audio element.
+    </audio>
 
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Your free full story</span>
-                  <Link
-                    to="/join"
-                    className="underline underline-offset-4 hover:text-foreground"
-                  >
-                    Continue into the full library →
-                  </Link>
-                </div>
-              </div>
-            </div>
+    <div className="flex items-center justify-between text-xs text-muted-foreground">
+      <span>Your free full story</span>
+      <Link
+        to="/join"
+        className="underline underline-offset-4 hover:text-foreground"
+      >
+        Continue into the full library →
+      </Link>
+    </div>
+  </div>
+</div>
+
+             
+
+            
 
             <div className="rounded-2xl border bg-muted p-5">
               <p className="text-sm font-medium">Member login</p>
