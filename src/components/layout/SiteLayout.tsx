@@ -38,12 +38,11 @@ export default function SiteLayout() {
             />
 
             <div className="leading-tight">
-              <div className="flex items-baseline gap-2 flex-wrap">
+              <div className="flex flex-wrap items-baseline gap-2">
                 <span className="font-semibold tracking-tight">
                   Night Listener
                 </span>
 
-                {/* 🔥 Parent brand (subtle but powerful) */}
                 <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
                   A Stabile USA Product
                 </span>
@@ -80,6 +79,7 @@ export default function SiteLayout() {
           <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center justify-between sm:hidden">
               <div className="flex items-center gap-4">
+                <NavItem to="/" label="Home" />
                 <NavItem to="/listen" label="Listen" />
                 <NavItem to="/join" label="Join" />
                 <NavItem to="/contact" label="Contact" />
@@ -121,7 +121,6 @@ export default function SiteLayout() {
                   className="h-10 w-10 rounded-full"
                 />
 
-                {/* 🔥 Clean brand hierarchy */}
                 <p className="text-base font-medium text-foreground">
                   Night Listener
                 </p>
@@ -145,10 +144,11 @@ export default function SiteLayout() {
                 Email
               </a>
 
-              <Link
-                to="/contact"
-                className="transition hover:text-foreground"
-              >
+              <Link to="/contact" className="transition hover:text-foreground">
+                Work with Me
+              </Link>
+
+              <Link to="/contact" className="transition hover:text-foreground">
                 Voice Work
               </Link>
 
@@ -158,7 +158,7 @@ export default function SiteLayout() {
                 rel="noreferrer"
                 className="transition hover:text-foreground"
               >
-                Creator
+                Portfolio
               </a>
             </div>
 
