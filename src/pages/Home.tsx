@@ -11,6 +11,8 @@ export default function Home() {
   const [sessionEmail, setSessionEmail] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [shareMessage, setShareMessage] = useState("");
+  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -50,6 +52,34 @@ export default function Home() {
     setMessage("");
   }
 
+  async function shareFeaturedStory() {
+    const shareUrl = `${window.location.origin}/#featured-story`;
+
+    const shareData = {
+      title: "She Had Everything… (Part 1) | Stabile USA Night Listener",
+      text: "Listen to this free Night Listener story: She Had Everything… (Part 1).",
+      url: shareUrl,
+    };
+
+    setSharing(true);
+    setShareMessage("");
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        setShareMessage("Shared.");
+        return;
+      }
+
+      await navigator.clipboard.writeText(shareUrl);
+      setShareMessage("Link copied.");
+    } catch {
+      setShareMessage("Unable to share right now.");
+    } finally {
+      setSharing(false);
+    }
+  }
+
   return (
     <div className="space-y-14">
       <section className="relative overflow-hidden rounded-3xl border bg-background p-6 sm:p-10">
@@ -60,25 +90,28 @@ export default function Home() {
           <div className="space-y-6">
             <div className="space-y-6">
               <div className="w-fit rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-               Night Listener • Human behavior • Story-driven audio
+                Night Listener • Human behavior • Story-driven audio
               </div>
 
               <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-  Story-driven reflections on{" "}
-  <span className="bg-gradient-to-r from-[#b49a7a] to-[#8f7a60] bg-clip-text text-transparent">
-    human behavior, relationships, and the moments we replay
-  </span>
-  .
-</h1>
+                Story-driven reflections on{" "}
+                <span className="bg-gradient-to-r from-[#b49a7a] to-[#8f7a60] bg-clip-text text-transparent">
+                  human behavior, relationships, and the moments we replay
+                </span>
+                .
+              </h1>
 
               <p className="max-w-xl text-sm italic leading-7 text-muted-foreground/90">
-  For the conversations you replay, the things you didn’t say, and the moments that stay with you longer than expected.
-</p>
+                For the conversations you replay, the things you didn’t say, and
+                the moments that stay with you longer than expected.
+              </p>
             </div>
 
             <p className="text-lg text-muted-foreground">
-  Start with one full story free, then explore a growing library of calm, thoughtful audio stories about emotional patterns, social behavior, and the quiet dynamics behind everyday life.
-</p>
+              Start with one full story free, then explore a growing library of
+              calm, thoughtful audio stories about emotional patterns, private
+              unraveling, and the quiet dynamics behind everyday life.
+            </p>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Button asChild className="h-11 px-6">
@@ -95,57 +128,76 @@ export default function Home() {
             </div>
 
             <p className="text-sm text-muted-foreground">
-              One full story free • Full library for members • Calm storytelling voice • Sociology-informed perspective
+              One full story free • Full library for members • Calm storytelling
+              voice • Sociology-informed perspective
             </p>
           </div>
 
           <div className="space-y-4">
             <div
-  id="featured-story"
-  className="rounded-2xl border bg-background p-5 shadow-sm"
->
-  <div className="flex items-center justify-between gap-3">
-    <p className="text-sm text-muted-foreground">Start here</p>
-    <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
-      Free full episode
-    </span>
-  </div>
+              id="featured-story"
+              className="rounded-2xl border bg-background p-5 shadow-sm"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm text-muted-foreground">Start here</p>
+                <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
+                  Free full episode
+                </span>
+              </div>
 
-  <img
-    src="/images/she-had-everything-part1.png"
-    alt="She Had Everything… Part 1"
-    className="mb-4 h-65 w-full rounded-xl object-cover"
-  />
+              <img
+                src="/images/she-had-everything-part1.png"
+                alt="She Had Everything… Part 1"
+                className="mb-4 h-68 w-full rounded-xl object-cover"
+              />
 
-  <p className="mt-1 text-xl font-medium">
-    She Had Everything… (Part 1)
-  </p>
+              <p className="mt-1 text-xl font-medium">
+                She Had Everything… (Part 1)
+              </p>
 
-  <p className="mt-2 text-sm text-muted-foreground">
-    A quiet story about control, escape, and the kind of shift no one sees until everything begins to change.
-  </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                A quiet story about control, escape, and the kind of shift no one
+                sees until everything begins to change.
+              </p>
 
-  <div className="mt-4 space-y-2">
-    <audio controls preload="metadata" className="w-full">
-      <source src="/audio/had-everything-part1-ep9.mp3" type="audio/mpeg" />
-      Your browser does not support the audio element.
-    </audio>
+              <div className="mt-4 space-y-2">
+                <audio controls preload="metadata" className="w-full">
+                  <source
+                    src="/audio/had-everything-part1-ep9.mp3"
+                    type="audio/mpeg"
+                  />
+                  Your browser does not support the audio element.
+                </audio>
 
-    <div className="flex items-center justify-between text-xs text-muted-foreground">
-      <span>Your free full story</span>
-      <Link
-        to="/join"
-        className="underline underline-offset-4 hover:text-foreground"
-      >
-        Continue into the full library →
-      </Link>
-    </div>
-  </div>
-</div>
+                <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
+                  <span>Your free full story</span>
 
-             
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={shareFeaturedStory}
+                      disabled={sharing}
+                      className="underline underline-offset-4 hover:text-foreground disabled:opacity-60"
+                    >
+                      {sharing ? "Sharing..." : "Share this story"}
+                    </button>
 
-            
+                    <Link
+                      to="/join"
+                      className="underline underline-offset-4 hover:text-foreground"
+                    >
+                      Continue into the full library →
+                    </Link>
+                  </div>
+                </div>
+
+                {shareMessage && (
+                  <p className="text-xs text-muted-foreground">
+                    {shareMessage}
+                  </p>
+                )}
+              </div>
+            </div>
 
             <div className="rounded-2xl border bg-muted p-5">
               <p className="text-sm font-medium">Member login</p>
