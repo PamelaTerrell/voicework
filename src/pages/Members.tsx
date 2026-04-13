@@ -41,6 +41,16 @@ const FREE_EPISODE_ID = "say-sorry-ep3";
 
 const EPISODES: MemberEpisode[] = [
 
+
+  {
+  id: "had-everything-part1-ep9",
+  title: "She Had Everything… (Part 1)",
+  description:
+    "She had the kind of life people never question — until something small, private, and quietly repeated begins to change everything.",
+  thumbnailSrc: "/images/she-had-everything-part1.png",
+  tags: ["story", "human behavior", "mystery"],
+},
+
   {
   id: "lonely-night-ep7",
   title: "The Night It Ended (Or So She Thought)",
