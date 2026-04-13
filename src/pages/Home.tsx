@@ -148,7 +148,7 @@ export default function Home() {
               <img
                 src="/images/she-had-everything-part1.png"
                 alt="She Had Everything… Part 1"
-                className="mb-4 h-68 w-full rounded-xl object-cover"
+                className="mb-4 w-full aspect-[3/4] rounded-xl object-cover"
               />
 
               <p className="mt-1 text-xl font-medium">
