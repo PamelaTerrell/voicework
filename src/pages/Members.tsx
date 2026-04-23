@@ -41,6 +41,14 @@ const FREE_EPISODE_ID = "say-sorry-ep3";
 
 const EPISODES: MemberEpisode[] = [
 
+{
+    id: "had-everything-part2-ep10",
+    title: "She Had Everything… (Part 2)",
+    description:
+      "The house is quiet now. What once felt ordinary becomes priceless when it’s gone—and some lessons only arrive in silence.",
+    thumbnailSrc: "/images/she-had-everything-part2.png",
+    tags: ["story", "relationships", "regret"],
+  },
 
   {
   id: "had-everything-part1-ep9",
