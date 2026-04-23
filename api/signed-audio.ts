@@ -48,7 +48,7 @@ const EPISODE_FILE_MAP: Record<string, { preview: string; full: string }> = {
 
 "had-everything-part2-ep10": {
   preview: "had-everything-part2-ep10/full.mp3",
-  full: "had-everything-part2-ep910full.mp3",
+  full: "had-everything-part2-ep10full.mp3",
 },
 
 };
