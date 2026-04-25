@@ -42,6 +42,15 @@ const FREE_EPISODE_ID = "say-sorry-ep3";
 const EPISODES: MemberEpisode[] = [
 
 {
+  id: "never-made-you-guess-ep11",
+  title: "The One Who Never Made You Guess",
+  description:
+    "A quiet reflection on the kind of love that does not confuse you, chase you, or make you question your worth — the steady love many people only recognize after pain.",
+  thumbnailSrc: "/images/never-made-you-guessep11.png",
+  tags: ["story", "relationships", "peace"],
+},
+
+{
     id: "had-everything-part2-ep10",
     title: "She Had Everything… (Part 2)",
     description:

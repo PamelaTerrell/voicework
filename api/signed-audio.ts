@@ -51,6 +51,11 @@ const EPISODE_FILE_MAP: Record<string, { preview: string; full: string }> = {
   full: "had-everything-part2-ep10/full.mp3",
 },
 
+"never-made-you-guess-ep11": {
+  preview: "never-made-you-guess-ep11/full.mp3",
+  full: "never-made-you-guess-ep11/full.mp3",
+},
+
 };
 
 function isActiveStatus(status?: string | null) {
