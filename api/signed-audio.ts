@@ -56,6 +56,11 @@ const EPISODE_FILE_MAP: Record<string, { preview: string; full: string }> = {
   full: "never-made-you-guess-ep11/full.mp3",
 },
 
+"the-hardest-people-ep12": {
+  preview: "the-hardest-people-ep12/full.mp3",
+  full: "the-hardest-people-ep12/full.mp3",
+},
+
 };
 
 function isActiveStatus(status?: string | null) {

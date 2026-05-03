@@ -41,6 +41,15 @@ const FREE_EPISODE_ID = "say-sorry-ep3";
 
 const EPISODES: MemberEpisode[] = [
 
+  {
+  id: "the-hardest-people-ep12",
+  title: "The Hardest People to Heal From",
+  description:
+    "The hardest people to heal from are often the ones who truly loved you badly — the ones who were both comfort and chaos.",
+  thumbnailSrc: "/images/the-hardest-people-ep12.png",
+  tags: ["story", "relationships", "healing"],
+},
+
 {
   id: "never-made-you-guess-ep11",
   title: "The One Who Never Made You Guess",

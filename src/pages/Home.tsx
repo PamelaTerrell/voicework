@@ -56,8 +56,8 @@ export default function Home() {
     const shareUrl = `${window.location.origin}/#featured-story`;
 
     const shareData = {
-      title: "She Had Everything… (Part 1) | Stabile USA Night Listener",
-      text: "Listen to this free Night Listener story: She Had Everything… (Part 1).",
+      title: "The Hardest People to Heal From | Stabile USA Night Listener",
+      text: "Listen to this free Night Listener story: The Hardest People to Heal From.",
       url: shareUrl,
     };
 
@@ -82,40 +82,53 @@ export default function Home() {
 
   return (
     <div className="space-y-14">
-      <section className="relative overflow-hidden rounded-3xl border bg-background p-6 sm:p-10">
+      <section className="relative overflow-hidden rounded-3xl border bg-background p-6 shadow-sm sm:p-10">
         <div className="pointer-events-none absolute -top-24 right-[-6rem] h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 left-[-6rem] h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
 
         <div className="grid gap-10 lg:grid-cols-2 lg:items-start">
           <div className="space-y-6">
-            <div className="space-y-6">
-              <div className="w-fit rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                Night Listener • Human behavior • Story-driven audio
-              </div>
+            <div className="w-fit rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              Night Listener • Human behavior • Story-driven audio
+            </div>
 
+            <div className="space-y-5">
               <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-                Story-driven reflections on{" "}
-                <span className="bg-gradient-to-r from-[#b49a7a] to-[#8f7a60] bg-clip-text text-transparent">
-                  human behavior, relationships, and the moments we replay
+                Quiet stories about{" "}
+                <span className="bg-gradient-to-r from-[#c4a77f] to-[#8f7a60] bg-clip-text text-transparent">
+                  the feelings we carry long after the moment has passed
                 </span>
                 .
               </h1>
 
-              <p className="max-w-xl text-sm italic leading-7 text-muted-foreground/90">
-                For the conversations you replay, the things you didn’t say, and
-                the moments that stay with you longer than expected.
+              <p className="max-w-xl text-base italic leading-7 text-muted-foreground/90">
+                For the conversations you replay, the people you still wonder
+                about, and the emotional truths that only make sense later.
               </p>
             </div>
 
-            <p className="text-lg text-muted-foreground">
-              Start with one full story free, then explore a growing library of
-              calm, thoughtful audio stories about emotional patterns, private
-              unraveling, and the quiet dynamics behind everyday life.
+            <p className="text-lg leading-8 text-muted-foreground">
+              Start with tonight’s featured story free, then step into a growing
+              members-only library of calm, thoughtful audio reflections on love,
+              regret, misunderstanding, attachment, and human behavior.
             </p>
+
+            <div className="rounded-2xl border bg-muted/30 p-5">
+              <p className="text-sm font-medium">
+                Tonight’s free episode:
+              </p>
+              <p className="mt-2 text-2xl font-semibold tracking-tight">
+                The Hardest People to Heal From
+              </p>
+              <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                A reflection on the people who truly loved us badly — the ones
+                who were both shelter and sorrow.
+              </p>
+            </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Button asChild className="h-11 px-6">
-                <a href="#featured-story">Listen to the free story</a>
+                <a href="#featured-story">Listen free now</a>
               </Button>
 
               <Button asChild variant="outline" className="h-11 px-6">
@@ -128,7 +141,7 @@ export default function Home() {
             </div>
 
             <p className="text-sm text-muted-foreground">
-              One full story free • Full library for members • Calm storytelling
+              One full story free • Members-only library • Calm storytelling
               voice • Sociology-informed perspective
             </p>
           </div>
@@ -138,32 +151,35 @@ export default function Home() {
               id="featured-story"
               className="rounded-2xl border bg-background p-5 shadow-sm"
             >
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm text-muted-foreground">Start here</p>
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <p className="text-sm text-muted-foreground">
+                  Tonight’s featured story
+                </p>
                 <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
                   Free full episode
                 </span>
               </div>
 
               <img
-                src="/images/she-had-everything-part1.png"
-                alt="She Had Everything… Part 1"
-                className="mb-4 w-full aspect-[3/4] rounded-xl object-cover"
+                src="/images/the-hardest-people-ep12.png"
+                alt="The Hardest People to Heal From"
+                className="mb-4 aspect-[3/4] w-full rounded-xl object-contain"
               />
 
-              <p className="mt-1 text-xl font-medium">
-                She Had Everything… (Part 1)
+              <p className="text-xl font-medium">
+                The Hardest People to Heal From
               </p>
 
-              <p className="mt-2 text-sm text-muted-foreground">
-                A quiet story about control, escape, and the kind of shift no one
-                sees until everything begins to change.
+              <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                The hardest people to heal from are often the ones who truly
+                loved you badly. A quiet reflection on the relationships that
+                were both comfort and chaos.
               </p>
 
               <div className="mt-4 space-y-2">
                 <audio controls preload="metadata" className="w-full">
                   <source
-                    src="/audio/had-everything-part1-ep9.mp3"
+                    src="/audio/thehardestpeople.mp3"
                     type="audio/mpeg"
                   />
                   Your browser does not support the audio element.
@@ -201,9 +217,9 @@ export default function Home() {
 
             <div className="rounded-2xl border bg-muted p-5">
               <p className="text-sm font-medium">Member login</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Already a member? Sign in with your email to open your full Night
-                Listener library.
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                Already a member? Sign in with your email to open your full
+                Night Listener library.
               </p>
 
               {sessionEmail ? (
@@ -256,7 +272,9 @@ export default function Home() {
                     </Button>
 
                     {message && (
-                      <p className="text-xs text-muted-foreground">{message}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {message}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -269,20 +287,20 @@ export default function Home() {
       <section className="grid gap-4 md:grid-cols-3">
         <Card className="transition-all hover:-translate-y-0.5 hover:shadow-lg">
           <CardContent className="space-y-2 p-6">
-            <p className="font-medium">Start with one full story free</p>
-            <p className="text-sm text-muted-foreground">
-              Listen to a complete episode first, so you can feel the tone,
-              pacing, and emotional pull before joining.
+            <p className="font-medium">Start with a full story free</p>
+            <p className="text-sm leading-6 text-muted-foreground">
+              Listen first, feel the tone, and decide whether Night Listener is
+              the kind of quiet place you want to return to.
             </p>
           </CardContent>
         </Card>
 
         <Card className="transition-all hover:-translate-y-0.5 hover:shadow-lg">
           <CardContent className="space-y-2 p-6">
-            <p className="font-medium">Stories that stay with you</p>
-            <p className="text-sm text-muted-foreground">
-              Each story explores familiar emotions, unfinished conversations,
-              and the quiet patterns behind human behavior.
+            <p className="font-medium">Human behavior, softly told</p>
+            <p className="text-sm leading-6 text-muted-foreground">
+              Each episode explores relationships, private regret, emotional
+              patterns, and the thoughts people rarely say out loud.
             </p>
           </CardContent>
         </Card>
@@ -290,10 +308,9 @@ export default function Home() {
         <Card className="transition-all hover:-translate-y-0.5 hover:shadow-lg">
           <CardContent className="space-y-2 p-6">
             <p className="font-medium">A growing members-only library</p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm leading-6 text-muted-foreground">
               Membership unlocks the full Night Listener collection, with more
-              thoughtful stories to return to whenever you want something calm,
-              curious, and deeply human.
+              thoughtful stories added as the library grows.
             </p>
           </CardContent>
         </Card>
@@ -305,7 +322,7 @@ export default function Home() {
             <p className="text-lg font-medium">
               Ready for the full Night Listener experience?
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm leading-6 text-muted-foreground">
               Begin with the free story, explore more previews, or unlock the
               full library with membership.
             </p>
