@@ -42,6 +42,15 @@ const FREE_EPISODE_ID = "say-sorry-ep3";
 const EPISODES: MemberEpisode[] = [
 
   {
+  id: "life-you-didnt-get-ep13",
+  title: "The Life You Almost Didn’t Get",
+  description:
+    "A quiet reflection on love, choice, the road not taken, and the ache of wondering who you might have become if life had stayed on its original course.",
+  thumbnailSrc: "/images/the-life-you-almost-didnt-get.png",
+  tags: ["reflection", "love", "what might have been"],
+},
+
+  {
   id: "the-hardest-people-ep12",
   title: "The Hardest People to Heal From",
   description:
