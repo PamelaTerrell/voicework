@@ -62,7 +62,7 @@ const EPISODE_FILE_MAP: Record<string, { preview: string; full: string }> = {
 },
 
 "life-you-didnt-get-ep13": {
-  preview: "life-you-didnt-get-ep11/full.mp3",
+  preview: "life-you-didnt-get-ep13/full.mp3",
   full: "life-you-didnt-get-ep11/full.mp3",
 },
 
