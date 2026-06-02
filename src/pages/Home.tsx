@@ -14,6 +14,16 @@ export default function Home() {
   const [shareMessage, setShareMessage] = useState("");
   const [sharing, setSharing] = useState(false);
 
+  const [storyTitle, setStoryTitle] = useState("");
+  const [storyCategory, setStoryCategory] = useState("Something I never forgot");
+  const [storyBody, setStoryBody] = useState("");
+  const [namePreference, setNamePreference] = useState("Keep me anonymous");
+  const [submitterName, setSubmitterName] = useState("");
+  const [submitterEmail, setSubmitterEmail] = useState("");
+  const [permissionGranted, setPermissionGranted] = useState(false);
+  const [storySubmitting, setStorySubmitting] = useState(false);
+  const [storyMessage, setStoryMessage] = useState("");
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSessionEmail(data.session?.user.email ?? null);
@@ -80,6 +90,54 @@ export default function Home() {
     }
   }
 
+  async function submitStory() {
+    setStoryMessage("");
+
+    if (!storyBody.trim()) {
+      setStoryMessage("Please share your story before submitting.");
+      return;
+    }
+
+    if (!permissionGranted) {
+      setStoryMessage("Please check the permission box before submitting.");
+      return;
+    }
+
+    setStorySubmitting(true);
+
+    try {
+      const { error } = await supabase.from("story_submissions").insert({
+        story_title: storyTitle.trim() || null,
+        story_category: storyCategory,
+        story_body: storyBody.trim(),
+        permission_granted: permissionGranted,
+        name_preference: namePreference,
+        submitter_name: submitterName.trim() || null,
+        submitter_email: submitterEmail.trim() || null,
+        status: "new",
+      });
+
+      if (error) {
+        setStoryMessage(error.message);
+        return;
+      }
+
+      setStoryMessage(
+        "Thank you for trusting Stabile USA with your story. Your submission was received."
+      );
+
+      setStoryTitle("");
+      setStoryCategory("Something I never forgot");
+      setStoryBody("");
+      setNamePreference("Keep me anonymous");
+      setSubmitterName("");
+      setSubmitterEmail("");
+      setPermissionGranted(false);
+    } finally {
+      setStorySubmitting(false);
+    }
+  }
+
   return (
     <div className="space-y-14">
       <section className="relative overflow-hidden rounded-3xl border bg-background p-6 shadow-sm sm:p-10">
@@ -114,9 +172,7 @@ export default function Home() {
             </p>
 
             <div className="rounded-2xl border bg-muted/30 p-5">
-              <p className="text-sm font-medium">
-                Tonight’s free episode:
-              </p>
+              <p className="text-sm font-medium">Tonight’s free episode:</p>
               <p className="mt-2 text-2xl font-semibold tracking-tight">
                 The Hardest People to Heal From
               </p>
@@ -178,10 +234,7 @@ export default function Home() {
 
               <div className="mt-4 space-y-2">
                 <audio controls preload="metadata" className="w-full">
-                  <source
-                    src="/audio/thehardestpeople.mp3"
-                    type="audio/mpeg"
-                  />
+                  <source src="/audio/thehardestpeople.mp3" type="audio/mpeg" />
                   Your browser does not support the audio element.
                 </audio>
 
@@ -316,6 +369,176 @@ export default function Home() {
         </Card>
       </section>
 
+      <section
+        id="submit-story"
+        className="relative overflow-hidden rounded-3xl border bg-background p-6 shadow-sm sm:p-10"
+      >
+        <div className="pointer-events-none absolute -right-24 top-10 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
+
+        <div className="relative grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+          <div className="space-y-5">
+            <div className="w-fit rounded-full border bg-muted px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              True stories • Listener submissions
+            </div>
+
+            <div className="space-y-3">
+              <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+                Submit a true story you still think about.
+              </h2>
+
+              <p className="text-base leading-7 text-muted-foreground">
+                It does not have to be shocking. It just has to be real. A
+                strange conversation. A moment of intuition. A relationship
+                lesson. A season of starting over. A night when something felt
+                different.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border bg-muted/30 p-5">
+              <p className="text-sm font-medium">How selected stories may be used</p>
+              <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                Stabile USA may adapt selected submissions into future narrated
+                Night Listener episodes. Names, locations, and identifying
+                details may be changed for privacy, clarity, tone, and length.
+              </p>
+            </div>
+
+            <p className="text-xs leading-6 text-muted-foreground">
+              Please do not include private addresses, phone numbers, medical
+              records, financial details, or accusations against clearly
+              identifiable people.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border bg-muted/30 p-5 sm:p-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium" htmlFor="story-title">
+                  Story title
+                </label>
+                <Input
+                  id="story-title"
+                  value={storyTitle}
+                  onChange={(e) => setStoryTitle(e.target.value)}
+                  placeholder="Example: The Phone Call I Still Think About"
+                  className="rounded-xl bg-background"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium" htmlFor="story-category">
+                  What kind of story is this?
+                </label>
+                <select
+                  id="story-category"
+                  value={storyCategory}
+                  onChange={(e) => setStoryCategory(e.target.value)}
+                  className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
+                >
+                  <option>Intuition</option>
+                  <option>Relationship lesson</option>
+                  <option>Strange encounter</option>
+                  <option>Starting over</option>
+                  <option>Family story</option>
+                  <option>Friendship story</option>
+                  <option>Work story</option>
+                  <option>Something I never forgot</option>
+                  <option>Other</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium" htmlFor="story-body">
+                  Tell your story
+                </label>
+                <textarea
+                  id="story-body"
+                  value={storyBody}
+                  onChange={(e) => setStoryBody(e.target.value)}
+                  placeholder="Share the story in your own words..."
+                  className="min-h-[180px] w-full rounded-xl border bg-background px-3 py-3 text-sm leading-6 outline-none ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium" htmlFor="name-preference">
+                    Name preference
+                  </label>
+                  <select
+                    id="name-preference"
+                    value={namePreference}
+                    onChange={(e) => setNamePreference(e.target.value)}
+                    className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
+                  >
+                    <option>Keep me anonymous</option>
+                    <option>First name only</option>
+                    <option>A fake name is fine</option>
+                    <option>Contact me before using any name</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium" htmlFor="submitter-name">
+                    Your name
+                  </label>
+                  <Input
+                    id="submitter-name"
+                    value={submitterName}
+                    onChange={(e) => setSubmitterName(e.target.value)}
+                    placeholder="Optional"
+                    className="rounded-xl bg-background"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium" htmlFor="submitter-email">
+                  Email address
+                </label>
+                <Input
+                  id="submitter-email"
+                  type="email"
+                  value={submitterEmail}
+                  onChange={(e) => setSubmitterEmail(e.target.value)}
+                  placeholder="Optional, but helpful if I need to follow up"
+                  className="rounded-xl bg-background"
+                />
+              </div>
+
+              <label className="flex gap-3 rounded-2xl border bg-background p-4 text-sm leading-6">
+                <input
+                  type="checkbox"
+                  checked={permissionGranted}
+                  onChange={(e) => setPermissionGranted(e.target.checked)}
+                  className="mt-1"
+                />
+                <span>
+                  Yes, I give Stabile USA permission to adapt, edit, narrate,
+                  and publish this story. I understand that names, locations,
+                  and identifying details may be changed.
+                </span>
+              </label>
+
+              <Button
+                type="button"
+                onClick={submitStory}
+                disabled={storySubmitting}
+                className="w-full sm:w-auto"
+              >
+                {storySubmitting ? "Submitting..." : "Submit your story"}
+              </Button>
+
+              {storyMessage && (
+                <p className="text-sm leading-6 text-muted-foreground">
+                  {storyMessage}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="rounded-3xl border bg-background p-6 sm:p-10">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
@@ -323,8 +546,8 @@ export default function Home() {
               Ready for the full Night Listener experience?
             </p>
             <p className="text-sm leading-6 text-muted-foreground">
-              Begin with the free story, explore more previews, or unlock the
-              full library with membership.
+              Begin with the free story, explore more previews, unlock the full
+              library, or submit a true story of your own.
             </p>
           </div>
 
@@ -339,6 +562,10 @@ export default function Home() {
 
             <Button asChild variant="secondary">
               <Link to="/members">Members</Link>
+            </Button>
+
+            <Button asChild variant="outline">
+              <a href="#submit-story">Submit a story</a>
             </Button>
           </div>
         </div>
