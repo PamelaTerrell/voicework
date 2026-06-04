@@ -107,14 +107,6 @@ export default function SiteLayout() {
               <div className="flex flex-wrap items-center gap-4">
                 <NavItem to="/" label="Home" />
                 <NavItem to="/listen" label="Listen" />
-
-                <a
-                  href="/#submit-story"
-                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  Submit a Story
-                </a>
-
                 <NavItem to="/join" label="Join" />
                 <NavItem to="/contact" label="Contact" />
               </div>
