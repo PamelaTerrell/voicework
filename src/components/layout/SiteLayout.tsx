@@ -29,15 +29,29 @@ export default function SiteLayout() {
     <div className="min-h-screen bg-background">
       {/* HEADER */}
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur">
+        {/* TOP ANNOUNCEMENT BAR */}
+        <div className="border-b bg-muted/70 px-4 py-2 text-center text-sm text-muted-foreground">
+          <a
+            href="/#submit-story"
+            className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
+          >
+            Submit a true story you still think about
+          </a>
+          <span className="hidden sm:inline">
+            {" "}
+            — selected stories may become future Night Listener episodes.
+          </span>
+        </div>
+
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
-          <Link to="/" className="flex items-center gap-3">
+          <Link to="/" className="flex min-w-0 items-center gap-3">
             <img
               src="/images/night-listener.png"
               alt="Night Listener"
-              className="h-9 w-9 rounded-full object-cover"
+              className="h-9 w-9 shrink-0 rounded-full object-cover"
             />
 
-            <div className="leading-tight">
+            <div className="min-w-0 leading-tight">
               <div className="flex flex-wrap items-baseline gap-2">
                 <span className="font-semibold tracking-tight">
                   Night Listener
@@ -54,7 +68,7 @@ export default function SiteLayout() {
             </div>
           </Link>
 
-          {/* NAV */}
+          {/* DESKTOP NAV */}
           <nav className="hidden items-center gap-6 sm:flex">
             <NavItem to="/" label="Home" />
             <NavItem to="/listen" label="Listen" />
@@ -62,13 +76,25 @@ export default function SiteLayout() {
             <NavItem to="/contact" label="Contact" />
           </nav>
 
-          {/* ACTIONS */}
+          {/* DESKTOP ACTIONS */}
           <div className="hidden items-center gap-2 lg:flex">
-            <Button asChild variant="outline" className="hidden sm:inline-flex">
+            <Button
+              asChild
+              variant="outline"
+              className="hidden whitespace-nowrap sm:inline-flex"
+            >
+              <a href="/#submit-story">Submit a Story</a>
+            </Button>
+
+            <Button
+              asChild
+              variant="outline"
+              className="hidden whitespace-nowrap sm:inline-flex"
+            >
               <Link to="/listen">Play a preview</Link>
             </Button>
 
-            <Button asChild>
+            <Button asChild className="hidden whitespace-nowrap sm:inline-flex">
               <Link to="/join">Unlock Membership</Link>
             </Button>
           </div>
@@ -77,18 +103,31 @@ export default function SiteLayout() {
         {/* MOBILE + AUTH */}
         <div className="border-t">
           <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center justify-between sm:hidden">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-3 sm:hidden">
+              <div className="flex flex-wrap items-center gap-4">
                 <NavItem to="/" label="Home" />
                 <NavItem to="/listen" label="Listen" />
+
+                <a
+                  href="/#submit-story"
+                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Submit a Story
+                </a>
+
                 <NavItem to="/join" label="Join" />
                 <NavItem to="/contact" label="Contact" />
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button asChild variant="outline" size="sm">
+                  <a href="/#submit-story">Submit</a>
+                </Button>
+
                 <Button asChild variant="outline" size="sm">
                   <Link to="/listen">Preview</Link>
                 </Button>
+
                 <Button asChild size="sm">
                   <Link to="/join">Join</Link>
                 </Button>
@@ -142,6 +181,13 @@ export default function SiteLayout() {
                 className="transition hover:text-foreground"
               >
                 Email
+              </a>
+
+              <a
+                href="/#submit-story"
+                className="transition hover:text-foreground"
+              >
+                Submit a Story
               </a>
 
               <Link to="/contact" className="transition hover:text-foreground">

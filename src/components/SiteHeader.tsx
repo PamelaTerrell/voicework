@@ -29,6 +29,19 @@ function NavLink({
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <div className="border-b bg-muted/70 px-4 py-2 text-center text-sm text-muted-foreground">
+        <a
+          href="/#submit-story"
+          className="font-medium text-foreground underline underline-offset-4 hover:text-primary"
+        >
+          Submit a true story you still think about
+        </a>
+        <span className="hidden sm:inline">
+          {" "}
+          — selected stories may become future Night Listener episodes.
+        </span>
+      </div>
+
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-6 py-4">
         <div className="flex min-w-0 items-center gap-8">
           <Link to="/" className="min-w-0">
@@ -84,7 +97,37 @@ export function SiteHeader() {
       </div>
 
       <div className="border-t px-6 py-3 lg:hidden">
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl space-y-3">
+          <div className="flex flex-wrap gap-3 text-sm">
+            <a
+              href="/#submit-story"
+              className="font-medium text-foreground underline underline-offset-4"
+            >
+              Submit a Story
+            </a>
+
+            <Link
+              to="/listen"
+              className="font-medium text-muted-foreground hover:text-foreground"
+            >
+              Listen
+            </Link>
+
+            <Link
+              to="/join"
+              className="font-medium text-muted-foreground hover:text-foreground"
+            >
+              Join
+            </Link>
+
+            <Link
+              to="/contact"
+              className="font-medium text-muted-foreground hover:text-foreground"
+            >
+              Contact
+            </Link>
+          </div>
+
           <Auth />
         </div>
       </div>
