@@ -51,12 +51,24 @@ export function SiteHeader() {
           <nav className="hidden items-center gap-8 md:flex">
             <NavLink to="/" label="Home" />
             <NavLink to="/listen" label="Listen" />
+
+            <a
+              href="/#submit-story"
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Submit a Story
+            </a>
+
             <NavLink to="/join" label="Join" />
             <NavLink to="/contact" label="Contact" />
           </nav>
         </div>
 
         <div className="flex items-center gap-3">
+          <Button asChild variant="outline" className="hidden sm:inline-flex">
+            <a href="/#submit-story">Submit a Story</a>
+          </Button>
+
           <Button asChild variant="outline" className="hidden sm:inline-flex">
             <Link to="/listen">Play a preview</Link>
           </Button>
