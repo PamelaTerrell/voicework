@@ -170,6 +170,31 @@ export default function SiteLayout() {
               </a>
 
               <a
+                href="https://instagram.com/stabileusa"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Instagram"
+                className="inline-flex items-center gap-2 transition hover:text-foreground"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-4 w-4"
+                  aria-hidden="true"
+                >
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                  <path d="M17.5 6.5h.01" />
+                </svg>
+                <span>Instagram</span>
+              </a>
+
+              <a
                 href="/#submit-story"
                 className="transition hover:text-foreground"
               >
