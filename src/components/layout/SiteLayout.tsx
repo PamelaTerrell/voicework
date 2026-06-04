@@ -51,19 +51,13 @@ export default function SiteLayout() {
               className="h-9 w-9 shrink-0 rounded-full object-cover"
             />
 
-            <div className="min-w-0 leading-tight">
-              <div className="flex flex-wrap items-baseline gap-2">
-                <span className="font-semibold tracking-tight">
-                  Night Listener
-                </span>
-
-                <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                  A Stabile USA Product
-                </span>
+            <div className="min-w-0 space-y-1">
+              <div className="font-semibold tracking-tight text-foreground">
+                Night Listener
               </div>
 
-              <div className="hidden text-xs text-muted-foreground sm:block">
-                Story-driven reflections on human behavior
+              <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                A Stabile USA Product
               </div>
             </div>
           </Link>
