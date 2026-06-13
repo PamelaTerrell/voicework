@@ -66,6 +66,11 @@ const EPISODE_FILE_MAP: Record<string, { preview: string; full: string }> = {
   full: "life-you-didnt-get-ep13/full.mp3",
 },
 
+"toast-ep14": {
+  preview: "toast-ep14/full.mp3",
+  full: "toast-ep14/full.mp3",
+},
+
 };
 
 function isActiveStatus(status?: string | null) {
