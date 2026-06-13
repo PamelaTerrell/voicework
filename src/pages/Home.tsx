@@ -66,8 +66,8 @@ export default function Home() {
     const shareUrl = `${window.location.origin}/#featured-story`;
 
     const shareData = {
-      title: "The Hardest People to Heal From | Stabile USA Night Listener",
-      text: "Listen to this free Night Listener story: The Hardest People to Heal From.",
+      title: "A Toast to the End of Us | Stabile USA Night Listener",
+      text: "Listen to this free Night Listener story: A Toast to the End of Us.",
       url: shareUrl,
     };
 
@@ -174,11 +174,11 @@ export default function Home() {
             <div className="rounded-2xl border bg-muted/30 p-5">
               <p className="text-sm font-medium">Tonight’s free episode:</p>
               <p className="mt-2 text-2xl font-semibold tracking-tight">
-                The Hardest People to Heal From
+                A Toast to the End of Us
               </p>
               <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                A reflection on the people who truly loved us badly — the ones
-                who were both shelter and sorrow.
+                A quiet story about familiarity, contempt, eye rolls, and the
+                small everyday criticisms that can slowly end a marriage.
               </p>
             </div>
 
@@ -217,24 +217,21 @@ export default function Home() {
               </div>
 
               <img
-                src="/images/the-hardest-people-ep12.png"
-                alt="The Hardest People to Heal From"
+                src="/images/toast-ep14.png"
+                alt="A Toast to the End of Us"
                 className="mb-4 aspect-[3/4] w-full rounded-xl object-contain"
               />
 
-              <p className="text-xl font-medium">
-                The Hardest People to Heal From
-              </p>
+              <p className="text-xl font-medium">A Toast to the End of Us</p>
 
               <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                The hardest people to heal from are often the ones who truly
-                loved you badly. A quiet reflection on the relationships that
-                were both comfort and chaos.
+                A quiet story about familiarity, contempt, eye rolls, and the
+                small everyday criticisms that can slowly end a marriage.
               </p>
 
               <div className="mt-4 space-y-2">
                 <audio controls preload="metadata" className="w-full">
-                  <source src="/audio/thehardestpeople.mp3" type="audio/mpeg" />
+                  <source src="/audio/toast-ep14.mp3" type="audio/mpeg" />
                   Your browser does not support the audio element.
                 </audio>
 
@@ -395,7 +392,9 @@ export default function Home() {
             </div>
 
             <div className="rounded-2xl border bg-muted/30 p-5">
-              <p className="text-sm font-medium">How selected stories may be used</p>
+              <p className="text-sm font-medium">
+                How selected stories may be used
+              </p>
               <p className="mt-2 text-sm leading-7 text-muted-foreground">
                 Stabile USA may adapt selected submissions into future narrated
                 Night Listener episodes. Names, locations, and identifying
@@ -462,7 +461,10 @@ export default function Home() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium" htmlFor="name-preference">
+                  <label
+                    className="text-sm font-medium"
+                    htmlFor="name-preference"
+                  >
                     Name preference
                   </label>
                   <select
@@ -479,7 +481,10 @@ export default function Home() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium" htmlFor="submitter-name">
+                  <label
+                    className="text-sm font-medium"
+                    htmlFor="submitter-name"
+                  >
                     Your name
                   </label>
                   <Input
@@ -493,7 +498,10 @@ export default function Home() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium" htmlFor="submitter-email">
+                <label
+                  className="text-sm font-medium"
+                  htmlFor="submitter-email"
+                >
                   Email address
                 </label>
                 <Input
