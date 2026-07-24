@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { track } from "@vercel/analytics";
 import { supabase } from "@/lib/supabaseClient";
 import { sendMagicLink } from "@/lib/sendMagicLink";
 import { Button } from "@/components/ui/button";
@@ -27,24 +28,50 @@ export function Auth() {
     setLoading(true);
     setMessage("");
 
+    // Do not send the visitor's email address to analytics.
+    track("Magic Link Requested", {
+      location: "site-header",
+    });
+
     try {
       const { error } = await sendMagicLink(email);
 
       if (error) {
+        track("Magic Link Failed", {
+          location: "site-header",
+          reason: error.message.slice(0, 100),
+        });
+
         setMessage(error.message);
         return;
       }
 
+      track("Magic Link Sent", {
+        location: "site-header",
+      });
+
       setMessage(
         "Magic link sent. Check your email and use the same address you used for Stripe."
       );
+
       setEmail("");
+    } catch {
+      track("Magic Link Failed", {
+        location: "site-header",
+        reason: "Unexpected error",
+      });
+
+      setMessage("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
   }
 
   async function signOut() {
+    track("Member Signed Out", {
+      location: "site-header",
+    });
+
     await supabase.auth.signOut();
     setMessage("");
   }
@@ -57,10 +84,23 @@ export function Auth() {
         </div>
 
         <Button asChild variant="outline" className="rounded-xl">
-          <Link to="/members">Members</Link>
+          <Link
+            to="/members"
+            onClick={() =>
+              track("Members Page Clicked", {
+                location: "authenticated-header",
+              })
+            }
+          >
+            Members
+          </Link>
         </Button>
 
-        <Button variant="secondary" className="rounded-xl" onClick={signOut}>
+        <Button
+          variant="secondary"
+          className="rounded-xl"
+          onClick={signOut}
+        >
           Sign out
         </Button>
       </div>
@@ -74,6 +114,11 @@ export function Auth() {
         placeholder="you@example.com"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && email && !loading) {
+            void sendLink();
+          }
+        }}
         className="w-64 rounded-xl"
       />
 
@@ -86,7 +131,10 @@ export function Auth() {
       </Button>
 
       {message && (
-        <p className="w-full text-right text-xs text-muted-foreground sm:text-left">
+        <p
+          className="w-full text-right text-xs text-muted-foreground sm:text-left"
+          aria-live="polite"
+        >
           {message}
         </p>
       )}

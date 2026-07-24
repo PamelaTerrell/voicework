@@ -2,13 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Auth } from "@/components/Auth";
 import { Button } from "@/components/ui/button";
 
-function NavLink({
-  to,
-  label,
-}: {
-  to: string;
-  label: string;
-}) {
+function NavLink({ to, label }: { to: string; label: string }) {
   const location = useLocation();
   const active = location.pathname === to;
 
@@ -64,6 +58,7 @@ export function SiteHeader() {
           <nav className="hidden items-center gap-8 md:flex">
             <NavLink to="/" label="Home" />
             <NavLink to="/listen" label="Listen" />
+            <NavLink to="/classic-readings" label="Classic Readings" />
 
             <a
               href="/#submit-story"
@@ -111,6 +106,13 @@ export function SiteHeader() {
               className="font-medium text-muted-foreground hover:text-foreground"
             >
               Listen
+            </Link>
+
+            <Link
+              to="/classic-readings"
+              className="font-medium text-muted-foreground hover:text-foreground"
+            >
+              Classic Readings
             </Link>
 
             <Link

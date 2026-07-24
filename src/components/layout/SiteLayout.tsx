@@ -66,6 +66,7 @@ export default function SiteLayout() {
           <nav className="hidden items-center gap-6 sm:flex">
             <NavItem to="/" label="Home" />
             <NavItem to="/listen" label="Listen" />
+            {/*<NavItem to="/classic-readings" label="Classic Readings" />*/}
             <NavItem to="/join" label="Join" />
             <NavItem to="/contact" label="Contact" />
           </nav>
@@ -101,6 +102,7 @@ export default function SiteLayout() {
               <div className="flex flex-wrap items-center gap-4">
                 <NavItem to="/" label="Home" />
                 <NavItem to="/listen" label="Listen" />
+                <NavItem to="/classic-readings" label="Classic Readings" />
                 <NavItem to="/join" label="Join" />
                 <NavItem to="/contact" label="Contact" />
               </div>
@@ -193,6 +195,13 @@ export default function SiteLayout() {
                 </svg>
                 <span>Instagram</span>
               </a>
+
+              <Link
+                to="/classic-readings"
+                className="transition hover:text-foreground"
+              >
+                Classic Readings
+              </Link>
 
               <a
                 href="/#submit-story"
