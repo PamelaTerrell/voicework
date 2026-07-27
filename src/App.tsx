@@ -14,7 +14,7 @@ import Contact from "@/pages/Contact";
 import Thanks from "@/pages/Thanks";
 import Demos from "@/pages/Demos";
 import AuthCallback from "@/pages/AuthCallback";
-import Classics from "@/pages/Classics";
+
 
 import { SiteHeader } from "@/components/SiteHeader";
 
@@ -50,7 +50,7 @@ export default function App() {
             <Route path="/thanks" element={<Thanks />} />
             <Route path="/demos" element={<Demos />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/classic-readings" element={<Classics />} />
+           
           </Routes>
         </main>
       </div>

@@ -196,12 +196,7 @@ export default function SiteLayout() {
                 <span>Instagram</span>
               </a>
 
-              <Link
-                to="/classic-readings"
-                className="transition hover:text-foreground"
-              >
-                Classic Readings
-              </Link>
+              
 
               <a
                 href="/#submit-story"

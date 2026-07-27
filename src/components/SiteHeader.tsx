@@ -108,12 +108,7 @@ export function SiteHeader() {
               Listen
             </Link>
 
-            <Link
-              to="/classic-readings"
-              className="font-medium text-muted-foreground hover:text-foreground"
-            >
-              Classic Readings
-            </Link>
+            
 
             <Link
               to="/join"

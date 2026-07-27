@@ -12,7 +12,7 @@ import ContactThanks from "@/pages/ContactThanks";
 import Thanks from "@/pages/Thanks";
 import Members from "@/pages/Members";
 import AuthCallback from "@/pages/AuthCallback";
-import Classics from "@/pages/Classics";
+
 
 const router = createBrowserRouter([
   {
@@ -21,7 +21,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Home /> },
       { path: "listen", element: <Listen /> },
-      { path: "classic-readings", element: <Classics /> },
+     
       { path: "join", element: <Join /> },
       { path: "demos", element: <Listen /> },
       { path: "contact", element: <Contact /> },
