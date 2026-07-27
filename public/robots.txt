@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+Disallow: /members
+Disallow: /auth/
+
+Sitemap: https://stabileusa.com/sitemap.xml
