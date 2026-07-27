@@ -140,199 +140,315 @@ export default function Home() {
 
   return (
     <div className="space-y-14">
-      <section className="relative overflow-hidden rounded-3xl border bg-background p-6 shadow-sm sm:p-10">
-        <div className="pointer-events-none absolute -top-24 right-[-6rem] h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 left-[-6rem] h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
+      {/* STABILE USA PARENT BRAND HERO */}
+<section className="relative overflow-hidden rounded-3xl border border-[#c8a96b]/25 bg-[#050b13] shadow-[0_30px_100px_rgba(0,0,0,0.35)]">
+  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,170,95,0.16),transparent_38%),radial-gradient(circle_at_bottom_right,rgba(44,113,168,0.18),transparent_42%)]" />
 
-        <div className="grid gap-10 lg:grid-cols-2 lg:items-start">
-          <div className="space-y-6">
-            <div className="w-fit rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-              Night Listener • Human behavior • Story-driven audio
-            </div>
+  <div className="relative">
+  <div className="relative overflow-hidden">
+    <img
+      src="/images/stabileusalogo.png"
+      alt="Stabile USA digital media brand — creative ideas built to last, advancing the human experience"
+      className="block h-auto w-full object-contain"
+    />
 
-            <div className="space-y-5">
-              <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-                Quiet stories about{" "}
-                <span className="bg-gradient-to-r from-[#c4a77f] to-[#8f7a60] bg-clip-text text-transparent">
-                  the feelings we carry long after the moment has passed
-                </span>
-                .
-              </h1>
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#050b13]/40 to-transparent" />
+  </div>
 
-              <p className="max-w-xl text-base italic leading-7 text-muted-foreground/90">
-                For the conversations you replay, the people you still wonder
-                about, and the emotional truths that only make sense later.
-              </p>
-            </div>
+     <div className="relative px-6 pb-8 pt-6 sm:px-10 sm:pb-10 sm:pt-8">
+    <div className="max-w-3xl rounded-3xl border border-white/10 bg-[#07111d]/90 p-6 shadow-2xl backdrop-blur-md sm:p-8">
+      
+        <div className="mb-4 w-fit rounded-full border border-[#d6b477]/30 bg-[#d6b477]/10 px-4 py-1.5 text-[11px] font-medium uppercase tracking-[0.22em] text-[#e4c98f]">
+          The parent brand behind Night Listener
+        </div>
 
-            <p className="text-lg leading-8 text-muted-foreground">
-              Start with tonight’s featured story free, then step into a growing
-              members-only library of calm, thoughtful audio reflections on love,
-              regret, misunderstanding, attachment, and human behavior.
+        <h1 className="text-3xl font-semibold leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">
+          Independent creative ideas.
+          <span className="mt-1 block bg-gradient-to-r from-[#f2d49b] via-[#d5b16d] to-[#9fc7e8] bg-clip-text text-transparent">
+            Built to last.
+          </span>
+        </h1>
+
+        <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg sm:leading-8">
+          Stabile USA is an independent digital media brand creating thoughtful
+          stories, useful experiences, and original ideas designed to advance
+          the human experience.
+        </p>
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+            <p className="text-sm font-medium text-[#e6cb98]">
+              Creative ideas
             </p>
-
-            <div className="rounded-2xl border bg-muted/30 p-5">
-              <p className="text-sm font-medium">Tonight’s free episode:</p>
-              <p className="mt-2 text-2xl font-semibold tracking-tight">
-                A Toast to the End of Us
-              </p>
-              <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                A quiet story about familiarity, contempt, eye rolls, and the
-                small everyday criticisms that can slowly end a marriage.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <Button asChild className="h-11 px-6">
-                <a href="#featured-story">Listen free now</a>
-              </Button>
-
-              <Button asChild variant="outline" className="h-11 px-6">
-                <Link to="/join">Unlock the full library</Link>
-              </Button>
-
-              <Button asChild variant="secondary" className="h-11 px-6">
-                <Link to="/listen">Hear more previews</Link>
-              </Button>
-            </div>
-
-            <p className="text-sm text-muted-foreground">
-              One full story free • Members-only library • Calm storytelling
-              voice • Sociology-informed perspective
+            <p className="mt-1 text-sm leading-6 text-slate-400">
+              Original concepts with meaning, purpose, and an independent
+              point of view.
             </p>
           </div>
 
-          <div className="space-y-4">
-            <div
-              id="featured-story"
-              className="rounded-2xl border bg-background p-5 shadow-sm"
-            >
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <p className="text-sm text-muted-foreground">
-                  Tonight’s featured story
-                </p>
-                <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
-                  Free full episode
-                </span>
-              </div>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+            <p className="text-sm font-medium text-[#e6cb98]">
+              Built to last
+            </p>
+            <p className="mt-1 text-sm leading-6 text-slate-400">
+              Digital projects created for lasting usefulness rather than
+              temporary attention.
+            </p>
+          </div>
 
-              <img
-                src="/images/toast-ep14.png"
-                alt="A Toast to the End of Us"
-                className="mb-4 aspect-[3/4] w-full rounded-xl object-contain"
-              />
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+            <p className="text-sm font-medium text-[#e6cb98]">
+              Human experience
+            </p>
+            <p className="mt-1 text-sm leading-6 text-slate-400">
+              Stories and solutions that help people understand, connect, and
+              move forward.
+            </p>
+          </div>
+        </div>
 
-              <p className="text-xl font-medium">A Toast to the End of Us</p>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+          <Button asChild className="h-11 px-6">
+            <a href="#night-listener">Discover Night Listener</a>
+          </Button>
 
-              <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                A quiet story about familiarity, contempt, eye rolls, and the
-                small everyday criticisms that can slowly end a marriage.
+          <Button
+            asChild
+            variant="outline"
+            className="h-11 border-white/20 bg-white/5 px-6 text-white hover:bg-white/10 hover:text-white"
+          >
+            <a href="#submit-story">Share your story</a>
+          </Button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{/* NIGHT LISTENER — A STABILE USA ORIGINAL */}
+<section
+  id="night-listener"
+  className="relative scroll-mt-24 overflow-hidden rounded-3xl border bg-background p-6 shadow-sm sm:p-10"
+>
+  <div className="pointer-events-none absolute -top-24 right-[-6rem] h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
+  <div className="pointer-events-none absolute -bottom-24 left-[-6rem] h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
+
+  <div className="relative mb-8 flex flex-col gap-4 border-b pb-7 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <div className="mb-3 w-fit rounded-full border bg-muted px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+        A Stabile USA original
+      </div>
+
+      <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+        Night Listener
+      </h2>
+
+      <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
+        Quiet, story-driven audio about human behavior, private emotions, and
+        the moments people continue carrying long after they have passed.
+      </p>
+    </div>
+
+    <p className="max-w-sm text-sm italic leading-6 text-muted-foreground">
+      Stories that inspire reflection, understanding, and deeper human
+      connection.
+    </p>
+  </div>
+
+  <div className="relative grid gap-10 lg:grid-cols-2 lg:items-start">
+    <div className="space-y-6">
+      <div className="w-fit rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+        Human behavior • Story-driven audio • Quiet reflection
+      </div>
+
+      <div className="space-y-5">
+        <h3 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
+          Quiet stories about{" "}
+          <span className="bg-gradient-to-r from-[#c4a77f] to-[#8f7a60] bg-clip-text text-transparent">
+            the feelings we carry long after the moment has passed
+          </span>
+          .
+        </h3>
+
+        <p className="max-w-xl text-base italic leading-7 text-muted-foreground/90">
+          For the conversations you replay, the people you still wonder about,
+          and the emotional truths that only make sense later.
+        </p>
+      </div>
+
+      <p className="text-lg leading-8 text-muted-foreground">
+        Start with tonight’s featured story free, then step into a growing
+        members-only library of calm, thoughtful audio reflections on love,
+        regret, misunderstanding, attachment, and human behavior.
+      </p>
+
+      <div className="rounded-2xl border bg-muted/30 p-5">
+        <p className="text-sm font-medium">Tonight’s free episode:</p>
+
+        <p className="mt-2 text-2xl font-semibold tracking-tight">
+          A Toast to the End of Us
+        </p>
+
+        <p className="mt-3 text-sm leading-7 text-muted-foreground">
+          A quiet story about familiarity, contempt, eye rolls, and the small
+          everyday criticisms that can slowly end a marriage.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+        <Button asChild className="h-11 px-6">
+          <a href="#featured-story">Listen free now</a>
+        </Button>
+
+        <Button asChild variant="outline" className="h-11 px-6">
+          <Link to="/join">Unlock the full library</Link>
+        </Button>
+
+        <Button asChild variant="secondary" className="h-11 px-6">
+          <Link to="/listen">Hear more previews</Link>
+        </Button>
+      </div>
+
+      <p className="text-sm text-muted-foreground">
+        One full story free • Members-only library • Calm storytelling voice •
+        Sociology-informed perspective
+      </p>
+    </div>
+
+    <div className="space-y-4">
+      <div
+        id="featured-story"
+        className="scroll-mt-24 rounded-2xl border bg-background p-5 shadow-sm"
+      >
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            Tonight’s featured story
+          </p>
+
+          <span className="rounded-full bg-muted px-3 py-1 text-xs text-muted-foreground">
+            Free full episode
+          </span>
+        </div>
+
+        <img
+          src="/images/toast-ep14.png"
+          alt="A Toast to the End of Us"
+          className="mb-4 aspect-[3/4] w-full rounded-xl object-contain"
+        />
+
+        <p className="text-xl font-medium">A Toast to the End of Us</p>
+
+        <p className="mt-2 text-sm leading-7 text-muted-foreground">
+          A quiet story about familiarity, contempt, eye rolls, and the small
+          everyday criticisms that can slowly end a marriage.
+        </p>
+
+        <div className="mt-4 space-y-2">
+          <audio controls preload="metadata" className="w-full">
+            <source src="/audio/toast-ep14.mp3" type="audio/mpeg" />
+            Your browser does not support the audio element.
+          </audio>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
+            <span>Your free full story</span>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={shareFeaturedStory}
+                disabled={sharing}
+                className="underline underline-offset-4 hover:text-foreground disabled:opacity-60"
+              >
+                {sharing ? "Sharing..." : "Share this story"}
+              </button>
+
+              <Link
+                to="/join"
+                className="underline underline-offset-4 hover:text-foreground"
+              >
+                Continue into the full library →
+              </Link>
+            </div>
+          </div>
+
+          {shareMessage && (
+            <p className="text-xs text-muted-foreground">{shareMessage}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border bg-muted p-5">
+        <p className="text-sm font-medium">Member login</p>
+
+        <p className="mt-1 text-sm leading-6 text-muted-foreground">
+          Already a member? Sign in with your email to open your full Night
+          Listener library.
+        </p>
+
+        {sessionEmail ? (
+          <div className="mt-4 space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Signed in as{" "}
+              <span className="font-medium text-foreground">
+                {sessionEmail}
+              </span>
+            </p>
+
+            <div className="flex flex-wrap gap-2">
+              <Button asChild className="w-full sm:w-auto">
+                <Link to="/members">Go to Members</Link>
+              </Button>
+
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto"
+                onClick={signOut}
+              >
+                Sign out
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-4 space-y-4">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Welcome in.</p>
+
+              <p className="text-sm leading-6 text-muted-foreground">
+                Enter your email to receive your private access link.
               </p>
-
-              <div className="mt-4 space-y-2">
-                <audio controls preload="metadata" className="w-full">
-                  <source src="/audio/toast-ep14.mp3" type="audio/mpeg" />
-                  Your browser does not support the audio element.
-                </audio>
-
-                <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
-                  <span>Your free full story</span>
-
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={shareFeaturedStory}
-                      disabled={sharing}
-                      className="underline underline-offset-4 hover:text-foreground disabled:opacity-60"
-                    >
-                      {sharing ? "Sharing..." : "Share this story"}
-                    </button>
-
-                    <Link
-                      to="/join"
-                      className="underline underline-offset-4 hover:text-foreground"
-                    >
-                      Continue into the full library →
-                    </Link>
-                  </div>
-                </div>
-
-                {shareMessage && (
-                  <p className="text-xs text-muted-foreground">
-                    {shareMessage}
-                  </p>
-                )}
-              </div>
             </div>
 
-            <div className="rounded-2xl border bg-muted p-5">
-              <p className="text-sm font-medium">Member login</p>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                Already a member? Sign in with your email to open your full
-                Night Listener library.
-              </p>
+            <div className="space-y-3">
+              <Input
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="rounded-xl bg-background"
+              />
 
-              {sessionEmail ? (
-                <div className="mt-4 space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    Signed in as{" "}
-                    <span className="font-medium text-foreground">
-                      {sessionEmail}
-                    </span>
-                  </p>
+              <Button
+                onClick={sendLink}
+                disabled={!email || loading}
+                className="w-full sm:w-auto"
+              >
+                {loading ? "Sending…" : "Send magic link"}
+              </Button>
 
-                  <div className="flex flex-wrap gap-2">
-                    <Button asChild className="w-full sm:w-auto">
-                      <Link to="/members">Go to Members</Link>
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      className="w-full sm:w-auto"
-                      onClick={signOut}
-                    >
-                      Sign out
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-4 space-y-4">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">Welcome in.</p>
-                    <p className="text-sm leading-6 text-muted-foreground">
-                      Enter your email to receive your private access link.
-                    </p>
-                  </div>
-
-                  <div className="space-y-3">
-                    <Input
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="rounded-xl bg-background"
-                    />
-
-                    <Button
-                      onClick={sendLink}
-                      disabled={!email || loading}
-                      className="w-full sm:w-auto"
-                    >
-                      {loading ? "Sending…" : "Send magic link"}
-                    </Button>
-
-                    {message && (
-                      <p className="text-xs text-muted-foreground">
-                        {message}
-                      </p>
-                    )}
-                  </div>
-                </div>
+              {message && (
+                <p className="text-xs text-muted-foreground">{message}</p>
               )}
             </div>
           </div>
-        </div>
-      </section>
+        )}
+      </div>
+    </div>
+  </div>
+</section>
+              
+            
+
+        
 
       <section className="grid gap-4 md:grid-cols-3">
         <Card className="transition-all hover:-translate-y-0.5 hover:shadow-lg">
