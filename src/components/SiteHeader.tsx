@@ -58,7 +58,7 @@ export function SiteHeader() {
           <nav className="hidden items-center gap-8 md:flex">
             <NavLink to="/" label="Home" />
             <NavLink to="/listen" label="Listen" />
-            <NavLink to="/classic-readings" label="Classic Readings" />
+            
 
             <a
               href="/#submit-story"
