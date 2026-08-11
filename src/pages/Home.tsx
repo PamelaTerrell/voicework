@@ -5,171 +5,91 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { sendMagicLink } from "@/lib/sendMagicLink";
 
-const VENTURES = [
+const PROJECTS = [
   {
-    number: "01",
-    name: "Night Listener",
-    domain: "stabileusa.com",
-    href: "#night-listener",
-    eyebrow: "Flagship Stabile USA Original",
-    statement:
-      "Story-driven audio about memory, relationships, emotion, and the things people continue carrying long after a moment has passed.",
-    tags: [
-      "Original Media",
-      "Audio",
-      "Human Behavior",
-      "Membership",
-    ],
-  },
-  {
-    number: "02",
     name: "Crime Recordings",
     domain: "CrimeRecordings.com",
     href: "https://www.crimerecordings.com",
-    eyebrow: "Public Records Reimagined",
-    statement:
-      "A documentary archive transforming police recordings, photographs, documents, interviews, and investigative materials into an organized digital case experience.",
-    tags: [
-      "Public Records",
-      "True Crime",
-      "Digital Archives",
-      "Media",
-    ],
+    category: "Public Records · True Crime",
+    description:
+      "A public-record true-crime archive presenting original police recordings, interviews, photographs, documents, and investigative case material.",
+    statement: "Public records become an accessible digital archive.",
   },
   {
-    number: "03",
     name: "Super Cleaning Lady",
     domain: "SuperCleaningLady.com",
     href: "https://www.supercleaninglady.com",
-    eyebrow: "Everyday Life Becomes Original IP",
-    statement:
-      "Cleaning becomes entertainment through original characters, villains, missions, humor, comics, household knowledge, and visual storytelling.",
-    tags: [
-      "Original IP",
-      "Comedy",
-      "Lifestyle",
-      "Visual Storytelling",
-    ],
+    category: "Original Comic · Entertainment",
+    description:
+      "An original comic and character-driven entertainment project built around cleaning, household chaos, missions, villains, humor, and visual storytelling.",
+    statement: "Everyday life becomes original entertainment.",
   },
   {
-    number: "04",
     name: "Vino Pairings",
     domain: "VinoPairings.com",
     href: "https://www.vinopairings.com",
-    eyebrow: "Wine Without the Intimidation",
-    statement:
-      "A digital wine and food-pairing experience designed around discovery, useful recommendations, approachable education, and elegant presentation.",
-    tags: [
-      "Wine",
-      "Food",
-      "Discovery",
-      "Publishing",
-    ],
+    category: "Wine · Food · Discovery",
+    description:
+      "An approachable wine-and-food discovery platform designed to make pairing, exploring, and learning about wine feel elegant and understandable.",
+    statement: "Knowledge becomes discovery.",
   },
   {
-    number: "05",
     name: "Medicare Before You Switch",
     domain: "MedicareBeforeYouSwitch.com",
     href: "https://www.medicarebeforeyouswitch.com",
-    eyebrow: "Better Questions Before Big Decisions",
-    statement:
-      "Independent consumer information designed to help people slow down, understand their options, and ask better questions before changing Medicare coverage.",
-    tags: [
-      "Consumer Information",
-      "Decision Support",
-      "Education",
-      "Clarity",
-    ],
+    category: "Medicare · Consumer Protection",
+    description:
+      "Built from years of real insurance-industry experience to help Medicare recipients ask better questions and understand what may change before switching coverage.",
+    statement: "Experience becomes protection.",
   },
   {
-    number: "06",
     name: "Life Stories Now",
     domain: "LifeStoriesNow.com",
     href: "https://www.lifestoriesnow.com",
-    eyebrow: "Ordinary Lives Are Worth Preserving",
-    statement:
-      "A storytelling concept centered on memory, personal history, lived experience, and preserving the stories people do not want the world to lose.",
-    tags: [
-      "Memory",
-      "Human Stories",
-      "Legacy",
-      "Storytelling",
-    ],
+    category: "Memory · Storytelling",
+    description:
+      "A human-story project centered on preserving memories, personal histories, lived experiences, and the stories people do not want to lose.",
+    statement: "Ordinary lives become lasting stories.",
   },
   {
-    number: "07",
-    name: "Pinkerton Williams",
+    name: "Pinkerton-Williams DAV",
     domain: "PinkertonWilliams.org",
     href: "https://www.pinkertonwilliams.org",
-    eyebrow: "Independent Digital Project",
-    statement:
-      "A purpose-driven digital property developed within the broader Stabile USA ecosystem of independent ideas and long-term projects.",
-    tags: [
-      "Digital Publishing",
-      "Research",
-      "Independent Work",
-      "Long-Term Stewardship",
-    ],
+    category: "Mission-Driven Web Project",
+    description:
+      "A digital home created for the Pinkerton-Williams Chapter of the Disabled American Veterans, supporting its members, mission, and community.",
+    statement: "Technology supports a real-world mission.",
   },
 ];
 
-const CROSSINGS = [
-  {
-    from: "PUBLIC RECORDS",
-    to: "DIGITAL MEDIA",
-    text:
-      "Crime Recordings asks what happens when raw government records become an accessible documentary archive.",
-  },
-  {
-    from: "CLEANING",
-    to: "ENTERTAINMENT",
-    text:
-      "Super Cleaning Lady turns ordinary household frustrations into characters, comedy, missions, and original intellectual property.",
-  },
-  {
-    from: "MEMORY",
-    to: "STORYTELLING",
-    text:
-      "Night Listener and Life Stories Now explore the emotional weight of experiences people continue carrying.",
-  },
-  {
-    from: "COMPLEX INFORMATION",
-    to: "CLARITY",
-    text:
-      "Medicare Before You Switch approaches difficult decisions by helping people understand what questions matter first.",
-  },
-  {
-    from: "TECHNOLOGY",
-    to: "NEW POSSIBILITIES",
-    text:
-      "Software, AI, media infrastructure, databases, and modern web systems give unconventional ideas somewhere to become real.",
-  },
-];
-
-const FOUNDATION = [
+const EXPERIENCE = [
+  "Original media",
+  "Digital publishing",
+  "Public-record research",
   "Web applications",
   "Audio & video",
   "Digital archives",
-  "Public records",
   "Membership systems",
+  "Consumer information",
+  "Insurance experience",
+  "Storytelling",
+  "Comic & visual media",
+  "Cloud infrastructure",
   "Databases",
   "Authentication",
-  "Cloud media",
   "APIs",
+  "SEO & analytics",
   "AI-assisted production",
-  "Search & SEO",
-  "Original storytelling",
-  "Visual media",
-  "Consumer tools",
-  "Independent publishing",
 ];
 
 export default function Home() {
   const [email, setEmail] = useState("");
   const [sessionEmail, setSessionEmail] =
     useState<string | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+
   const [shareMessage, setShareMessage] = useState("");
   const [sharing, setSharing] = useState(false);
 
@@ -178,11 +98,11 @@ export default function Home() {
     "Something I never forgot",
   );
   const [storyBody, setStoryBody] = useState("");
-  const [namePreference, setNamePreference] =
-    useState("Keep me anonymous");
+  const [namePreference, setNamePreference] = useState(
+    "Keep me anonymous",
+  );
   const [submitterName, setSubmitterName] = useState("");
-  const [submitterEmail, setSubmitterEmail] =
-    useState("");
+  const [submitterEmail, setSubmitterEmail] = useState("");
   const [permissionGranted, setPermissionGranted] =
     useState(false);
   const [storySubmitting, setStorySubmitting] =
@@ -191,22 +111,15 @@ export default function Home() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      setSessionEmail(
-        data.session?.user.email ?? null,
-      );
+      setSessionEmail(data.session?.user.email ?? null);
     });
 
     const { data: sub } =
-      supabase.auth.onAuthStateChange(
-        (_event, session) => {
-          setSessionEmail(
-            session?.user.email ?? null,
-          );
-        },
-      );
+      supabase.auth.onAuthStateChange((_event, session) => {
+        setSessionEmail(session?.user.email ?? null);
+      });
 
-    return () =>
-      sub.subscription.unsubscribe();
+    return () => sub.subscription.unsubscribe();
   }, []);
 
   async function sendLink() {
@@ -214,8 +127,7 @@ export default function Home() {
     setMessage("");
 
     try {
-      const { error } =
-        await sendMagicLink(email);
+      const { error } = await sendMagicLink(email);
 
       if (error) {
         setMessage(error.message);
@@ -238,8 +150,7 @@ export default function Home() {
   }
 
   async function shareFeaturedStory() {
-    const shareUrl =
-      `${window.location.origin}/#featured-story`;
+    const shareUrl = `${window.location.origin}/#featured-story`;
 
     const shareData = {
       title:
@@ -259,15 +170,10 @@ export default function Home() {
         return;
       }
 
-      await navigator.clipboard.writeText(
-        shareUrl,
-      );
-
+      await navigator.clipboard.writeText(shareUrl);
       setShareMessage("Link copied.");
     } catch {
-      setShareMessage(
-        "Unable to share right now.",
-      );
+      setShareMessage("Unable to share right now.");
     } finally {
       setSharing(false);
     }
@@ -296,18 +202,13 @@ export default function Home() {
       const { error } = await supabase
         .from("story_submissions")
         .insert({
-          story_title:
-            storyTitle.trim() || null,
+          story_title: storyTitle.trim() || null,
           story_category: storyCategory,
           story_body: storyBody.trim(),
-          permission_granted:
-            permissionGranted,
-          name_preference:
-            namePreference,
-          submitter_name:
-            submitterName.trim() || null,
-          submitter_email:
-            submitterEmail.trim() || null,
+          permission_granted: permissionGranted,
+          name_preference: namePreference,
+          submitter_name: submitterName.trim() || null,
+          submitter_email: submitterEmail.trim() || null,
           status: "new",
         });
 
@@ -321,13 +222,9 @@ export default function Home() {
       );
 
       setStoryTitle("");
-      setStoryCategory(
-        "Something I never forgot",
-      );
+      setStoryCategory("Something I never forgot");
       setStoryBody("");
-      setNamePreference(
-        "Keep me anonymous",
-      );
+      setNamePreference("Keep me anonymous");
       setSubmitterName("");
       setSubmitterEmail("");
       setPermissionGranted(false);
@@ -337,270 +234,330 @@ export default function Home() {
   }
 
   return (
-    <main className="overflow-hidden bg-[#02060b] text-white">
+    <main className="w-full overflow-x-hidden bg-[#02060b] text-white">
       {/* ======================================================
-          HERO
+          FULL-WIDTH CINEMATIC HERO
       ====================================================== */}
-      <section className="relative min-h-[92vh] overflow-hidden border-b border-white/10">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-[-12rem] top-[-12rem] h-[40rem] w-[40rem] rounded-full bg-[#d8b36d]/10 blur-[150px]" />
 
-          <div className="absolute right-[-10rem] top-[10%] h-[42rem] w-[42rem] rounded-full bg-cyan-600/10 blur-[150px]" />
-
-          <div
-            className="absolute inset-0 opacity-[0.14]"
-            style={{
-              backgroundImage:
-                "linear-gradient(rgba(255,255,255,.065) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.065) 1px, transparent 1px)",
-              backgroundSize: "55px 55px",
-              maskImage:
-                "linear-gradient(to bottom, black, transparent 90%)",
-            }}
+      <section className="relative w-full overflow-hidden bg-[#02060b]">
+        {/* BACKGROUND FILL */}
+        <div className="absolute inset-0 overflow-hidden">
+          <img
+            src="/images/stabileusa-hero.png"
+            alt=""
+            aria-hidden="true"
+            className="h-full w-full scale-110 object-cover object-center opacity-45 blur-2xl"
           />
 
-          <div className="absolute inset-x-0 bottom-0 h-72 bg-gradient-to-b from-transparent to-[#02060b]" />
+          <div className="absolute inset-0 bg-[#02060b]/30" />
         </div>
 
-        <div className="relative mx-auto flex min-h-[92vh] max-w-[1600px] flex-col px-6 pb-16 pt-8 sm:px-10 lg:px-16">
-          <div className="flex items-center justify-between border-b border-white/10 pb-6">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[#d9b775] sm:text-xs">
+        {/* MAIN ARTWORK */}
+        <div
+          className="
+            relative
+            z-10
+            flex
+            w-full
+            items-center
+            justify-center
+            min-h-[72svh]
+            sm:min-h-[82svh]
+            lg:min-h-[100svh]
+          "
+        >
+          <img
+            src="/images/stabileusa-hero.png"
+            alt="Stabile USA digital media brand — creative ideas built to last, advancing the human experience, and stories that inspire with solutions that endure"
+            className="
+              block
+              h-auto
+              max-h-[100svh]
+              w-full
+              object-contain
+              object-center
+              lg:h-[100svh]
+              lg:w-auto
+              lg:max-w-full
+            "
+          />
+        </div>
+
+        {/* CINEMATIC FADES */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-28 bg-gradient-to-t from-[#02060b] via-[#02060b]/35 to-transparent sm:h-36" />
+
+        <div className="pointer-events-none absolute inset-0 z-20 hidden bg-[radial-gradient(ellipse_at_center,transparent_50%,rgba(0,0,0,0.24)_100%)] xl:block" />
+
+        {/* TOP BRAND STRIP */}
+        <div
+          className="
+            absolute
+            inset-x-0
+            top-0
+            z-30
+            flex
+            w-full
+            items-center
+            justify-between
+            px-4
+            pt-4
+            sm:px-7
+            sm:pt-6
+            lg:px-10
+            xl:px-16
+            2xl:px-20
+          "
+        >
+          <div className="flex items-center gap-3 rounded-full border border-white/10 bg-black/25 px-3 py-2 backdrop-blur-md sm:px-4">
+            <img
+              src="/images/stabile-s-logo.png"
+              alt=""
+              aria-hidden="true"
+              className="h-7 w-7 rounded-full object-cover shadow-[0_0_22px_rgba(215,175,101,.22)] sm:h-8 sm:w-8"
+            />
+
+            <span className="hidden text-[9px] font-semibold uppercase tracking-[0.27em] text-white/80 sm:inline">
+              Stabile USA
+            </span>
+          </div>
+
+          <a
+            href="https://www.pamelajterrell.com"
+            target="_blank"
+            rel="noreferrer"
+            className="
+              rounded-full
+              border
+              border-white/15
+              bg-black/30
+              px-4
+              py-2
+              text-[8px]
+              font-medium
+              uppercase
+              tracking-[0.17em]
+              text-white/70
+              backdrop-blur-md
+              transition
+              hover:border-[#d7af65]/50
+              hover:bg-black/55
+              hover:text-white
+              sm:text-[9px]
+              lg:text-[10px]
+            "
+          >
+            Pamela J. Terrell ↗
+          </a>
+        </div>
+
+        {/* HERO BUTTONS */}
+        <div
+          className="
+            absolute
+            inset-x-0
+            bottom-0
+            z-30
+            px-4
+            pb-4
+            sm:px-7
+            sm:pb-6
+            lg:px-10
+            lg:pb-8
+            xl:px-16
+          "
+        >
+          <div className="mx-auto flex w-full max-w-[1800px] flex-col justify-center gap-2.5 sm:flex-row sm:gap-3">
+            <a
+              href="#night-listener"
+              className="
+                inline-flex
+                min-h-11
+                items-center
+                justify-center
+                rounded-full
+                border
+                border-[#d7af65]/55
+                bg-black/55
+                px-6
+                text-center
+                text-[9px]
+                font-semibold
+                uppercase
+                tracking-[0.14em]
+                text-[#f0d493]
+                shadow-lg
+                backdrop-blur-md
+                transition
+                hover:border-[#e7ca90]/80
+                hover:bg-black/75
+                sm:text-[10px]
+              "
+            >
+              Experience Night Listener
+            </a>
+
+            <a
+              href="#projects"
+              className="
+                inline-flex
+                min-h-11
+                items-center
+                justify-center
+                rounded-full
+                border
+                border-white/20
+                bg-black/45
+                px-6
+                text-center
+                text-[9px]
+                font-semibold
+                uppercase
+                tracking-[0.14em]
+                text-white
+                backdrop-blur-md
+                transition
+                hover:border-white/35
+                hover:bg-black/70
+                sm:text-[10px]
+              "
+            >
+              Explore Stabile USA
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ======================================================
+          BRAND INTRO
+      ====================================================== */}
+
+      <section className="w-full border-b border-white/10 bg-[#02060b]">
+        <div
+          className="
+            mx-auto
+            grid
+            w-full
+            max-w-[1900px]
+            gap-10
+            px-5
+            py-16
+            sm:px-8
+            sm:py-20
+            lg:grid-cols-[0.45fr_1.55fr]
+            lg:px-12
+            lg:py-24
+            xl:px-16
+            2xl:px-20
+          "
+        >
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#d7af65]">
               Stabile USA
             </p>
-
-            <p className="hidden text-[10px] uppercase tracking-[0.25em] text-slate-600 sm:block">
-              Independent ideas · Built to last
-            </p>
-          </div>
-
-          <div className="grid flex-1 gap-12 py-16 lg:grid-cols-[1.15fr_.85fr] lg:items-center lg:py-20">
-            <div>
-              <div className="mb-8 inline-flex items-center gap-3 rounded-full border border-[#d7b16c]/25 bg-[#d7b16c]/5 px-4 py-2 text-[10px] uppercase tracking-[0.24em] text-[#e4c583]">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#e4c583] shadow-[0_0_15px_rgba(228,197,131,.9)]" />
-                Independent innovation studio
-              </div>
-
-              <h1 className="max-w-[1050px] text-[clamp(3.8rem,9vw,9rem)] font-semibold leading-[0.84] tracking-[-0.07em]">
-                We build what
-                <span className="mt-2 block bg-gradient-to-r from-[#fff6dc] via-[#d8b36d] to-[#78c8ff] bg-clip-text text-transparent">
-                  doesn&apos;t exist yet.
-                </span>
-              </h1>
-
-              <p className="mt-9 max-w-3xl text-xl font-medium leading-[1.25] tracking-[-0.025em] text-slate-200 sm:text-2xl lg:text-3xl">
-                Ideas that cross boundaries.
-                Technology that makes them real.
-              </p>
-
-              <p className="mt-7 max-w-3xl text-base leading-8 text-slate-400 sm:text-lg">
-                Stabile USA creates original
-                platforms, media, technology,
-                stories, tools, and experiences
-                from ideas that do not fit neatly
-                inside a single industry.
-              </p>
-
-              <p className="mt-4 text-sm font-semibold uppercase tracking-[0.21em] text-slate-600">
-                Not one industry. Not one format.
-                Not one way of thinking.
-              </p>
-
-              <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <Button
-                  asChild
-                  className="h-12 rounded-full bg-[#d8b36d] px-7 text-[#05080c] hover:bg-[#efd39a]"
-                >
-                  <a href="#night-listener">
-                    Experience Night Listener
-                  </a>
-                </Button>
-
-                <Button
-                  asChild
-                  variant="outline"
-                  className="h-12 rounded-full border-white/20 bg-white/[0.03] px-7 text-white hover:bg-white/10 hover:text-white"
-                >
-                  <a href="#ventures">
-                    See what else we&apos;re building
-                  </a>
-                </Button>
-              </div>
-            </div>
-
-            <div className="relative">
-              <div className="absolute inset-[15%] rounded-full bg-[#d8b36d]/10 blur-[100px]" />
-
-              <div className="relative overflow-hidden rounded-[2.25rem] border border-white/10 bg-[#07111c]/80 shadow-[0_50px_150px_rgba(0,0,0,.65)] backdrop-blur-xl">
-                <img
-                  src="/images/stabileusalogo.png"
-                  alt="Stabile USA"
-                  className="block h-auto w-full"
-                />
-
-                <div className="border-t border-white/10 p-6 sm:p-7">
-                  <div className="grid grid-cols-3 divide-x divide-white/10">
-                    <div className="pr-4">
-                      <p className="text-2xl font-semibold text-[#e5c37e]">
-                        7+
-                      </p>
-                      <p className="mt-1 text-[9px] uppercase tracking-[0.18em] text-slate-600">
-                        Ventures
-                      </p>
-                    </div>
-
-                    <div className="px-4">
-                      <p className="text-2xl font-semibold text-[#e5c37e]">
-                        Many
-                      </p>
-                      <p className="mt-1 text-[9px] uppercase tracking-[0.18em] text-slate-600">
-                        Industries
-                      </p>
-                    </div>
-
-                    <div className="pl-4">
-                      <p className="text-2xl font-semibold text-[#e5c37e]">
-                        One
-                      </p>
-                      <p className="mt-1 text-[9px] uppercase tracking-[0.18em] text-slate-600">
-                        Vision
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-white/10 pt-6">
-            <div className="flex flex-wrap gap-x-7 gap-y-3">
-              {FOUNDATION.slice(0, 8).map(
-                (item) => (
-                  <span
-                    key={item}
-                    className="text-xs text-slate-600"
-                  >
-                    {item}
-                  </span>
-                ),
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ======================================================
-          MANIFESTO INTRO
-      ====================================================== */}
-      <section className="border-b border-white/10 bg-[#050a11]">
-        <div className="mx-auto grid max-w-[1500px] gap-12 px-6 py-24 sm:px-10 lg:grid-cols-[.65fr_1.35fr] lg:px-16 lg:py-32">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[#d8b36d]">
-              Why Stabile USA exists
-            </p>
           </div>
 
           <div>
-            <h2 className="max-w-5xl text-4xl font-medium leading-[1.04] tracking-[-0.045em] sm:text-5xl lg:text-7xl">
-              The most interesting ideas
-              <span className="block text-slate-500">
-                rarely belong to one industry.
+            <h1 className="max-w-5xl text-3xl font-medium leading-[1.08] tracking-[-0.035em] sm:text-4xl lg:text-5xl">
+              Ideas with purpose.
+              <span className="mt-2 block text-slate-500">
+                Built with experience.
               </span>
-            </h2>
+            </h1>
 
-            <p className="mt-8 max-w-3xl text-lg leading-9 text-slate-400">
-              They happen when technology meets
-              storytelling. When archives become
-              experiences. When useful information
-              becomes beautiful. When ordinary
-              problems become entirely new
-              products.
+            <p className="mt-7 max-w-4xl text-base leading-8 text-slate-400 sm:text-lg">
+              Stabile USA is an independent digital brand
+              creating original media, technology-driven
+              platforms, useful information, entertainment,
+              storytelling, and mission-driven web projects
+              across very different areas.
             </p>
 
-            <p className="mt-5 max-w-3xl text-lg leading-9 text-slate-300">
-              And sometimes they begin with an
-              idea strange enough that no one has
-              built it yet.
+            <p className="mt-5 max-w-4xl text-base leading-8 text-slate-500">
+              The common foundation is real-world experience,
+              independent thinking, curiosity, and the ability
+              to turn an idea into something people can
+              actually use, hear, explore, learn from, or enjoy.
             </p>
           </div>
         </div>
       </section>
 
       {/* ======================================================
-          NIGHT LISTENER FLAGSHIP
+          NIGHT LISTENER
       ====================================================== */}
+
       <section
         id="night-listener"
-        className="relative scroll-mt-20 overflow-hidden border-b border-white/10 bg-[#07101a]"
+        className="relative w-full scroll-mt-20 overflow-hidden border-b border-white/10 bg-[#071019]"
       >
-        <div className="pointer-events-none absolute right-[-8rem] top-[-8rem] h-[36rem] w-[36rem] rounded-full bg-[#b69061]/10 blur-[140px]" />
+        <div className="pointer-events-none absolute right-[-12rem] top-[-12rem] h-[42rem] w-[42rem] rounded-full bg-[#c59a59]/10 blur-[150px]" />
 
-        <div className="mx-auto max-w-[1500px] px-6 py-24 sm:px-10 lg:px-16 lg:py-32">
-          <div className="mb-14 border-b border-white/10 pb-9">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.27em] text-[#d8b36d]">
-                  Flagship Stabile USA Original
-                </p>
-
-                <h2 className="mt-4 text-5xl font-semibold tracking-[-0.05em] sm:text-6xl lg:text-8xl">
-                  Night Listener
-                </h2>
-              </div>
-
-              <p className="max-w-lg text-base leading-8 text-slate-400">
-                Story-driven audio about human
-                behavior, private emotions,
-                relationships, memory, and the
-                moments people continue carrying
-                long after they have passed.
+        <div
+          className="
+            relative
+            mx-auto
+            w-full
+            max-w-[1900px]
+            px-5
+            py-20
+            sm:px-8
+            sm:py-24
+            lg:px-12
+            xl:px-16
+            2xl:px-20
+          "
+        >
+          <div className="mb-12 flex flex-col gap-6 border-b border-white/10 pb-9 xl:flex-row xl:items-end xl:justify-between">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.27em] text-[#d7af65]">
+                Flagship Stabile USA Original
               </p>
+
+              <h2 className="mt-4 text-4xl font-medium tracking-[-0.04em] sm:text-5xl lg:text-6xl">
+                Night Listener
+              </h2>
             </div>
+
+            <p className="max-w-2xl text-sm leading-7 text-slate-400 sm:text-base">
+              Original story-driven audio about memory,
+              relationships, private emotions, human behavior,
+              and the moments people continue carrying long
+              after they have passed.
+            </p>
           </div>
 
-          <div className="grid gap-12 lg:grid-cols-[1fr_.9fr] lg:items-start">
+          <div className="grid gap-10 xl:grid-cols-[0.7fr_1.3fr] xl:items-center">
             <div>
-              <div className="inline-flex rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-[10px] uppercase tracking-[0.2em] text-slate-500">
-                Human behavior · Quiet reflection ·
-                Original audio
-              </div>
+              <p className="text-[10px] uppercase tracking-[0.22em] text-slate-600">
+                Quiet · Intimate · Human
+              </p>
 
-              <h3 className="mt-8 max-w-4xl text-4xl font-medium leading-[1.04] tracking-[-0.04em] sm:text-5xl lg:text-6xl">
+              <h3 className="mt-6 max-w-2xl text-3xl font-medium leading-[1.06] tracking-[-0.035em] sm:text-4xl lg:text-5xl">
                 Some moments end.
-                <span className="mt-2 block bg-gradient-to-r from-[#e5c589] to-[#8aa7bf] bg-clip-text text-transparent">
+                <span className="mt-2 block text-[#d0ad72]">
                   The feelings don&apos;t.
                 </span>
               </h3>
 
-              <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-400">
-                Night Listener explores the
-                conversations we replay, the people
-                we still wonder about, and the
-                emotional truths that sometimes
-                only make sense years later.
+              <p className="mt-7 max-w-2xl text-base leading-8 text-slate-400">
+                Night Listener explores the people we still
+                wonder about, the conversations we replay,
+                and the emotional truths that sometimes only
+                make sense later.
               </p>
 
-              <p className="mt-5 max-w-2xl text-base leading-8 text-slate-500">
-                Start with a complete story free,
-                then enter a growing members-only
-                library exploring love, regret,
-                misunderstanding, contempt,
-                attachment, intuition, and human
-                behavior.
-              </p>
-
-              <div className="mt-9 flex flex-wrap gap-3">
+              <div className="mt-8 flex flex-wrap gap-3">
                 <Button
                   asChild
-                  className="h-12 rounded-full bg-[#d8b36d] px-7 text-black hover:bg-[#ecd096]"
+                  className="h-11 rounded-full bg-[#d6ae65] px-6 text-black hover:bg-[#e8ca91]"
                 >
-                  <a href="#featured-story">
-                    Listen free now
-                  </a>
+                  <a href="#featured-story">Listen free</a>
                 </Button>
 
                 <Button
                   asChild
                   variant="outline"
-                  className="h-12 rounded-full border-white/20 bg-transparent px-7 text-white hover:bg-white/10 hover:text-white"
+                  className="h-11 rounded-full border-white/20 bg-transparent px-6 text-white hover:bg-white/10 hover:text-white"
                 >
                   <Link to="/join">
                     Unlock the full library
@@ -610,115 +567,99 @@ export default function Home() {
                 <Button
                   asChild
                   variant="outline"
-                  className="h-12 rounded-full border-white/20 bg-transparent px-7 text-white hover:bg-white/10 hover:text-white"
+                  className="h-11 rounded-full border-white/20 bg-transparent px-6 text-white hover:bg-white/10 hover:text-white"
                 >
                   <Link to="/listen">
-                    Hear more previews
+                    More previews
                   </Link>
                 </Button>
               </div>
             </div>
 
-            {/* FEATURED EPISODE */}
             <div
               id="featured-story"
-              className="scroll-mt-24 overflow-hidden rounded-[2rem] border border-white/10 bg-[#04090f] shadow-[0_35px_100px_rgba(0,0,0,.4)]"
+              className="scroll-mt-24 overflow-hidden rounded-[2rem] border border-white/10 bg-[#03070c] shadow-[0_40px_120px_rgba(0,0,0,.45)]"
             >
-              <div className="relative">
+              <div className="grid md:grid-cols-[0.82fr_1.18fr]">
                 <img
                   src="/images/toast-ep14.png"
                   alt="A Toast to the End of Us"
-                  className="aspect-[4/3] w-full object-cover object-center"
+                  className="h-full min-h-[340px] w-full object-cover"
                 />
 
-                <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#04090f] to-transparent" />
-              </div>
-
-              <div className="relative -mt-12 p-6 sm:p-8">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#d8b36d]">
-                    Tonight&apos;s featured story
-                  </p>
-
-                  <span className="rounded-full border border-white/10 bg-black/30 px-3 py-1 text-xs text-slate-400">
+                <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-10 xl:p-12">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#d6ae65]">
                     Free full episode
-                  </span>
-                </div>
-
-                <h3 className="mt-5 text-3xl font-semibold tracking-[-0.03em]">
-                  A Toast to the End of Us
-                </h3>
-
-                <p className="mt-4 text-sm leading-7 text-slate-400">
-                  A quiet story about familiarity,
-                  contempt, eye rolls, and the small
-                  everyday criticisms that can
-                  slowly end a marriage.
-                </p>
-
-                <audio
-                  controls
-                  preload="metadata"
-                  className="mt-6 w-full"
-                >
-                  <source
-                    src="/audio/toast-ep14.mp3"
-                    type="audio/mpeg"
-                  />
-
-                  Your browser does not support
-                  the audio element.
-                </audio>
-
-                <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs text-slate-500">
-                  <button
-                    type="button"
-                    onClick={shareFeaturedStory}
-                    disabled={sharing}
-                    className="underline underline-offset-4 transition hover:text-white disabled:opacity-50"
-                  >
-                    {sharing
-                      ? "Sharing..."
-                      : "Share this story"}
-                  </button>
-
-                  <Link
-                    to="/join"
-                    className="underline underline-offset-4 transition hover:text-white"
-                  >
-                    Continue into the library →
-                  </Link>
-                </div>
-
-                {shareMessage && (
-                  <p className="mt-3 text-xs text-slate-500">
-                    {shareMessage}
                   </p>
-                )}
+
+                  <h3 className="mt-4 text-2xl font-medium tracking-[-0.03em] lg:text-3xl">
+                    A Toast to the End of Us
+                  </h3>
+
+                  <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-400 sm:text-base">
+                    A quiet story about familiarity, contempt,
+                    eye rolls, and the small everyday
+                    criticisms that can slowly end a marriage.
+                  </p>
+
+                  <audio
+                    controls
+                    preload="metadata"
+                    className="mt-6 w-full"
+                  >
+                    <source
+                      src="/audio/toast-ep14.mp3"
+                      type="audio/mpeg"
+                    />
+                    Your browser does not support the audio element.
+                  </audio>
+
+                  <div className="mt-5 flex flex-wrap gap-5 text-xs text-slate-500">
+                    <button
+                      type="button"
+                      onClick={shareFeaturedStory}
+                      disabled={sharing}
+                      className="underline underline-offset-4 transition hover:text-white disabled:opacity-50"
+                    >
+                      {sharing
+                        ? "Sharing..."
+                        : "Share this story"}
+                    </button>
+
+                    <Link
+                      to="/join"
+                      className="underline underline-offset-4 transition hover:text-white"
+                    >
+                      Continue into the library →
+                    </Link>
+                  </div>
+
+                  {shareMessage && (
+                    <p className="mt-3 text-xs text-slate-500">
+                      {shareMessage}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* MEMBER LOGIN */}
-          <div className="mt-10 rounded-[2rem] border border-white/10 bg-black/20 p-6 sm:p-8">
-            <div className="grid gap-7 lg:grid-cols-[1fr_auto] lg:items-center">
+          {/* MEMBER ACCESS */}
+          <div className="mt-8 rounded-[1.5rem] border border-white/10 bg-black/20 p-6 sm:p-7 lg:p-8">
+            <div className="grid gap-6 xl:grid-cols-[1fr_auto] xl:items-center">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.23em] text-[#d8b36d]">
-                  Night Listener member access
+                <p className="text-[10px] uppercase tracking-[0.22em] text-[#d6ae65]">
+                  Member access
                 </p>
 
-                <h3 className="mt-3 text-2xl font-semibold">
-                  Return to the full library.
-                </h3>
-
-                <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Already a member? Use the email
-                  connected to your membership.
+                <p className="mt-2 text-sm text-slate-400">
+                  Already a member? Sign in using your
+                  membership email.
                 </p>
               </div>
 
               {sessionEmail ? (
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="flex flex-wrap items-center gap-3">
                   <p className="text-sm text-slate-400">
                     Signed in as{" "}
                     <span className="text-white">
@@ -741,7 +682,7 @@ export default function Home() {
                   </Button>
                 </div>
               ) : (
-                <div className="w-full max-w-lg">
+                <div className="w-full max-w-2xl">
                   <div className="flex flex-col gap-3 sm:flex-row">
                     <Input
                       type="email"
@@ -777,191 +718,214 @@ export default function Home() {
       </section>
 
       {/* ======================================================
-          VENTURES
+          PROJECTS
       ====================================================== */}
+
       <section
-        id="ventures"
-        className="scroll-mt-20 border-b border-white/10 bg-[#02060b]"
+        id="projects"
+        className="w-full scroll-mt-20 border-b border-white/10 bg-[#02060b]"
       >
-        <div className="mx-auto max-w-[1500px] px-6 py-24 sm:px-10 lg:px-16 lg:py-32">
-          <div className="grid gap-10 border-b border-white/10 pb-12 lg:grid-cols-[.7fr_1.3fr]">
+        <div
+          className="
+            mx-auto
+            w-full
+            max-w-[1900px]
+            px-5
+            py-20
+            sm:px-8
+            sm:py-24
+            lg:px-12
+            xl:px-16
+            2xl:px-20
+          "
+        >
+          <div className="mb-14 grid gap-10 border-b border-white/10 pb-11 lg:grid-cols-[0.45fr_1.55fr]">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[#d8b36d]">
-                What else are we building?
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#d7af65]">
+                Across Stabile USA
               </p>
             </div>
 
             <div>
-              <h2 className="max-w-5xl text-4xl font-semibold leading-[1.04] tracking-[-0.045em] sm:text-5xl lg:text-7xl">
-                One company.
-                <span className="block text-slate-500">
-                  Very different ideas.
+              <h2 className="max-w-5xl text-3xl font-medium leading-[1.08] tracking-[-0.035em] sm:text-4xl lg:text-5xl">
+                Different experience.
+                <span className="mt-2 block text-slate-500">
+                  Different ideas. One foundation.
                 </span>
               </h2>
 
-              <p className="mt-7 max-w-3xl text-lg leading-8 text-slate-400">
-                Stabile USA does not begin with an
-                industry category. We begin with
-                the question, the possibility, or
-                the thing we wish existed.
+              <p className="mt-6 max-w-4xl text-base leading-8 text-slate-400">
+                Stabile USA projects come from very different
+                places — professional experience, curiosity,
+                creative ideas, community needs, personal
+                interests, technology, research, and stories
+                worth preserving.
               </p>
             </div>
           </div>
 
-          <div className="divide-y divide-white/10">
-            {VENTURES.slice(1).map(
-              (venture) => (
-                <a
-                  key={venture.name}
-                  href={venture.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="group grid gap-7 py-10 transition sm:py-12 lg:grid-cols-[80px_.8fr_1.2fr_auto] lg:items-start"
-                >
-                  <span className="font-mono text-xs text-slate-700">
-                    {venture.number}
-                  </span>
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {PROJECTS.map((project) => (
+              <a
+                key={project.domain}
+                href={project.href}
+                target="_blank"
+                rel="noreferrer"
+                className="
+                  group
+                  relative
+                  min-h-[360px]
+                  overflow-hidden
+                  rounded-[1.6rem]
+                  border
+                  border-white/10
+                  bg-[#07101a]
+                  p-6
+                  transition
+                  duration-300
+                  hover:-translate-y-1
+                  hover:border-[#d7af65]/40
+                "
+              >
+                <div className="absolute inset-0 bg-gradient-to-br from-[#d7af65]/[0.05] to-transparent opacity-0 transition group-hover:opacity-100" />
 
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#d8b36d]">
-                      {venture.eyebrow}
-                    </p>
+                <div className="relative flex h-full flex-col">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#d7af65]">
+                    {project.category}
+                  </p>
 
-                    <h3 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-white sm:text-4xl">
-                      {venture.name}
-                    </h3>
+                  <h3 className="mt-5 text-xl font-medium tracking-[-0.03em] xl:text-2xl">
+                    {project.name}
+                  </h3>
 
-                    <p className="mt-1 text-sm text-slate-600">
-                      {venture.domain}
-                    </p>
-                  </div>
+                  <p className="mt-1 break-words text-xs text-slate-600">
+                    {project.domain}
+                  </p>
 
-                  <div>
-                    <p className="max-w-2xl text-base leading-8 text-slate-400">
-                      {venture.statement}
-                    </p>
+                  <p className="mt-6 text-sm leading-7 text-slate-400">
+                    {project.description}
+                  </p>
 
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      {venture.tags.map(
-                        (tag) => (
-                          <span
-                            key={tag}
-                            className="rounded-full border border-white/10 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-slate-600"
-                          >
-                            {tag}
-                          </span>
-                        ),
-                      )}
+                  <div className="mt-auto pt-9">
+                    <div className="border-t border-white/10 pt-5">
+                      <p className="text-sm leading-6 text-slate-300">
+                        {project.statement}
+                      </p>
+
+                      <p className="mt-5 text-[10px] uppercase tracking-[0.17em] text-slate-600 transition group-hover:text-[#d7af65]">
+                        Visit project ↗
+                      </p>
                     </div>
                   </div>
-
-                  <span className="text-xl text-slate-700 transition duration-300 group-hover:translate-x-1 group-hover:text-[#d8b36d]">
-                    ↗
-                  </span>
-                </a>
-              ),
-            )}
+                </div>
+              </a>
+            ))}
           </div>
         </div>
       </section>
 
       {/* ======================================================
-          CROSS BOUNDARIES
+          EXPERIENCE
       ====================================================== */}
-      <section className="border-b border-white/10 bg-[#07101a]">
-        <div className="mx-auto max-w-[1500px] px-6 py-24 sm:px-10 lg:px-16 lg:py-32">
-          <div className="mb-14">
-            <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[#d8b36d]">
-              We experiment across boundaries
-            </p>
 
-            <h2 className="mt-5 max-w-5xl text-4xl font-semibold leading-[1.03] tracking-[-0.045em] sm:text-5xl lg:text-7xl">
-              The category is not
-              <span className="block text-slate-500">
-                the limit.
-              </span>
-            </h2>
-          </div>
-
-          <div className="grid gap-px overflow-hidden rounded-[2rem] border border-white/10 bg-white/10 lg:grid-cols-2">
-            {CROSSINGS.map(
-              (crossing, index) => (
-                <article
-                  key={crossing.from}
-                  className={`bg-[#050b12] p-7 sm:p-9 ${
-                    index === CROSSINGS.length - 1
-                      ? "lg:col-span-2"
-                      : ""
-                  }`}
-                >
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-xs font-semibold tracking-[0.18em] text-slate-500">
-                      {crossing.from}
-                    </span>
-
-                    <span className="text-[#d8b36d]">
-                      →
-                    </span>
-
-                    <span className="text-xs font-semibold tracking-[0.18em] text-white">
-                      {crossing.to}
-                    </span>
-                  </div>
-
-                  <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-400">
-                    {crossing.text}
-                  </p>
-                </article>
-              ),
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* ======================================================
-          FOUNDATION
-      ====================================================== */}
-      <section className="border-b border-white/10 bg-[#02060b]">
-        <div className="mx-auto grid max-w-[1500px] gap-14 px-6 py-24 sm:px-10 lg:grid-cols-[.8fr_1.2fr] lg:px-16 lg:py-32">
+      <section className="w-full border-b border-white/10 bg-[#050a11]">
+        <div
+          className="
+            mx-auto
+            grid
+            w-full
+            max-w-[1900px]
+            gap-12
+            px-5
+            py-20
+            sm:px-8
+            sm:py-24
+            lg:grid-cols-[0.55fr_1.45fr]
+            lg:px-12
+            xl:px-16
+            2xl:px-20
+          "
+        >
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[#d8b36d]">
-              Built independently
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#d7af65]">
+              Experience brought forward
             </p>
 
-            <h2 className="mt-5 max-w-xl text-4xl font-semibold leading-[1.04] tracking-[-0.045em] sm:text-5xl">
-              An idea is only interesting
-              <span className="block text-slate-500">
-                if you can make it real.
-              </span>
+            <h2 className="mt-5 max-w-xl text-3xl font-medium leading-[1.08] tracking-[-0.035em] sm:text-4xl">
+              Knowledge from one world can become
+              useful in another.
             </h2>
 
-            <p className="mt-7 max-w-xl text-base leading-8 text-slate-400">
-              Behind every Stabile USA project is
-              the technical infrastructure needed
-              to move from concept to a working,
-              public digital product.
+            <p className="mt-6 max-w-xl text-base leading-8 text-slate-400">
+              Professional experience, research, software
+              development, media production, storytelling,
+              design, and emerging technology all inform the
+              work.
             </p>
+          </div>
+
+          <div className="flex content-start flex-wrap gap-3">
+            {EXPERIENCE.map((item) => (
+              <span
+                key={item}
+                className="
+                  rounded-full
+                  border
+                  border-white/10
+                  bg-[#07101a]
+                  px-4
+                  py-2.5
+                  text-sm
+                  text-slate-400
+                  lg:px-5
+                  lg:py-3
+                "
+              >
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="w-full border-t border-white/10">
+          <div
+            className="
+              mx-auto
+              flex
+              w-full
+              max-w-[1900px]
+              flex-col
+              gap-5
+              px-5
+              py-10
+              sm:flex-row
+              sm:items-center
+              sm:justify-between
+              sm:px-8
+              lg:px-12
+              xl:px-16
+              2xl:px-20
+            "
+          >
+            <div>
+              <p className="text-sm text-slate-500">
+                Creative direction, development,
+                research & production
+              </p>
+
+              <p className="mt-1 text-lg font-medium">
+                Pamela J. Terrell
+              </p>
+            </div>
 
             <a
               href="https://www.pamelajterrell.com"
               target="_blank"
               rel="noreferrer"
-              className="mt-8 inline-flex min-h-12 items-center rounded-full border border-[#d8b36d]/30 px-6 text-sm text-[#e5c584] transition hover:bg-[#d8b36d]/10"
+              className="text-sm text-[#d7af65] underline underline-offset-4 transition hover:text-[#efd296]"
             >
-              See how it&apos;s built at
               PamelaJTerrell.com ↗
             </a>
-          </div>
-
-          <div className="flex flex-wrap content-start gap-3">
-            {FOUNDATION.map((item) => (
-              <span
-                key={item}
-                className="rounded-full border border-white/10 bg-[#07101a] px-4 py-2.5 text-sm text-slate-400"
-              >
-                {item}
-              </span>
-            ))}
           </div>
         </div>
       </section>
@@ -969,317 +933,293 @@ export default function Home() {
       {/* ======================================================
           STORY SUBMISSION
       ====================================================== */}
+
       <section
         id="submit-story"
-        className="scroll-mt-20 border-b border-white/10 bg-[#050a11]"
+        className="w-full scroll-mt-20 border-b border-white/10 bg-[#02060b]"
       >
-        <div className="mx-auto max-w-[1500px] px-6 py-24 sm:px-10 lg:px-16 lg:py-32">
-          <div className="grid gap-12 lg:grid-cols-[.8fr_1.2fr]">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[#d8b36d]">
-                Night Listener submissions
+        <div
+          className="
+            mx-auto
+            grid
+            w-full
+            max-w-[1900px]
+            gap-12
+            px-5
+            py-20
+            sm:px-8
+            sm:py-24
+            lg:grid-cols-[0.65fr_1.35fr]
+            lg:px-12
+            xl:px-16
+            2xl:px-20
+          "
+        >
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#d7af65]">
+              Night Listener submissions
+            </p>
+
+            <h2 className="mt-5 max-w-xl text-3xl font-medium leading-[1.08] tracking-[-0.035em] sm:text-4xl">
+              Tell us a true story you still think about.
+            </h2>
+
+            <p className="mt-6 max-w-xl text-base leading-8 text-slate-400">
+              It does not need to be shocking. It just
+              needs to be real — a conversation, a strange
+              encounter, a relationship lesson, intuition,
+              starting over, or something you simply never
+              forgot.
+            </p>
+
+            <div className="mt-8 max-w-xl rounded-2xl border border-white/10 bg-white/[0.025] p-5">
+              <p className="text-sm font-medium">
+                How selected stories may be used
               </p>
 
-              <h2 className="mt-5 max-w-xl text-4xl font-semibold leading-[1.04] tracking-[-0.045em] sm:text-5xl">
-                Tell us a true story you still
-                think about.
-              </h2>
-
-              <p className="mt-7 max-w-xl text-base leading-8 text-slate-400">
-                It does not have to be shocking.
-                It just has to be real. A strange
-                conversation. A relationship
-                lesson. A moment of intuition. A
-                season of starting over. A night
-                when something felt different.
-              </p>
-
-              <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.025] p-5">
-                <p className="text-sm font-medium text-white">
-                  How selected stories may be used
-                </p>
-
-                <p className="mt-2 text-sm leading-7 text-slate-500">
-                  Stabile USA may adapt selected
-                  submissions into future narrated
-                  Night Listener episodes. Names,
-                  locations, and identifying
-                  details may be changed for
-                  privacy, clarity, tone, and
-                  length.
-                </p>
-              </div>
-
-              <p className="mt-5 text-xs leading-6 text-slate-600">
-                Please do not include private
-                addresses, phone numbers, medical
-                records, financial details, or
-                accusations against clearly
-                identifiable people.
+              <p className="mt-2 text-sm leading-7 text-slate-500">
+                Stabile USA may adapt selected submissions
+                into future narrated Night Listener
+                episodes. Names, locations, and identifying
+                details may be changed for privacy,
+                clarity, tone, and length.
               </p>
             </div>
 
-            <div className="rounded-[2rem] border border-white/10 bg-[#07101a] p-6 sm:p-8">
-              <div className="space-y-5">
+            <p className="mt-5 max-w-xl text-xs leading-6 text-slate-600">
+              Please do not include private addresses,
+              phone numbers, medical records, financial
+              details, or accusations against clearly
+              identifiable people.
+            </p>
+          </div>
+
+          <div className="rounded-[2rem] border border-white/10 bg-[#07101a] p-5 sm:p-7 lg:p-9 xl:p-10">
+            <div className="space-y-5">
+              <div>
+                <label
+                  htmlFor="story-title"
+                  className="text-sm font-medium"
+                >
+                  Story title
+                </label>
+
+                <Input
+                  id="story-title"
+                  value={storyTitle}
+                  onChange={(e) =>
+                    setStoryTitle(e.target.value)
+                  }
+                  placeholder="Example: The Phone Call I Still Think About"
+                  className="mt-2 border-white/10 bg-black/20 text-white"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="story-category"
+                  className="text-sm font-medium"
+                >
+                  What kind of story is this?
+                </label>
+
+                <select
+                  id="story-category"
+                  value={storyCategory}
+                  onChange={(e) =>
+                    setStoryCategory(e.target.value)
+                  }
+                  className="mt-2 h-11 w-full rounded-xl border border-white/10 bg-[#03070d] px-3 text-sm text-white"
+                >
+                  <option>Intuition</option>
+                  <option>Relationship lesson</option>
+                  <option>Strange encounter</option>
+                  <option>Starting over</option>
+                  <option>Family story</option>
+                  <option>Friendship story</option>
+                  <option>Work story</option>
+                  <option>Something I never forgot</option>
+                  <option>Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="story-body"
+                  className="text-sm font-medium"
+                >
+                  Tell your story
+                </label>
+
+                <textarea
+                  id="story-body"
+                  value={storyBody}
+                  onChange={(e) =>
+                    setStoryBody(e.target.value)
+                  }
+                  placeholder="Share the story in your own words..."
+                  className="mt-2 min-h-[210px] w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm leading-7 text-white outline-none placeholder:text-slate-700 focus:border-[#d7af65]/40"
+                />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label
-                    htmlFor="story-title"
-                    className="text-sm font-medium text-white"
+                    htmlFor="name-preference"
+                    className="text-sm font-medium"
                   >
-                    Story title
-                  </label>
-
-                  <Input
-                    id="story-title"
-                    value={storyTitle}
-                    onChange={(e) =>
-                      setStoryTitle(
-                        e.target.value,
-                      )
-                    }
-                    placeholder="Example: The Phone Call I Still Think About"
-                    className="mt-2 border-white/10 bg-black/20 text-white"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="story-category"
-                    className="text-sm font-medium text-white"
-                  >
-                    What kind of story is this?
+                    Name preference
                   </label>
 
                   <select
-                    id="story-category"
-                    value={storyCategory}
+                    id="name-preference"
+                    value={namePreference}
                     onChange={(e) =>
-                      setStoryCategory(
-                        e.target.value,
-                      )
+                      setNamePreference(e.target.value)
                     }
                     className="mt-2 h-11 w-full rounded-xl border border-white/10 bg-[#03070d] px-3 text-sm text-white"
                   >
-                    <option>Intuition</option>
+                    <option>Keep me anonymous</option>
+                    <option>First name only</option>
+                    <option>A fake name is fine</option>
                     <option>
-                      Relationship lesson
+                      Contact me before using any name
                     </option>
-                    <option>
-                      Strange encounter
-                    </option>
-                    <option>Starting over</option>
-                    <option>Family story</option>
-                    <option>
-                      Friendship story
-                    </option>
-                    <option>Work story</option>
-                    <option>
-                      Something I never forgot
-                    </option>
-                    <option>Other</option>
                   </select>
                 </div>
 
                 <div>
                   <label
-                    htmlFor="story-body"
-                    className="text-sm font-medium text-white"
+                    htmlFor="submitter-name"
+                    className="text-sm font-medium"
                   >
-                    Tell your story
-                  </label>
-
-                  <textarea
-                    id="story-body"
-                    value={storyBody}
-                    onChange={(e) =>
-                      setStoryBody(
-                        e.target.value,
-                      )
-                    }
-                    placeholder="Share the story in your own words..."
-                    className="mt-2 min-h-[190px] w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm leading-7 text-white outline-none placeholder:text-slate-700 focus:border-[#d8b36d]/40"
-                  />
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label
-                      htmlFor="name-preference"
-                      className="text-sm font-medium text-white"
-                    >
-                      Name preference
-                    </label>
-
-                    <select
-                      id="name-preference"
-                      value={namePreference}
-                      onChange={(e) =>
-                        setNamePreference(
-                          e.target.value,
-                        )
-                      }
-                      className="mt-2 h-11 w-full rounded-xl border border-white/10 bg-[#03070d] px-3 text-sm text-white"
-                    >
-                      <option>
-                        Keep me anonymous
-                      </option>
-                      <option>
-                        First name only
-                      </option>
-                      <option>
-                        A fake name is fine
-                      </option>
-                      <option>
-                        Contact me before using any name
-                      </option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="submitter-name"
-                      className="text-sm font-medium text-white"
-                    >
-                      Your name
-                    </label>
-
-                    <Input
-                      id="submitter-name"
-                      value={submitterName}
-                      onChange={(e) =>
-                        setSubmitterName(
-                          e.target.value,
-                        )
-                      }
-                      placeholder="Optional"
-                      className="mt-2 border-white/10 bg-black/20 text-white"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="submitter-email"
-                    className="text-sm font-medium text-white"
-                  >
-                    Email address
+                    Your name
                   </label>
 
                   <Input
-                    id="submitter-email"
-                    type="email"
-                    value={submitterEmail}
+                    id="submitter-name"
+                    value={submitterName}
                     onChange={(e) =>
-                      setSubmitterEmail(
-                        e.target.value,
-                      )
+                      setSubmitterName(e.target.value)
                     }
-                    placeholder="Optional, but helpful if I need to follow up"
+                    placeholder="Optional"
                     className="mt-2 border-white/10 bg-black/20 text-white"
                   />
                 </div>
+              </div>
 
-                <label className="flex gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm leading-6 text-slate-400">
-                  <input
-                    type="checkbox"
-                    checked={
-                      permissionGranted
-                    }
-                    onChange={(e) =>
-                      setPermissionGranted(
-                        e.target.checked,
-                      )
-                    }
-                    className="mt-1"
-                  />
-
-                  <span>
-                    Yes, I give Stabile USA
-                    permission to adapt, edit,
-                    narrate, and publish this story.
-                    I understand that names,
-                    locations, and identifying
-                    details may be changed.
-                  </span>
+              <div>
+                <label
+                  htmlFor="submitter-email"
+                  className="text-sm font-medium"
+                >
+                  Email address
                 </label>
 
-                <Button
-                  type="button"
-                  onClick={submitStory}
-                  disabled={storySubmitting}
-                  className="h-11 w-full bg-[#d8b36d] text-black hover:bg-[#ecd096] sm:w-auto"
-                >
-                  {storySubmitting
-                    ? "Submitting..."
-                    : "Submit your story"}
-                </Button>
-
-                {storyMessage && (
-                  <p className="text-sm leading-6 text-slate-400">
-                    {storyMessage}
-                  </p>
-                )}
+                <Input
+                  id="submitter-email"
+                  type="email"
+                  value={submitterEmail}
+                  onChange={(e) =>
+                    setSubmitterEmail(e.target.value)
+                  }
+                  placeholder="Optional, but helpful if I need to follow up"
+                  className="mt-2 border-white/10 bg-black/20 text-white"
+                />
               </div>
+
+              <label className="flex gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm leading-6 text-slate-400">
+                <input
+                  type="checkbox"
+                  checked={permissionGranted}
+                  onChange={(e) =>
+                    setPermissionGranted(e.target.checked)
+                  }
+                  className="mt-1"
+                />
+
+                <span>
+                  Yes, I give Stabile USA permission to
+                  adapt, edit, narrate, and publish this
+                  story. I understand that names,
+                  locations, and identifying details may
+                  be changed.
+                </span>
+              </label>
+
+              <Button
+                type="button"
+                onClick={submitStory}
+                disabled={storySubmitting}
+                className="h-11 w-full bg-[#d7af65] text-black hover:bg-[#e8cb91] sm:w-auto"
+              >
+                {storySubmitting
+                  ? "Submitting..."
+                  : "Submit your story"}
+              </Button>
+
+              {storyMessage && (
+                <p className="text-sm leading-6 text-slate-400">
+                  {storyMessage}
+                </p>
+              )}
             </div>
           </div>
         </div>
       </section>
 
       {/* ======================================================
-          FINAL MANIFESTO
+          FINAL BRAND MOMENT
       ====================================================== */}
-      <section className="relative overflow-hidden bg-[#02060b]">
-        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[50rem] w-[50rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#d8b36d]/5 blur-[150px]" />
 
-        <div className="relative mx-auto max-w-[1500px] px-6 py-28 text-center sm:px-10 lg:px-16 lg:py-40">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#d8b36d]">
-            The question behind everything
+      <section className="relative w-full overflow-hidden bg-[#03070d]">
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[50rem] w-[50rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#d7af65]/5 blur-[160px]" />
+
+        <div
+          className="
+            relative
+            mx-auto
+            w-full
+            max-w-[1900px]
+            px-5
+            py-24
+            text-center
+            sm:px-8
+            sm:py-28
+            lg:px-12
+            lg:py-32
+            xl:px-16
+            2xl:px-20
+          "
+        >
+          <img
+            src="/images/stabile-s-logo.png"
+            alt="Stabile USA"
+            className="mx-auto w-[105px] drop-shadow-[0_0_30px_rgba(215,175,101,.2)] sm:w-[120px]"
+          />
+
+          <p className="mt-9 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#d7af65]">
+            Stabile USA
           </p>
 
-          <h2 className="mx-auto mt-7 max-w-6xl text-5xl font-semibold leading-[0.94] tracking-[-0.06em] sm:text-6xl lg:text-8xl">
-            What should exist
-            <span className="block text-slate-500">
-              that doesn&apos;t exist yet?
+          <h2 className="mx-auto mt-6 max-w-4xl text-3xl font-medium leading-[1.08] tracking-[-0.035em] sm:text-4xl lg:text-5xl">
+            Independent ideas.
+            <span className="mt-2 block text-slate-500">
+              Built with purpose.
             </span>
           </h2>
 
-          <p className="mx-auto mt-9 max-w-3xl text-xl leading-9 text-slate-300 sm:text-2xl">
-            That&apos;s usually where we start.
+          <p className="mx-auto mt-7 max-w-3xl text-base leading-8 text-slate-400">
+            Experience, creativity, technology,
+            information, storytelling, and curiosity —
+            brought together wherever they can do something
+            worthwhile.
           </p>
 
-          <div className="mx-auto mt-14 flex max-w-4xl flex-wrap justify-center gap-x-8 gap-y-4 text-xs uppercase tracking-[0.2em] text-slate-600">
-            <span>Independent ideas</span>
-            <span>Original media</span>
-            <span>Useful technology</span>
-            <span>Human stories</span>
-            <span>Unbounded possibilities</span>
-          </div>
-
-          <div className="mt-20">
-            <p className="text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
-              Stabile USA
+          <div className="mx-auto mt-16 max-w-[1700px] border-t border-white/10 pt-7">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-slate-700">
+              stabileUSA.com · Independent digital media brand
             </p>
-
-            <p className="mt-3 text-lg text-[#d8b36d]">
-              We build what doesn&apos;t exist yet.
-            </p>
-          </div>
-
-          <div className="mt-20 border-t border-white/10 pt-8">
-            <p className="text-[10px] uppercase tracking-[0.24em] text-slate-700">
-              stabileUSA.com · An independent
-              digital innovation company
-            </p>
-
-            <a
-              href="https://www.pamelajterrell.com"
-              target="_blank"
-              rel="noreferrer"
-              className="mt-3 inline-block text-xs text-slate-600 underline underline-offset-4 transition hover:text-white"
-            >
-              Technical development &
-              production: PamelaJTerrell.com
-            </a>
           </div>
         </div>
       </section>
