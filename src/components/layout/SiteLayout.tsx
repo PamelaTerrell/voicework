@@ -270,10 +270,21 @@ export default function SiteLayout() {
               </a>
 
               <a
+                href="https://bsky.app/profile/stabileusa.bsky.social"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Stabile USA on Bluesky"
+                className="inline-flex items-center gap-2 transition hover:text-foreground"
+              >
+                <span aria-hidden="true">🦋</span>
+                <span>Bluesky</span>
+              </a>
+
+              <a
                 href="https://instagram.com/stabileusa"
                 target="_blank"
                 rel="noreferrer"
-                aria-label="Instagram"
+                aria-label="Stabile USA on Instagram"
                 className="inline-flex items-center gap-2 transition hover:text-foreground"
               >
                 <svg
