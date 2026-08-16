@@ -239,193 +239,281 @@ export default function Home() {
           FULL-WIDTH CINEMATIC HERO
       ====================================================== */}
 
-      <section className="relative w-full overflow-hidden bg-[#02060b]">
-        {/* BACKGROUND FILL */}
-        <div className="absolute inset-0 overflow-hidden">
-          <img
-            src="/images/stabileusa-hero.png"
-            alt=""
-            aria-hidden="true"
-            className="h-full w-full scale-110 object-cover object-center opacity-45 blur-2xl"
-          />
+        <section className="relative w-full overflow-hidden bg-[#02060b]">
+  {/* BACKGROUND FILL */}
+  <div className="absolute inset-0 overflow-hidden">
+    <img
+      src="/images/stabileusa-hero.png"
+      alt=""
+      aria-hidden="true"
+      className="
+        h-full
+        w-full
+        scale-110
+        object-cover
+        object-center
+        opacity-40
+        blur-2xl
+        sm:opacity-45
+      "
+    />
 
-          <div className="absolute inset-0 bg-[#02060b]/30" />
-        </div>
+    <div className="absolute inset-0 bg-[#02060b]/35 sm:bg-[#02060b]/30" />
+  </div>
 
-        {/* MAIN ARTWORK */}
-        <div
-          className="
-            relative
-            z-10
-            flex
-            w-full
-            items-center
-            justify-center
-            min-h-[72svh]
-            sm:min-h-[82svh]
-            lg:min-h-[100svh]
-          "
-        >
-          <img
-            src="/images/stabileusa-hero.png"
-            alt="Stabile USA digital media brand — creative ideas built to last, advancing the human experience, and stories that inspire with solutions that endure"
-            className="
-              block
-              h-auto
-              max-h-[100svh]
-              w-full
-              object-contain
-              object-center
-              lg:h-[100svh]
-              lg:w-auto
-              lg:max-w-full
-            "
-          />
-        </div>
+  {/* MAIN ARTWORK */}
+  <div
+    className="
+      relative
+      z-10
+      flex
+      w-full
+      items-center
+      justify-center
 
-        {/* CINEMATIC FADES */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-28 bg-gradient-to-t from-[#02060b] via-[#02060b]/35 to-transparent sm:h-36" />
+      min-h-[78svh]
+      sm:min-h-[86svh]
+      md:min-h-[92svh]
+      lg:min-h-[100svh]
 
-        <div className="pointer-events-none absolute inset-0 z-20 hidden bg-[radial-gradient(ellipse_at_center,transparent_50%,rgba(0,0,0,0.24)_100%)] xl:block" />
+      px-0
+      sm:px-4
+      lg:px-0
 
-        {/* TOP BRAND STRIP */}
-        <div
-          className="
-            absolute
-            inset-x-0
-            top-0
-            z-30
-            flex
-            w-full
-            items-center
-            justify-between
-            px-4
-            pt-4
-            sm:px-7
-            sm:pt-6
-            lg:px-10
-            xl:px-16
-            2xl:px-20
-          "
-        >
-          <div className="flex items-center gap-3 rounded-full border border-white/10 bg-black/25 px-3 py-2 backdrop-blur-md sm:px-4">
-            <img
-              src="/images/stabile-s-logo.png"
-              alt=""
-              aria-hidden="true"
-              className="h-7 w-7 rounded-full object-cover shadow-[0_0_22px_rgba(215,175,101,.22)] sm:h-8 sm:w-8"
-            />
+      pt-16
+      pb-28
+      sm:pt-20
+      sm:pb-24
+      lg:py-0
+    "
+  >
+    <img
+      src="/images/stabileusa-hero.png"
+      alt="Stabile USA digital media brand — creative ideas built to last, advancing the human experience, and stories that inspire with solutions that endure"
+      className="
+        block
 
-            <span className="hidden text-[9px] font-semibold uppercase tracking-[0.27em] text-white/80 sm:inline">
-              Stabile USA
-            </span>
-          </div>
+        w-[118%]
+        max-w-none
+        h-auto
 
-          <a
-            href="https://www.pamelajterrell.com"
-            target="_blank"
-            rel="noreferrer"
-            className="
-              rounded-full
-              border
-              border-white/15
-              bg-black/30
-              px-4
-              py-2
-              text-[8px]
-              font-medium
-              uppercase
-              tracking-[0.17em]
-              text-white/70
-              backdrop-blur-md
-              transition
-              hover:border-[#d7af65]/50
-              hover:bg-black/55
-              hover:text-white
-              sm:text-[9px]
-              lg:text-[10px]
-            "
-          >
-            Pamela J. Terrell ↗
-          </a>
-        </div>
+        object-contain
+        object-center
 
-        {/* HERO BUTTONS */}
-        <div
-          className="
-            absolute
-            inset-x-0
-            bottom-0
-            z-30
-            px-4
-            pb-4
-            sm:px-7
-            sm:pb-6
-            lg:px-10
-            lg:pb-8
-            xl:px-16
-          "
-        >
-          <div className="mx-auto flex w-full max-w-[1800px] flex-col justify-center gap-2.5 sm:flex-row sm:gap-3">
-            <a
-              href="#night-listener"
-              className="
-                inline-flex
-                min-h-11
-                items-center
-                justify-center
-                rounded-full
-                border
-                border-[#d7af65]/55
-                bg-black/55
-                px-6
-                text-center
-                text-[9px]
-                font-semibold
-                uppercase
-                tracking-[0.14em]
-                text-[#f0d493]
-                shadow-lg
-                backdrop-blur-md
-                transition
-                hover:border-[#e7ca90]/80
-                hover:bg-black/75
-                sm:text-[10px]
-              "
-            >
-              Experience Night Listener
-            </a>
+        sm:w-[108%]
+        md:w-full
+        md:max-w-full
 
-            <a
-              href="#projects"
-              className="
-                inline-flex
-                min-h-11
-                items-center
-                justify-center
-                rounded-full
-                border
-                border-white/20
-                bg-black/45
-                px-6
-                text-center
-                text-[9px]
-                font-semibold
-                uppercase
-                tracking-[0.14em]
-                text-white
-                backdrop-blur-md
-                transition
-                hover:border-white/35
-                hover:bg-black/70
-                sm:text-[10px]
-              "
-            >
-              Explore Stabile USA
-            </a>
-          </div>
-        </div>
-      </section>
+        lg:h-[100svh]
+        lg:w-auto
+        lg:max-w-full
+
+        drop-shadow-[0_20px_60px_rgba(0,0,0,.28)]
+      "
+    />
+  </div>
+
+  {/* CINEMATIC FADES */}
+  <div
+    className="
+      pointer-events-none
+      absolute
+      inset-x-0
+      bottom-0
+      z-20
+      h-32
+      bg-gradient-to-t
+      from-[#02060b]
+      via-[#02060b]/45
+      to-transparent
+      sm:h-36
+      lg:h-40
+    "
+  />
+
+  <div
+    className="
+      pointer-events-none
+      absolute
+      inset-x-0
+      top-0
+      z-20
+      h-24
+      bg-gradient-to-b
+      from-[#02060b]/55
+      to-transparent
+      sm:h-28
+    "
+  />
+
+  <div className="pointer-events-none absolute inset-0 z-20 hidden bg-[radial-gradient(ellipse_at_center,transparent_50%,rgba(0,0,0,0.24)_100%)] xl:block" />
+
+  {/* TOP BRAND STRIP */}
+  <div
+    className="
+      absolute
+      inset-x-0
+      top-0
+      z-30
+      flex
+      w-full
+      items-center
+      justify-between
+      px-4
+      pt-4
+      sm:px-7
+      sm:pt-6
+      lg:px-10
+      xl:px-16
+      2xl:px-20
+    "
+  >
+    <div className="flex items-center gap-3 rounded-full border border-white/10 bg-black/25 px-3 py-2 backdrop-blur-md sm:px-4">
+      <img
+        src="/images/stabile-s-logo.png"
+        alt=""
+        aria-hidden="true"
+        className="h-7 w-7 rounded-full object-cover shadow-[0_0_22px_rgba(215,175,101,.22)] sm:h-8 sm:w-8"
+      />
+
+      <span className="hidden text-[9px] font-semibold uppercase tracking-[0.27em] text-white/80 sm:inline">
+        Stabile USA
+      </span>
+    </div>
+
+    <a
+      href="https://www.pamelajterrell.com"
+      target="_blank"
+      rel="noreferrer"
+      className="
+        rounded-full
+        border
+        border-white/15
+        bg-black/30
+        px-3.5
+        py-2
+        text-[8px]
+        font-medium
+        uppercase
+        tracking-[0.14em]
+        text-white/70
+        backdrop-blur-md
+        transition
+        hover:border-[#d7af65]/50
+        hover:bg-black/55
+        hover:text-white
+        sm:px-4
+        sm:text-[9px]
+        sm:tracking-[0.17em]
+        lg:text-[10px]
+      "
+    >
+      Pamela J. Terrell ↗
+    </a>
+  </div>
+
+  {/* HERO BUTTONS */}
+  <div
+    className="
+      absolute
+      inset-x-0
+      bottom-0
+      z-30
+      px-4
+      pb-5
+      sm:px-7
+      sm:pb-6
+      lg:px-10
+      lg:pb-8
+      xl:px-16
+    "
+  >
+    <div
+      className="
+        mx-auto
+        flex
+        w-full
+        max-w-[1800px]
+        flex-row
+        justify-center
+        gap-2
+        sm:gap-3
+      "
+    >
+      <a
+        href="#night-listener"
+        className="
+          inline-flex
+          min-h-10
+          flex-1
+          items-center
+          justify-center
+          rounded-full
+          border
+          border-[#d7af65]/55
+          bg-black/60
+          px-3
+          text-center
+          text-[8px]
+          font-semibold
+          uppercase
+          tracking-[0.10em]
+          text-[#f0d493]
+          shadow-lg
+          backdrop-blur-md
+          transition
+          hover:border-[#e7ca90]/80
+          hover:bg-black/75
+
+          sm:min-h-11
+          sm:flex-none
+          sm:px-6
+          sm:text-[10px]
+          sm:tracking-[0.14em]
+        "
+      >
+        Experience Night Listener
+      </a>
+
+      <a
+        href="#projects"
+        className="
+          inline-flex
+          min-h-10
+          flex-1
+          items-center
+          justify-center
+          rounded-full
+          border
+          border-white/20
+          bg-black/50
+          px-3
+          text-center
+          text-[8px]
+          font-semibold
+          uppercase
+          tracking-[0.10em]
+          text-white
+          backdrop-blur-md
+          transition
+          hover:border-white/35
+          hover:bg-black/70
+
+          sm:min-h-11
+          sm:flex-none
+          sm:px-6
+          sm:text-[10px]
+          sm:tracking-[0.14em]
+        "
+      >
+        Explore Stabile USA
+      </a>
+    </div>
+  </div>
+</section>
+        
+
+ 
 
       {/* ======================================================
           BRAND INTRO
