@@ -20,6 +20,7 @@ type MemberAccessResponse = {
   isSubscriber?: boolean;
   cancellationScheduled?: boolean;
   cancellationEffectiveAt?: number | null;
+
   profile?: {
     id: string;
     email: string | null;
@@ -27,6 +28,7 @@ type MemberAccessResponse = {
     subscription_status: string | null;
     stripe_customer_id?: string | null;
   } | null;
+
   subscription?: {
     id: string;
     status: string;
@@ -34,51 +36,59 @@ type MemberAccessResponse = {
     cancel_at: number | null;
     current_period_end: number | null;
   } | null;
+
   error?: string;
 };
 
-const FREE_EPISODE_ID = "say-sorry-ep3";
+const FREE_EPISODE_IDS = new Set([
+  "say-sorry-ep3",
+  "im-fine-ep6",
+]);
+
+const DEFAULT_EPISODE_ID = "say-sorry-ep3";
 
 const EPISODES: MemberEpisode[] = [
-
   {
-
-  id: "toast-ep14",
-  title: "A Toast to the End of Us",
-  description:
-    "A quiet story about familiarity, contempt, eye rolls, and the small everyday criticisms that can slowly end a marriage.",
-  thumbnailSrc: "/images/toast-ep14.png",
-  tags: ["story", "relationships", "contempt"],
-},
-
-{
-  id: "life-you-didnt-get-ep13",
-  title: "The Life You Almost Didn’t Get",
-  description:
-    "A quiet reflection on love, choice, the road not taken, and the ache of wondering who you might have become if life had stayed on its original course.",
-  thumbnailSrc: "/images/the-life-you-almost-didnt-get.png",
-  tags: ["reflection", "love", "what might have been"],
-},
-
+    id: "love-him-anyway-15",
+    title: "When a Man Realizes You Love Him Anyway",
+    description:
+      "A quiet story about the moment a man realizes he does not have to be strong, successful, or useful every second to still be loved.",
+    thumbnailSrc: "/images/love-him-anyway-15.png",
+    tags: ["story", "relationships", "love"],
+  },
   {
-  id: "the-hardest-people-ep12",
-  title: "The Hardest People to Heal From",
-  description:
-    "The hardest people to heal from are often the ones who truly loved you badly — the ones who were both comfort and chaos.",
-  thumbnailSrc: "/images/the-hardest-people-ep12.png",
-  tags: ["story", "relationships", "healing"],
-},
-
-{
-  id: "never-made-you-guess-ep11",
-  title: "The One Who Never Made You Guess",
-  description:
-    "A quiet reflection on the kind of love that does not confuse you, chase you, or make you question your worth — the steady love many people only recognize after pain.",
-  thumbnailSrc: "/images/never-made-you-guessep11.png",
-  tags: ["story", "relationships", "peace"],
-},
-
-{
+    id: "toast-ep14",
+    title: "A Toast to the End of Us",
+    description:
+      "A quiet story about familiarity, contempt, eye rolls, and the small everyday criticisms that can slowly end a marriage.",
+    thumbnailSrc: "/images/toast-ep14.png",
+    tags: ["story", "relationships", "contempt"],
+  },
+  {
+    id: "life-you-didnt-get-ep13",
+    title: "The Life You Almost Didn’t Get",
+    description:
+      "A quiet reflection on love, choice, the road not taken, and the ache of wondering who you might have become if life had stayed on its original course.",
+    thumbnailSrc: "/images/the-life-you-almost-didnt-get.png",
+    tags: ["reflection", "love", "what might have been"],
+  },
+  {
+    id: "the-hardest-people-ep12",
+    title: "The Hardest People to Heal From",
+    description:
+      "The hardest people to heal from are often the ones who truly loved you badly — the ones who were both comfort and chaos.",
+    thumbnailSrc: "/images/the-hardest-people-ep12.png",
+    tags: ["story", "relationships", "healing"],
+  },
+  {
+    id: "never-made-you-guess-ep11",
+    title: "The One Who Never Made You Guess",
+    description:
+      "A quiet reflection on the kind of love that does not confuse you, chase you, or make you question your worth — the steady love many people only recognize after pain.",
+    thumbnailSrc: "/images/never-made-you-guessep11.png",
+    tags: ["story", "relationships", "peace"],
+  },
+  {
     id: "had-everything-part2-ep10",
     title: "She Had Everything… (Part 2)",
     description:
@@ -86,40 +96,60 @@ const EPISODES: MemberEpisode[] = [
     thumbnailSrc: "/images/she-had-everything-part2.png",
     tags: ["story", "relationships", "regret"],
   },
-
   {
-  id: "had-everything-part1-ep9",
-  title: "She Had Everything… (Part 1)",
-  description:
-    "She had the kind of life people never question — until something small, private, and quietly repeated begins to change everything.",
-  thumbnailSrc: "/images/she-had-everything-part1.png",
-  tags: ["story", "human behavior", "mystery"],
-},
-
+    id: "had-everything-part1-ep9",
+    title: "She Had Everything… (Part 1)",
+    description:
+      "She had the kind of life people never question — until something small, private, and quietly repeated begins to change everything.",
+    thumbnailSrc: "/images/she-had-everything-part1.png",
+    tags: ["story", "human behavior", "mystery"],
+  },
   {
-  id: "lonely-night-ep7",
-  title: "The Night It Ended (Or So She Thought)",
-  description:
-    "Part 1: Her Version — She sat outside his apartment, staring at a message that felt final. But the truth of that night… wasn’t as complete as she believed.",
-  thumbnailSrc: "/images/lonely-night.png",
-  tags: ["story", "relationships", "perspective"],
-},
-
-{
-  id: "lonely-night-part2-ep8",
-  title: "The Night He Stayed Inside",
-  description:
-    "Part 2: His Version — While she sat outside believing the silence meant he didn’t care, he was inside facing something he didn’t yet know how to hold.",
-  thumbnailSrc: "/images/lonely-night-part2.png",
-  tags: ["story", "relationships", "perspective"],
-},
-
+    id: "lonely-night-part2-ep8",
+    title: "The Night He Stayed Inside",
+    description:
+      "Part 2: His Version — While she sat outside believing the silence meant he didn’t care, he was inside facing something he didn’t yet know how to hold.",
+    thumbnailSrc: "/images/lonely-night-part2.png",
+    tags: ["story", "relationships", "perspective"],
+  },
+  {
+    id: "lonely-night-ep7",
+    title: "The Night It Ended (Or So She Thought)",
+    description:
+      "Part 1: Her Version — She sat outside his apartment, staring at a message that felt final. But the truth of that night… wasn’t as complete as she believed.",
+    thumbnailSrc: "/images/lonely-night.png",
+    tags: ["story", "relationships", "perspective"],
+  },
+  {
+    id: "im-fine-ep6",
+    title: "Why We Say “I’m Fine” When It’s Not",
+    description:
+      "A quiet story about the small moments we dismiss, the things we don’t say, and how something subtle can quietly shift a connection.",
+    thumbnailSrc: "/images/im-fine.png",
+    tags: ["story", "relationships", "human behavior"],
+  },
   {
     id: "versions-ep5",
     title: "The Versions We Never Meant to See",
     description:
       "A quiet story about how two people can care deeply for each other—yet slowly begin responding to versions of each other that were never really there.",
     thumbnailSrc: "/images/never-meant-to-see.png",
+    tags: ["story", "reflection", "relationships"],
+  },
+  {
+    id: "resentment-ep4",
+    title: "The Quiet Weight of Resentment",
+    description:
+      "A quiet story about what builds when nothing is said—and how distance can grow without either person realizing it.",
+    thumbnailSrc: "/images/resentment.png",
+    tags: ["story", "reflection", "relationships"],
+  },
+  {
+    id: "say-sorry-ep3",
+    title: "You Were Right… But You Never Said Sorry",
+    description:
+      "A quiet reflection on being right, the moment you almost apologized, and what it cost you not to.",
+    thumbnailSrc: "/images/say-sorry.png",
     tags: ["story", "reflection", "relationships"],
   },
   {
@@ -138,41 +168,32 @@ const EPISODES: MemberEpisode[] = [
     thumbnailSrc: "/images/why-mind-replays-thumbnail.png",
     tags: ["story", "calm", "human behavior"],
   },
-  {
-    id: "say-sorry-ep3",
-    title: "You Were Right… But You Never Said Sorry",
-    description:
-      "A quiet reflection on being right, the moment you almost apologized, and what it cost you not to.",
-    thumbnailSrc: "/images/say-sorry.png",
-    tags: ["story", "reflection", "relationships"],
-  },
-  {
-    id: "resentment-ep4",
-    title: "The Quiet Weight of Resentment",
-    description:
-      "A quiet story about what builds when nothing is said—and how distance can grow without either person realizing it.",
-    thumbnailSrc: "/images/resentment.png",
-    tags: ["story", "reflection", "relationships"],
-  },
-
-  {
-  id: "im-fine-ep6",
-  title: "Why We Say “I’m Fine” When It’s Not",
-  description:
-    "A quiet story about the small moments we dismiss, the things we don’t say, and how something subtle can quietly shift a connection.",
-  thumbnailSrc: "/images/im-fine.png",
-  tags: ["story", "relationships", "human behavior"],
-}
-
-
-
 ];
 
-function trackEvent(eventName: string, params: Record<string, any> = {}) {
-  if (typeof window !== "undefined" && (window as any).gtag) {
+function isFreeEpisode(id: string) {
+  return FREE_EPISODE_IDS.has(id);
+}
+
+function stopOtherAudio(current: HTMLAudioElement) {
+  document.querySelectorAll("audio").forEach((audio) => {
+    if (audio !== current) {
+      audio.pause();
+    }
+  });
+}
+
+function trackEvent(
+  eventName: string,
+  params: Record<string, unknown> = {},
+) {
+  if (
+    typeof window !== "undefined" &&
+    typeof (window as any).gtag === "function"
+  ) {
     (window as any).gtag("event", eventName, {
       site: "stabileusa",
       page_name: "members",
+      content_type: "episode",
       page_location: window.location.pathname,
       ...params,
     });
@@ -185,6 +206,7 @@ function isActiveStatus(status?: string | null) {
 
 function formatDate(timestamp?: number | null) {
   if (!timestamp) return null;
+
   return new Date(timestamp * 1000).toLocaleDateString(undefined, {
     month: "long",
     day: "numeric",
@@ -195,9 +217,7 @@ function formatDate(timestamp?: number | null) {
 function getDaysRemaining(timestamp?: number | null) {
   if (!timestamp) return null;
 
-  const now = Date.now();
-  const end = timestamp * 1000;
-  const diff = end - now;
+  const diff = timestamp * 1000 - Date.now();
 
   if (diff <= 0) return 0;
 
@@ -205,56 +225,115 @@ function getDaysRemaining(timestamp?: number | null) {
 }
 
 export default function Members() {
-  const [episodeId, setEpisodeId] = useState(FREE_EPISODE_ID);
-  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [episodeId, setEpisodeId] =
+    useState(DEFAULT_EPISODE_ID);
+
+  const [signedUrl, setSignedUrl] =
+    useState<string | null>(null);
+
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
-  const [sessionUserId, setSessionUserId] = useState<string | null>(null);
-  const [checkingAccess, setCheckingAccess] = useState(false);
-  const [isSubscriber, setIsSubscriber] = useState(false);
-  const [cancellationScheduled, setCancellationScheduled] = useState(false);
-  const [cancellationEffectiveAt, setCancellationEffectiveAt] = useState<number | null>(null);
-  const [, setSubscriptionStatus] = useState<string | null>(null);
-  const [cancelLoading, setCancelLoading] = useState(false);
-  const [cancelMessage, setCancelMessage] = useState("");
+  const [sessionEmail, setSessionEmail] =
+    useState<string | null>(null);
 
-  const [stripeCustomerId, setStripeCustomerId] = useState<string | null>(null);
+  const [sessionUserId, setSessionUserId] =
+    useState<string | null>(null);
+
+  const [checkingAccess, setCheckingAccess] =
+    useState(false);
+
+  const [isSubscriber, setIsSubscriber] =
+    useState(false);
+
+  const [
+    cancellationScheduled,
+    setCancellationScheduled,
+  ] = useState(false);
+
+  const [
+    cancellationEffectiveAt,
+    setCancellationEffectiveAt,
+  ] = useState<number | null>(null);
+
+  const [stripeCustomerId, setStripeCustomerId] =
+    useState<string | null>(null);
+
+  const [cancelLoading, setCancelLoading] =
+    useState(false);
+
+  const [cancelMessage, setCancelMessage] =
+    useState("");
 
   const [loginEmail, setLoginEmail] = useState("");
-  const [loginLoading, setLoginLoading] = useState(false);
-  const [loginMessage, setLoginMessage] = useState("");
+  const [loginLoading, setLoginLoading] =
+    useState(false);
+  const [loginMessage, setLoginMessage] =
+    useState("");
 
   const selectedEpisode = useMemo(
-    () => EPISODES.find((ep) => ep.id === episodeId) ?? EPISODES[0],
-    [episodeId]
+    () =>
+      EPISODES.find(
+        (episode) => episode.id === episodeId,
+      ) ?? EPISODES[0],
+    [episodeId],
   );
 
-  const isFreeEpisode = episodeId === FREE_EPISODE_ID;
-  const formattedEndDate = formatDate(cancellationEffectiveAt);
-  const daysRemaining = getDaysRemaining(cancellationEffectiveAt);
+  const selectedIsFree = isFreeEpisode(episodeId);
+
+  const isSignedIn = Boolean(sessionEmail);
+  const hasAccess = Boolean(signedUrl);
+
+  const formattedEndDate =
+    formatDate(cancellationEffectiveAt);
+
+  const daysRemaining =
+    getDaysRemaining(cancellationEffectiveAt);
+
+  const showCancelButton =
+    isSignedIn &&
+    isSubscriber &&
+    !cancellationScheduled;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      setSessionEmail(data.session?.user.email ?? null);
-      setSessionUserId(data.session?.user.id ?? null);
+      setSessionEmail(
+        data.session?.user.email ?? null,
+      );
+
+      setSessionUserId(
+        data.session?.user.id ?? null,
+      );
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSessionEmail(session?.user.email ?? null);
-      setSessionUserId(session?.user.id ?? null);
-    });
+    const { data: sub } =
+      supabase.auth.onAuthStateChange(
+        (_event, session) => {
+          setSessionEmail(
+            session?.user.email ?? null,
+          );
 
-    return () => sub.subscription.unsubscribe();
+          setSessionUserId(
+            session?.user.id ?? null,
+          );
+        },
+      );
+
+    return () =>
+      sub.subscription.unsubscribe();
   }, []);
 
   async function handleSendMagicLink() {
+    const email = loginEmail.trim();
+
+    if (!email) return;
+
     setLoginLoading(true);
     setLoginMessage("");
 
     try {
-      const { error } = await sendMagicLink(loginEmail);
+      const { error } =
+        await sendMagicLink(email);
 
       if (error) {
         setLoginMessage(error.message);
@@ -262,9 +341,16 @@ export default function Members() {
       }
 
       setLoginMessage(
-        "Your sign-in link is on its way. Open your email and return with the same address you used for membership."
+        "Magic link sent. Check your email and use the same address you used for membership.",
       );
+
       setLoginEmail("");
+    } catch (error) {
+      setLoginMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to send your sign-in link.",
+      );
     } finally {
       setLoginLoading(false);
     }
@@ -272,10 +358,12 @@ export default function Members() {
 
   async function signOut() {
     await supabase.auth.signOut();
+
     setLoginMessage("");
     setCancelMessage("");
     setStatus("");
     setSignedUrl(null);
+    setIsSubscriber(false);
     setCancellationScheduled(false);
     setCancellationEffectiveAt(null);
     setStripeCustomerId(null);
@@ -286,38 +374,59 @@ export default function Members() {
     setCancelMessage("");
 
     try {
-      const { data } = await supabase.auth.getSession();
-      const userId = data.session?.user.id ?? sessionUserId ?? "";
+      const { data } =
+        await supabase.auth.getSession();
 
-      const r = await fetch(
+      const userId =
+        data.session?.user.id ??
+        sessionUserId ??
+        "";
+
+      const response = await fetch(
         `/api/member-access?email=${encodeURIComponent(
-          email
-        )}&userId=${encodeURIComponent(userId)}`
+          email,
+        )}&userId=${encodeURIComponent(userId)}`,
       );
-      const j: MemberAccessResponse = await r.json();
 
-      if (!r.ok) {
+      const result: MemberAccessResponse =
+        await response.json();
+
+      if (!response.ok) {
         setIsSubscriber(false);
         setCancellationScheduled(false);
         setCancellationEffectiveAt(null);
         setStripeCustomerId(null);
-        setSubscriptionStatus(null);
-        setStatus(j.error || "Unable to verify membership.");
+
+        setStatus(
+          result.error ||
+            "Unable to verify membership.",
+        );
+
         return false;
       }
 
-      setStripeCustomerId(j.profile?.stripe_customer_id ?? null);
-
       const active =
-        !!j.isSubscriber ||
-        isActiveStatus(j.profile?.subscription_status) ||
-        isActiveStatus(j.subscription?.status);
+        Boolean(result.isSubscriber) ||
+        isActiveStatus(
+          result.profile?.subscription_status,
+        ) ||
+        isActiveStatus(
+          result.subscription?.status,
+        );
 
       setIsSubscriber(active);
-      setCancellationScheduled(!!j.cancellationScheduled);
-      setCancellationEffectiveAt(j.cancellationEffectiveAt ?? null);
-      setSubscriptionStatus(
-        j.profile?.subscription_status ?? j.subscription?.status ?? null
+
+      setCancellationScheduled(
+        Boolean(result.cancellationScheduled),
+      );
+
+      setCancellationEffectiveAt(
+        result.cancellationEffectiveAt ?? null,
+      );
+
+      setStripeCustomerId(
+        result.profile?.stripe_customer_id ??
+          null,
       );
 
       return active;
@@ -326,101 +435,127 @@ export default function Members() {
       setCancellationScheduled(false);
       setCancellationEffectiveAt(null);
       setStripeCustomerId(null);
-      setSubscriptionStatus(null);
+
       setStatus(
         error instanceof Error
           ? error.message
-          : "Unable to verify membership."
+          : "Unable to verify membership.",
       );
+
       return false;
     } finally {
       setCheckingAccess(false);
     }
   }
 
-  async function fetchSignedUrl(selectedId = episodeId) {
+  async function fetchSignedUrl(
+    selectedId = episodeId,
+  ) {
     setLoading(true);
     setStatus("");
+    setSignedUrl(null);
 
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
-    const email = data.session?.user.email ?? null;
-    const selectedIsFree = selectedId === FREE_EPISODE_ID;
+    const { data } =
+      await supabase.auth.getSession();
+
+    const token =
+      data.session?.access_token;
+
+    const email =
+      data.session?.user.email ?? null;
+
+    const episodeIsFree =
+      isFreeEpisode(selectedId);
 
     if (!token || !email) {
-      setSignedUrl(null);
       setIsSubscriber(false);
       setCancellationScheduled(false);
       setCancellationEffectiveAt(null);
       setStripeCustomerId(null);
-      setSubscriptionStatus(null);
 
       setStatus(
-        selectedIsFree
-          ? "Sign in below if you'd like to open this story here in your library."
-          : "This story is waiting inside the full Night Listener library."
+        episodeIsFree
+          ? "Sign in below to open this free story in your library."
+          : "This story is waiting inside the full Night Listener library.",
       );
 
       setLoading(false);
       return;
     }
 
-    const hasMembership = await checkMemberAccess(email);
+    const hasMembership =
+      await checkMemberAccess(email);
 
     try {
-      const r = await fetch(
-        `/api/signed-audio?episodeId=${encodeURIComponent(selectedId)}`,
+      const response = await fetch(
+        `/api/signed-audio?episodeId=${encodeURIComponent(
+          selectedId,
+        )}`,
         {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
       );
 
-      const j = await r.json();
+      const result = await response.json();
 
-      if (!r.ok) {
-        setSignedUrl(null);
-
-        if (!hasMembership && selectedIsFree && r.status === 403) {
+      if (!response.ok) {
+        if (
+          !hasMembership &&
+          episodeIsFree &&
+          response.status === 403
+        ) {
           setStatus(
-            "This story is marked as free, but playback is still being blocked. Update /api/signed-audio to allow the free episode."
+            "This free story could not be opened. Please try again.",
           );
-        } else if (!hasMembership && r.status === 403) {
+        } else if (
+          !hasMembership &&
+          response.status === 403
+        ) {
           setStatus(
-            "This story is waiting inside the full Night Listener library. Unlock membership to continue."
+            "This story is part of the full Night Listener library.",
           );
         } else {
-          setStatus(`Error ${r.status}: ${j.error || "Unknown error"}`);
+          setStatus(
+            result.error ||
+              "Unable to open this story.",
+          );
         }
 
-        setLoading(false);
         return;
       }
 
-      setSignedUrl(j.url);
+      setSignedUrl(result.url);
 
-      if (hasMembership) {
-        setStatus("Your library is open.");
-      } else if (selectedIsFree) {
-        setStatus("This story is ready for you.");
-      } else {
-        setStatus("Your story is ready.");
-      }
+      setStatus(
+        hasMembership
+          ? "Your library is open."
+          : episodeIsFree
+            ? "This free story is ready."
+            : "Your story is ready.",
+      );
 
       const loadedEpisode =
-        EPISODES.find((ep) => ep.id === selectedId) ?? selectedEpisode;
+        EPISODES.find(
+          (episode) =>
+            episode.id === selectedId,
+        ) ?? selectedEpisode;
 
       trackEvent("member_episode_load", {
         episode_id: selectedId,
-        episode_title: loadedEpisode.title,
+        episode_title:
+          loadedEpisode.title,
         is_subscriber: hasMembership,
-        is_free_episode: selectedIsFree,
+        is_free_episode: episodeIsFree,
       });
     } catch (error) {
       setSignedUrl(null);
+
       setStatus(
         error instanceof Error
           ? error.message
-          : "Something went wrong while opening your story."
+          : "Something went wrong while opening your story.",
       );
     } finally {
       setLoading(false);
@@ -433,40 +568,54 @@ export default function Members() {
     setStatus("");
 
     try {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
+      const { data } =
+        await supabase.auth.getSession();
+
+      const token =
+        data.session?.access_token;
 
       if (!token) {
-        setCancelMessage("Please sign in first.");
+        setCancelMessage(
+          "Please sign in first.",
+        );
         return;
       }
 
-      const r = await fetch("/api/cancel-membership", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+      const response = await fetch(
+        "/api/cancel-membership",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type":
+              "application/json",
+          },
         },
-      });
+      );
 
-      const j = await r.json();
+      const result = await response.json();
 
-      if (!r.ok) {
-        setCancelMessage(j.error || "Unable to cancel membership.");
+      if (!response.ok) {
+        setCancelMessage(
+          result.error ||
+            "Unable to cancel membership.",
+        );
         return;
       }
 
       setCancelMessage(
-        j.message ||
-          "Your membership has been canceled. You should keep access until the end of your current billing period."
+        result.message ||
+          "Your membership has been canceled. Access will continue through the end of your current billing period.",
       );
 
-      trackEvent("member_cancel_membership", {
-        email: sessionEmail,
-      });
+      trackEvent(
+        "member_cancel_membership",
+      );
 
       if (sessionEmail) {
-        await checkMemberAccess(sessionEmail);
+        await checkMemberAccess(
+          sessionEmail,
+        );
       }
 
       setSignedUrl(null);
@@ -474,7 +623,7 @@ export default function Members() {
       setCancelMessage(
         error instanceof Error
           ? error.message
-          : "Unable to cancel membership."
+          : "Unable to cancel membership.",
       );
     } finally {
       setCancelLoading(false);
@@ -484,464 +633,675 @@ export default function Members() {
   async function handleResumeMembership() {
     if (!stripeCustomerId) {
       setCancelMessage(
-        "Unable to resume membership right now. Please refresh and try again."
+        "Unable to resume membership right now. Please refresh and try again.",
       );
       return;
     }
 
+    setCancelLoading(true);
+    setCancelMessage("");
+
     try {
-      const r = await fetch("/api/resume-membership", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          customerId: stripeCustomerId,
-        }),
-      });
+      const { data } =
+        await supabase.auth.getSession();
 
-      const j = await r.json();
+      const token =
+        data.session?.access_token;
 
-      if (!r.ok) {
-        setCancelMessage(j.error || "Unable to resume membership.");
+      if (!token) {
+        setCancelMessage(
+          "Please sign in first.",
+        );
         return;
       }
 
-      if (j.url) {
-        window.location.href = j.url;
+      const response = await fetch(
+        "/api/resume-membership",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            customerId: stripeCustomerId,
+          }),
+        },
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setCancelMessage(
+          result.error ||
+            "Unable to resume membership.",
+        );
+        return;
       }
+
+      if (result.url) {
+        window.location.href = result.url;
+        return;
+      }
+
+      if (sessionEmail) {
+        await checkMemberAccess(
+          sessionEmail,
+        );
+      }
+
+      setCancelMessage(
+        "Your membership has been resumed.",
+      );
     } catch (error) {
       setCancelMessage(
         error instanceof Error
           ? error.message
-          : "Unable to resume membership."
+          : "Unable to resume membership.",
       );
+    } finally {
+      setCancelLoading(false);
     }
   }
 
   useEffect(() => {
     if (sessionEmail) {
       fetchSignedUrl(episodeId);
-    } else {
-      setSignedUrl(null);
-      setIsSubscriber(false);
-      setCancellationScheduled(false);
-      setCancellationEffectiveAt(null);
-      setStripeCustomerId(null);
-      setSubscriptionStatus(null);
-      setStatus(
-        episodeId === FREE_EPISODE_ID
-          ? "Choose the free featured story to begin, or sign in to open your library."
-          : ""
-      );
-      setCancelMessage("");
+      return;
     }
+
+    setSignedUrl(null);
+    setIsSubscriber(false);
+    setCancellationScheduled(false);
+    setCancellationEffectiveAt(null);
+    setStripeCustomerId(null);
+    setCancelMessage("");
+
+    setStatus(
+      isFreeEpisode(episodeId)
+        ? "Sign in to open this free story in your library."
+        : "",
+    );
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionEmail]);
 
   useEffect(() => {
     if (sessionEmail) {
       fetchSignedUrl(episodeId);
-    } else {
-      setSignedUrl(null);
-      setStatus(
-        episodeId === FREE_EPISODE_ID
-          ? "Sign in below if you'd like to open this story here in your library."
-          : "This story is waiting inside the full Night Listener library. Sign in or subscribe to continue."
-      );
+      return;
     }
+
+    setSignedUrl(null);
+
+    setStatus(
+      isFreeEpisode(episodeId)
+        ? "Sign in below to open this free story in your library."
+        : "This story is part of the full Night Listener library. Sign in or subscribe to continue.",
+    );
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [episodeId]);
 
   function handleEpisodeChange(id: string) {
     setEpisodeId(id);
 
-    const nextEpisode = EPISODES.find((ep) => ep.id === id);
+    const nextEpisode =
+      EPISODES.find(
+        (episode) => episode.id === id,
+      );
 
-    trackEvent("member_episode_select", {
-      episode_id: id,
-      episode_title: nextEpisode?.title,
-      is_free_episode: id === FREE_EPISODE_ID,
-    });
+    trackEvent(
+      "member_episode_select",
+      {
+        episode_id: id,
+        episode_title:
+          nextEpisode?.title,
+        is_free_episode:
+          isFreeEpisode(id),
+      },
+    );
   }
 
-  const isSignedIn = Boolean(sessionEmail);
-  const hasAccess = Boolean(signedUrl);
-  const showCancelButton =
-    isSignedIn && isSubscriber && !cancellationScheduled;
-
   return (
-    <div className="space-y-8">
-      <header className="space-y-4">
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="rounded-full border bg-muted/30 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-              Night Listener
-            </div>
+    <section className="min-h-screen w-full bg-[#02060b] text-white">
+      <div
+        className="
+          mx-auto
+          w-full
+          max-w-[1600px]
+          px-5
+          py-14
+          sm:px-8
+          sm:py-18
+          lg:px-12
+          lg:py-20
+          xl:px-16
+          2xl:px-20
+        "
+      >
+        {/* =========================================
+            INTRO
+        ========================================= */}
 
-            {isSignedIn ? (
-              <Badge className="font-normal">Signed In</Badge>
-            ) : (
-              <Badge variant="secondary" className="font-normal">
-                Not Signed In
-              </Badge>
-            )}
+        <header className="mx-auto max-w-5xl text-center">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#d7af65]">
+            Night Listener
+          </p>
 
-            {isSubscriber && !cancellationScheduled && (
-              <Badge variant="secondary" className="font-normal">
-                Active Member
-              </Badge>
-            )}
+          <h1 className="mt-5 text-3xl font-medium tracking-[-0.035em] sm:text-4xl lg:text-5xl">
+            Your Library
+          </h1>
 
-            {isSubscriber && cancellationScheduled && (
-              <Badge variant="secondary" className="font-normal">
-                Ends Soon
-              </Badge>
-            )}
+          <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-400 sm:text-lg">
+            A quiet place for the complete Night Listener
+            collection — stories about relationships,
+            memory, perspective, love, and the moments
+            that stay with us.
+          </p>
 
-            {hasAccess && (
-              <Badge variant="secondary" className="font-normal">
-                Ready to Play
-              </Badge>
-            )}
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <span className="rounded-full border border-white/10 bg-white/[0.025] px-4 py-2 text-xs text-slate-500">
+              {EPISODES.length} stories
+            </span>
+
+            <span className="rounded-full border border-white/10 bg-white/[0.025] px-4 py-2 text-xs text-slate-500">
+              Secure listening
+            </span>
+
+            <span className="rounded-full border border-white/10 bg-white/[0.025] px-4 py-2 text-xs text-slate-500">
+              New stories added
+            </span>
           </div>
+        </header>
 
-          <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-              Your library
-            </h1>
-            <p className="max-w-3xl text-muted-foreground">
-              A quiet place for the full Night Listener experience—thoughtful
-              stories, gentle reflection, and the moments that stay with us.
-            </p>
-          </div>
-        </div>
+        {/* =========================================
+            MEMBER ACCESS
+        ========================================= */}
 
-        <div className="rounded-[28px] border border-border/70 bg-muted/20 p-5 shadow-sm">
-          {isSignedIn ? (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Welcome back.</p>
-                <p className="text-xs text-muted-foreground">{sessionEmail}</p>
+        <Card className="mx-auto mt-12 max-w-5xl rounded-[2rem] border-white/10 bg-[#07101a] text-white shadow-[0_25px_80px_rgba(0,0,0,.22)]">
+          <CardContent className="p-6 sm:p-8">
+            <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#d7af65]">
+                  Member Access
+                </p>
 
-                <p className="text-sm leading-7 text-muted-foreground">
+                <h2 className="mt-3 text-xl font-medium tracking-[-0.025em] sm:text-2xl">
+                  {isSignedIn
+                    ? "Welcome back."
+                    : "Open your library"}
+                </h2>
+
+                <p className="mt-3 text-sm leading-7 text-slate-400">
                   {checkingAccess
                     ? "Checking your library access…"
-                    : isSubscriber && cancellationScheduled
-                    ? `Your membership remains active until ${
-                        formattedEndDate ?? "the end of your billing period"
-                      }${
-                        daysRemaining !== null
-                          ? ` (${daysRemaining} day${
-                              daysRemaining === 1 ? "" : "s"
-                            } remaining)`
-                          : ""
-                      }.`
-                    : isSubscriber
-                    ? "Your library is open. You have access to the full Night Listener collection."
-                    : "You're signed in. You can begin with the free featured story below, or unlock the full library anytime."}
+                    : isSubscriber &&
+                        cancellationScheduled
+                      ? `Your membership remains active until ${
+                          formattedEndDate ??
+                          "the end of your billing period"
+                        }${
+                          daysRemaining !== null
+                            ? ` — ${daysRemaining} day${
+                                daysRemaining === 1
+                                  ? ""
+                                  : "s"
+                              } remaining`
+                            : ""
+                        }.`
+                      : isSubscriber
+                        ? "Your full Night Listener collection is open."
+                        : isSignedIn
+                          ? "You’re signed in. Free stories are available now, and membership opens the complete collection."
+                          : "Sign in with the same email address you used for membership."}
                 </p>
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                <Button variant="outline" onClick={signOut}>
-                  Sign out
-                </Button>
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
+                {isSignedIn ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-slate-400">
+                      Signed in as{" "}
+                      <span className="font-medium text-white">
+                        {sessionEmail}
+                      </span>
+                    </p>
 
-                {!isSubscriber && (
-                  <Button asChild>
-                    <Link to="/join">Unlock the full library</Link>
-                  </Button>
-                )}
+                    <div className="flex flex-wrap gap-2">
+                      {!isSubscriber && (
+                        <Button
+                          asChild
+                          className="rounded-full bg-[#d7af65] text-black hover:bg-[#e7ca90]"
+                        >
+                          <Link to="/join">
+                            Unlock Full Library
+                          </Link>
+                        </Button>
+                      )}
 
-                {isSubscriber && cancellationScheduled && (
-                  <Button onClick={handleResumeMembership}>
-                    Resume membership
-                  </Button>
-                )}
+                      {isSubscriber &&
+                        cancellationScheduled && (
+                          <Button
+                            onClick={
+                              handleResumeMembership
+                            }
+                            disabled={
+                              cancelLoading
+                            }
+                            className="rounded-full bg-[#d7af65] text-black hover:bg-[#e7ca90]"
+                          >
+                            {cancelLoading
+                              ? "Working…"
+                              : "Resume membership"}
+                          </Button>
+                        )}
 
-                {showCancelButton && (
-                  <button
-                    type="button"
-                    onClick={handleCancelMembership}
-                    disabled={cancelLoading}
-                    className="rounded-xl border border-border/70 bg-background px-4 py-2 text-sm font-medium transition hover:bg-muted/30 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {cancelLoading ? "Canceling…" : "Cancel membership"}
-                  </button>
+                      <Button
+                        variant="outline"
+                        onClick={signOut}
+                        className="rounded-full border-white/15 bg-transparent text-white hover:bg-white/10 hover:text-white"
+                      >
+                        Sign out
+                      </Button>
+
+                      {showCancelButton && (
+                        <Button
+                          variant="ghost"
+                          onClick={
+                            handleCancelMembership
+                          }
+                          disabled={
+                            cancelLoading
+                          }
+                          className="rounded-full text-slate-500 hover:bg-white/5 hover:text-slate-300"
+                        >
+                          {cancelLoading
+                            ? "Canceling…"
+                            : "Cancel membership"}
+                        </Button>
+                      )}
+                    </div>
+
+                    {cancelMessage && (
+                      <p className="text-xs leading-6 text-slate-500">
+                        {cancelMessage}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                      <Input
+                        type="email"
+                        placeholder="you@example.com"
+                        value={loginEmail}
+                        onChange={(e) =>
+                          setLoginEmail(
+                            e.target.value,
+                          )
+                        }
+                        onKeyDown={(e) => {
+                          if (
+                            e.key === "Enter"
+                          ) {
+                            handleSendMagicLink();
+                          }
+                        }}
+                        className="h-11 flex-1 border-white/10 bg-[#03070d] text-white placeholder:text-slate-700"
+                      />
+
+                      <Button
+                        onClick={
+                          handleSendMagicLink
+                        }
+                        disabled={
+                          !loginEmail.trim() ||
+                          loginLoading
+                        }
+                        className="h-11 shrink-0 rounded-full bg-[#d7af65] px-6 text-black hover:bg-[#e7ca90]"
+                      >
+                        {loginLoading
+                          ? "Sending…"
+                          : "Send magic link"}
+                      </Button>
+                    </div>
+
+                    {loginMessage && (
+                      <p className="mt-3 text-xs leading-6 text-slate-500">
+                        {loginMessage}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
-
-              {isSubscriber && cancellationScheduled && (
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  Access continues until{" "}
-                  <span className="font-medium">
-                    {formattedEndDate ?? "the end of your billing period"}
-                  </span>
-                  .
-                </p>
-              )}
-
-              {showCancelButton && (
-                <p className="text-xs leading-relaxed text-muted-foreground">
-                  If you cancel, your library should remain open through the end
-                  of your current billing period.
-                </p>
-              )}
-
-              {cancelMessage && (
-                <div className="rounded-xl border bg-background p-3">
-                  <p className="text-sm text-muted-foreground">
-                    {cancelMessage}
-                  </p>
-                </div>
-              )}
             </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <p className="text-sm font-medium">
-                  Your Night Listener library is waiting.
-                </p>
-                <p className="text-sm leading-7 text-muted-foreground">
-                  Enter your email and we’ll send you a link back to your stories.
-                </p>
-              </div>
+          </CardContent>
+        </Card>
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Input
-                  type="email"
-                  placeholder="you@example.com"
-                  value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  className="sm:max-w-sm"
-                />
+        {/* =========================================
+            LIBRARY
+        ========================================= */}
 
-                <Button
-                  onClick={handleSendMagicLink}
-                  disabled={!loginEmail || loginLoading}
-                >
-                  {loginLoading ? "Sending…" : "Send magic link"}
-                </Button>
-              </div>
+        <section className="mt-14">
+          <div className="mb-7">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#d7af65]">
+              Full Collection
+            </p>
 
-              {loginMessage && (
-                <div className="rounded-xl border bg-background p-3">
-                  <p className="text-sm text-muted-foreground">
-                    {loginMessage}
-                  </p>
-                </div>
-              )}
+            <h2 className="mt-3 text-2xl font-medium tracking-[-0.03em] sm:text-3xl">
+              Choose a story
+            </h2>
 
-              <p className="text-xs text-muted-foreground">
-                Want the full library? Membership unlocks every episode.
-              </p>
-            </div>
-          )}
-        </div>
-      </header>
-
-      <section className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <Card className="overflow-hidden rounded-[28px] border border-border/70">
-          <div className="border-b px-6 py-5">
-            <p className="text-sm font-medium">Library shelf</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Browse stories and select where to begin.
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">
+              Select an episode from the shelf and
+              settle in.
             </p>
           </div>
 
-          <CardContent className="space-y-3 p-4">
-            {EPISODES.map((ep) => {
-              const isActive = ep.id === episodeId;
-              const epIsFree = ep.id === FREE_EPISODE_ID;
+          <div className="grid gap-7 xl:grid-cols-[360px_minmax(0,1fr)]">
+            {/* =====================================
+                EPISODE SHELF
+            ===================================== */}
 
-              return (
-                <button
-                  key={ep.id}
-                  type="button"
-                  onClick={() => handleEpisodeChange(ep.id)}
-                  className={`w-full rounded-2xl border p-3 text-left transition ${
-                    isActive
-                      ? "border-primary/40 bg-muted/40 shadow-sm"
-                      : "border-border/70 bg-background hover:bg-muted/20"
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <img
-                      src={ep.thumbnailSrc}
-                      alt={ep.title}
-                      className="h-16 w-16 rounded-xl object-cover"
-                      loading="lazy"
-                    />
+            <Card className="overflow-hidden rounded-[2rem] border-white/10 bg-[#07101a] text-white shadow-[0_25px_80px_rgba(0,0,0,.22)]">
+              <div className="border-b border-white/10 px-5 py-5">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-white">
+                      Library Shelf
+                    </p>
 
-                    <div className="min-w-0 flex-1 space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="line-clamp-2 text-sm font-medium leading-snug">
-                          {ep.title}
-                        </p>
-
-                        {epIsFree ? (
-                          <Badge
-                            variant="secondary"
-                            className="rounded-full px-2 py-0.5 text-[10px] font-normal"
-                          >
-                            Free
-                          </Badge>
-                        ) : !isSubscriber ? (
-                          <Badge
-                            variant="outline"
-                            className="rounded-full px-2 py-0.5 text-[10px] font-normal"
-                          >
-                            Members
-                          </Badge>
-                        ) : null}
-                      </div>
-
-                      <p className="line-clamp-2 text-xs text-muted-foreground">
-                        {ep.description}
-                      </p>
-                    </div>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {EPISODES.length} Night
+                      Listener stories
+                    </p>
                   </div>
-                </button>
-              );
-            })}
-          </CardContent>
-        </Card>
 
-        <Card className="overflow-hidden rounded-[28px] border border-border/70 shadow-[0_10px_40px_rgba(0,0,0,0.25)]">
-          <div className="relative bg-[#0b0f19]">
-            <img
-              src={selectedEpisode.thumbnailSrc}
-              alt={selectedEpisode.title}
-              className="mx-auto max-h-[420px] w-full object-contain"
-              loading="lazy"
-            />
-
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
-
-            <div className="absolute right-4 top-4 flex gap-2">
-              <Badge className="border-white/20 bg-black/40 text-white shadow-sm backdrop-blur">
-                {isFreeEpisode ? "Story" : "Members"}
-              </Badge>
-
-              {hasAccess && (
-                <Badge
-                  variant="secondary"
-                  className="bg-white/80 shadow-sm backdrop-blur"
-                >
-                  Ready to Play
-                </Badge>
-              )}
-            </div>
-          </div>
-
-          <CardContent className="space-y-6 p-6">
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                  Selected story
-                </p>
-                <h2 className="text-2xl font-semibold leading-tight tracking-tight">
-                  {selectedEpisode.title}
-                </h2>
-                <p className="max-w-2xl text-sm leading-7 text-muted-foreground">
-                  {selectedEpisode.description}
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {selectedEpisode.tags.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant="outline"
-                    className="rounded-full px-3 py-1 font-normal"
-                  >
-                    {tag}
+                  <Badge className="rounded-full border border-[#d7af65]/20 bg-[#d7af65]/[0.05] text-[#d7af65]">
+                    Members
                   </Badge>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-2xl border bg-muted/20 p-5">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">
-                    {isFreeEpisode ? "Your featured story" : "Your listening session"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {isFreeEpisode
-                      ? "This featured story is also available on the home page."
-                      : "Membership unlocks this full story and the rest of the library."}
-                  </p>
                 </div>
-
-                <Badge variant="secondary" className="font-normal">
-                  Secure Playback
-                </Badge>
               </div>
 
-              {status && (
-                <div className="mt-4 rounded-xl border bg-background p-3">
-                  <p className="text-sm text-muted-foreground">{status}</p>
-                </div>
-              )}
+              <CardContent className="max-h-[820px] space-y-2 overflow-y-auto p-3">
+                {EPISODES.map(
+                  (episode, index) => {
+                    const active =
+                      episode.id ===
+                      episodeId;
 
-              {loading ? (
-                <div className="mt-5 rounded-xl border bg-background p-4">
-                  <p className="text-sm font-medium">Preparing your story…</p>
-                </div>
-              ) : signedUrl ? (
-                <div className="mt-5 space-y-3">
-                  <p className="text-sm font-medium">Now playing</p>
-                  <p className="text-xs text-muted-foreground">
-                    {isFreeEpisode
-                      ? "Settle in. This featured story is ready."
-                      : "Settle in. Your full Night Listener experience is ready."}
-                  </p>
+                    const episodeIsFree =
+                      isFreeEpisode(
+                        episode.id,
+                      );
 
-                  <audio
-                    key={signedUrl}
-                    controls
-                    preload="none"
-                    className="w-full"
-                    src={signedUrl}
-                  />
+                    return (
+                      <button
+                        key={episode.id}
+                        type="button"
+                        onClick={() =>
+                          handleEpisodeChange(
+                            episode.id,
+                          )
+                        }
+                        className={`
+                          group
+                          w-full
+                          rounded-2xl
+                          border
+                          p-3
+                          text-left
+                          transition
+                          duration-200
+                          ${
+                            active
+                              ? "border-[#d7af65]/30 bg-[#d7af65]/[0.055]"
+                              : "border-transparent hover:border-white/10 hover:bg-white/[0.025]"
+                          }
+                        `}
+                      >
+                        <div className="flex items-start gap-3">
+                          <img
+                            src={
+                              episode.thumbnailSrc
+                            }
+                            alt=""
+                            className="h-[74px] w-[74px] shrink-0 rounded-xl object-cover"
+                            loading="lazy"
+                          />
 
-                  <p className="text-xs leading-relaxed text-muted-foreground">
-                    Your secure link expires after a short time. If playback
-                    stops, reselect the episode or refresh the page.
-                  </p>
-                </div>
-              ) : (
-                <div className="mt-5 space-y-4 rounded-xl border bg-background p-4">
-                  <p className="text-sm font-medium">
-                    {isFreeEpisode
-                      ? "This featured story is available for free on the home page. Sign in if you'd like to open it here in your library."
-                      : isSignedIn
-                      ? "This story is waiting inside the full Night Listener library. Unlock membership to continue."
-                      : "This story is waiting inside the full Night Listener library. Sign in or subscribe to continue."}
-                  </p>
+                          <div className="min-w-0 flex-1">
+                            <div className="mb-2 flex flex-wrap gap-1.5">
+                              {index === 0 && (
+                                <span className="rounded-full border border-[#d7af65]/20 bg-[#d7af65]/[0.045] px-2 py-0.5 text-[9px] uppercase tracking-wider text-[#d7af65]">
+                                  New
+                                </span>
+                              )}
 
-                  {!isSubscriber && !isFreeEpisode && (
-                    <Button asChild className="w-full sm:w-auto">
-                      <Link to="/join">Unlock the full library</Link>
-                    </Button>
+                              {episodeIsFree ? (
+                                <span className="rounded-full border border-white/10 bg-white/[0.03] px-2 py-0.5 text-[9px] text-slate-400">
+                                  Free
+                                </span>
+                              ) : (
+                                !isSubscriber && (
+                                  <span className="rounded-full border border-white/10 px-2 py-0.5 text-[9px] text-slate-600">
+                                    Members
+                                  </span>
+                                )
+                              )}
+                            </div>
+
+                            <p className="line-clamp-2 text-sm font-medium leading-snug text-white">
+                              {episode.title}
+                            </p>
+
+                            <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                              {
+                                episode.description
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  },
+                )}
+              </CardContent>
+            </Card>
+
+            {/* =====================================
+                SELECTED STORY
+            ===================================== */}
+
+            <Card className="overflow-hidden rounded-[2rem] border-white/10 bg-[#07101a] text-white shadow-[0_25px_80px_rgba(0,0,0,.26)]">
+              <div className="relative overflow-hidden bg-black">
+                <img
+                  src={
+                    selectedEpisode.thumbnailSrc
+                  }
+                  alt={
+                    selectedEpisode.title
+                  }
+                  className="aspect-video w-full object-cover"
+                />
+
+                <div className="absolute inset-0 bg-gradient-to-t from-[#07101a] via-transparent to-black/10" />
+
+                <div className="absolute left-5 top-5 flex flex-wrap gap-2">
+                  <Badge className="rounded-full border border-white/10 bg-black/65 text-xs font-normal text-white backdrop-blur">
+                    {selectedIsFree
+                      ? "Free full episode"
+                      : "Members"}
+                  </Badge>
+
+                  {hasAccess && (
+                    <Badge className="rounded-full border border-[#d7af65]/20 bg-[#d7af65]/90 text-xs font-normal text-black">
+                      Ready to Play
+                    </Badge>
                   )}
                 </div>
-              )}
-            </div>
+              </div>
 
-            <div className="rounded-2xl border bg-background p-5">
-              <p className="text-sm font-medium">A quiet note</p>
-              <p className="mt-2 text-sm leading-7 text-muted-foreground">
-                Begin with the free featured story whenever you like. When
-                you’re ready for more, membership unlocks the full growing
-                Night Listener library.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </section>
-    </div>
+              <CardContent className="p-6 sm:p-8">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#d7af65]">
+                  Night Listener
+                </p>
+
+                <h2 className="mt-3 max-w-4xl text-2xl font-medium leading-tight tracking-[-0.03em] sm:text-3xl">
+                  {selectedEpisode.title}
+                </h2>
+
+                <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-400 sm:text-base">
+                  {
+                    selectedEpisode.description
+                  }
+                </p>
+
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {selectedEpisode.tags.map(
+                    (tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full border border-white/10 bg-white/[0.025] px-3 py-1 text-xs text-slate-500"
+                      >
+                        {tag}
+                      </span>
+                    ),
+                  )}
+                </div>
+
+                {/* PLAYER */}
+
+                <div className="mt-7 rounded-2xl border border-white/10 bg-black/20 p-5 sm:p-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-medium text-white">
+                        {selectedIsFree
+                          ? "Listen free"
+                          : "Your listening session"}
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-500">
+                        {selectedIsFree
+                          ? "This complete story is included free."
+                          : "Full playback is included with your Night Listener membership."}
+                      </p>
+                    </div>
+
+                    <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] text-slate-400">
+                      Secure Playback
+                    </span>
+                  </div>
+
+                  {status && (
+                    <p className="mt-4 text-xs leading-6 text-slate-500">
+                      {status}
+                    </p>
+                  )}
+
+                  {loading ? (
+                    <div className="mt-5 rounded-xl border border-white/10 bg-[#03070d] p-4">
+                      <p className="text-sm text-slate-400">
+                        Preparing your story…
+                      </p>
+                    </div>
+                  ) : signedUrl ? (
+                    <div className="mt-5">
+                      <audio
+                        key={signedUrl}
+                        controls
+                        preload="metadata"
+                        className="w-full"
+                        src={signedUrl}
+                        onPlay={(e) => {
+                          stopOtherAudio(
+                            e.currentTarget,
+                          );
+
+                          trackEvent(
+                            "member_episode_play",
+                            {
+                              episode_id:
+                                episodeId,
+                              episode_title:
+                                selectedEpisode.title,
+                            },
+                          );
+                        }}
+                      />
+
+                      <p className="mt-3 text-xs italic leading-5 text-slate-600">
+                        Tip: headphones + low
+                        volume work beautifully
+                        for quiet listening.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="mt-5">
+                      {!selectedIsFree &&
+                        !isSubscriber && (
+                          <div className="rounded-2xl border border-[#d7af65]/20 bg-[#d7af65]/[0.045] p-5">
+                            <p className="text-sm font-medium text-white">
+                              Full Library Access
+                            </p>
+
+                            <p className="mt-3 text-sm leading-7 text-slate-400">
+                              Membership opens
+                              this story and the
+                              complete Night
+                              Listener collection.
+                            </p>
+
+                            <Button
+                              asChild
+                              className="mt-5 rounded-full bg-[#d7af65] px-6 text-black hover:bg-[#e7ca90]"
+                            >
+                              <Link to="/join">
+                                Unlock the Full
+                                Library —
+                                $4.99/month
+                              </Link>
+                            </Button>
+                          </div>
+                        )}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+
+        {/* =========================================
+            BOTTOM NOTE
+        ========================================= */}
+
+        <section className="mt-10 rounded-[2rem] border border-white/10 bg-[#050a11] px-6 py-9 text-center sm:px-10 sm:py-10">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#d7af65]">
+            Night Listener
+          </p>
+
+          <h2 className="mx-auto mt-4 max-w-2xl text-2xl font-medium tracking-[-0.03em] sm:text-3xl">
+            Come back whenever you need
+            something quiet.
+          </h2>
+
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-slate-400 sm:text-base">
+            New stories and reflections are added
+            to the Night Listener library as the
+            collection grows.
+          </p>
+
+          <Link
+            to="/listen"
+            className="mt-6 inline-block text-sm text-[#d7af65] underline underline-offset-4 transition hover:text-[#efd296]"
+          >
+            Explore Night Listener
+          </Link>
+        </section>
+      </div>
+    </section>
   );
 }

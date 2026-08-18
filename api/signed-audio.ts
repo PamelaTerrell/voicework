@@ -71,6 +71,11 @@ const EPISODE_FILE_MAP: Record<string, { preview: string; full: string }> = {
   full: "toast-ep14/full.mp3",
 },
 
+"love-him-anyway-15": {
+  preview: "love-him-anyway-15/full.mp3",
+  full: "love-him-anyway-15/full.mp3",
+},
+
 };
 
 function isActiveStatus(status?: string | null) {
