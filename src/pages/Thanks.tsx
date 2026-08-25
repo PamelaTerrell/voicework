@@ -4,20 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabaseClient";
-
-type VerificationState =
-  | "verifying"
-  | "verified_subscription"
-  | "verified_one_time"
-  | "pending"
-  | "invalid"
-  | "direct"
-  | "failure";
-
-type CheckoutVerification = {
-  state?: "verified" | "pending" | "failed" | "invalid";
-  purchaseType?: "subscription" | "one_time";
-};
+import {
+  initialVerificationState,
+  resolveVerificationState,
+  type CheckoutVerification,
+  type VerificationState,
+} from "@/lib/checkoutConfirmation";
 
 type AnalyticsWindow = Window & {
   gtag?: (...args: unknown[]) => void;
@@ -85,7 +77,7 @@ export default function Thanks() {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get("session_id");
   const [verificationState, setVerificationState] =
-    useState<VerificationState>(sessionId ? "verifying" : "direct");
+    useState<VerificationState>(initialVerificationState(sessionId));
   const [email, setEmail] = useState("");
   const [sendingLink, setSendingLink] = useState(false);
   const [message, setMessage] = useState("");
@@ -118,17 +110,16 @@ export default function Thanks() {
 
         if (cancelled) return;
 
-        if (response.ok && result.state === "verified") {
-          const nextState =
-            result.purchaseType === "subscription"
-              ? "verified_subscription"
-              : result.purchaseType === "one_time"
-                ? "verified_one_time"
-                : "invalid";
+        const nextState = resolveVerificationState(response.ok, result);
+
+        if (
+          nextState === "verified_subscription" ||
+          nextState === "verified_one_time"
+        ) {
 
           setVerificationState(nextState);
 
-          if (nextState !== "invalid" && !successTracked.current) {
+          if (!successTracked.current) {
             successTracked.current = true;
             trackEvent("checkout_verified", {
               purchase_type: result.purchaseType,
@@ -137,12 +128,7 @@ export default function Thanks() {
           return;
         }
 
-        if (response.ok && result.state === "pending") {
-          setVerificationState("pending");
-          return;
-        }
-
-        setVerificationState("invalid");
+        setVerificationState(nextState);
       } catch {
         if (!cancelled) setVerificationState("failure");
       }

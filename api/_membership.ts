@@ -114,7 +114,7 @@ async function findUniqueActiveCustomer(
   return matches.length === 1 ? matches[0] : inactiveCustomerValidation();
 }
 
-export async function validateAuthenticatedMembership(
+async function validateMembership(
   user: User,
   options: { reconcileByVerifiedEmail?: boolean } = {}
 ): Promise<MembershipValidation> {
@@ -189,4 +189,15 @@ export async function validateAuthenticatedMembership(
     cancellationScheduled: validation.cancellationScheduled,
     cancellationEffectiveAt: validation.cancellationEffectiveAt,
   };
+}
+
+export async function validateAuthenticatedMembership(
+  user: User,
+  options: { reconcileByVerifiedEmail?: boolean } = {}
+): Promise<MembershipValidation> {
+  try {
+    return await validateMembership(user, options);
+  } catch {
+    return INACTIVE_MEMBERSHIP;
+  }
 }
