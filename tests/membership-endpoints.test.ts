@@ -16,7 +16,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("../api/_membership.js", () => ({
-  validateAuthenticatedMembership: mocks.validateMembership,
+  reconcileAuthenticatedMembership: mocks.validateMembership,
 }));
 
 vi.mock("../api/_lib.js", () => ({
@@ -51,9 +51,11 @@ import resumeMembership from "../api/resume-membership.js";
 beforeEach(() => {
   mocks.requireUser.mockResolvedValue({ id: "user-current", email: "trusted" });
   mocks.validateMembership.mockResolvedValue({
+    outcome: "inactive",
     active: false,
     cancellationScheduled: false,
     cancellationEffectiveAt: null,
+    customerId: null,
   });
   mocks.profileResult = {
     data: { id: "user-current", stripe_customer_id: "customer-linked" },
@@ -118,9 +120,11 @@ describe("member access endpoint", () => {
 
   it("uses trusted reconciliation and returns minimal membership state", async () => {
     mocks.validateMembership.mockResolvedValue({
+      outcome: "active",
       active: true,
       cancellationScheduled: false,
       cancellationEffectiveAt: null,
+      customerId: "customer-linked",
     });
     const { res, result } = response();
     await memberAccess(request(), res);
@@ -135,6 +139,29 @@ describe("member access endpoint", () => {
       cancellationScheduled: false,
       cancellationEffectiveAt: null,
     });
+  });
+
+  it.each(["conflict", "unavailable"])(
+    "does not present %s verification as confirmed inactivity",
+    async (outcome) => {
+      mocks.validateMembership.mockResolvedValue({
+        outcome,
+        active: false,
+        cancellationScheduled: false,
+        cancellationEffectiveAt: null,
+        customerId: null,
+      });
+      const { res, result } = response();
+      await memberAccess(request(), res);
+      expect(result.statusCode).toBe(503);
+      expect(result.body).toEqual({ error: "Unable to verify membership." });
+    },
+  );
+
+  it("keeps the Members unlock state hidden after membership verification errors", () => {
+    const client = readFileSync(resolve("src/pages/Members.tsx"), "utf8");
+    expect(client).toContain("!membershipUnavailable");
+    expect(client).toContain("setMembershipUnavailable(true)");
   });
 });
 

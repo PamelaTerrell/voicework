@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { EPISODE_FILE_MAP, isApprovedEpisodeId } from "./_episodes.js";
-import { validateAuthenticatedMembership } from "./_membership.js";
+import { reconcileAuthenticatedMembership } from "./_membership.js";
 import { requireUser, supabaseAdmin } from "./_lib.js";
 import { setApiResponseHeaders } from "./_responseHeaders.js";
 
@@ -57,10 +57,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     let allowed = type === "preview" || FREE_EPISODE_IDS.has(episodeId);
+    let membershipUnavailable = false;
 
     if (!allowed) {
-      const membership = await validateAuthenticatedMembership(user);
+      const membership = await reconcileAuthenticatedMembership(user);
       allowed = membership.active;
+      membershipUnavailable =
+        membership.outcome === "conflict" || membership.outcome === "unavailable";
     }
 
     if (!allowed) {
@@ -79,6 +82,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (!allowed) {
+      if (membershipUnavailable) {
+        return res.status(503).json({ error: "Unable to authorize audio." });
+      }
       return res.status(403).json({ error: "Access required." });
     }
 

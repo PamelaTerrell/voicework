@@ -7,6 +7,7 @@ import {
   supabaseAdmin,
 } from "./_lib.js";
 import { setApiResponseHeaders } from "./_responseHeaders.js";
+import { reconcileAuthenticatedMembership } from "./_membership.js";
 
 type CheckoutRequest = { mode: "subscription" };
 
@@ -151,29 +152,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(500).json({ error: "Unable to start checkout." });
     }
 
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from("profiles")
-      .select("id, stripe_customer_id")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (profileError) {
-      return res.status(500).json({ error: "Unable to start checkout." });
+    const membership = await reconcileAuthenticatedMembership(user, {
+      reconcileByVerifiedEmail: true,
+    });
+    if (membership.outcome === "active") {
+      return res.status(409).json({
+        error: "An active membership already exists for this account.",
+      });
+    }
+    if (membership.outcome === "conflict" || membership.outcome === "unavailable") {
+      return res.status(409).json({ error: "Unable to start checkout safely." });
     }
 
-    let customerId = profile?.stripe_customer_id ?? null;
+    let customerId = membership.customerId;
 
     if (customerId) {
-      const customer = await stripe.customers.retrieve(customerId);
-      if (
-        ("deleted" in customer && customer.deleted) ||
-        normalizeEmail(customer.email) !== trustedEmail
-      ) {
-        return res.status(400).json({
-          error: "The billing account linked to this sign-in cannot be used.",
-        });
-      }
-
       const subscriptionState = await verifyNoCurrentSubscription(customerId);
       if (subscriptionState === "current") {
         return res.status(409).json({

@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("../api/_membership.js", () => ({
-  validateAuthenticatedMembership: mocks.validateMembership,
+  reconcileAuthenticatedMembership: mocks.validateMembership,
 }));
 
 vi.mock("../api/_lib.js", () => ({
@@ -38,7 +38,7 @@ import signedAudio from "../api/signed-audio.js";
 
 beforeEach(() => {
   mocks.requireUser.mockResolvedValue({ id: "user-current", email: "trusted" });
-  mocks.validateMembership.mockResolvedValue({ active: false });
+  mocks.validateMembership.mockResolvedValue({ outcome: "inactive", active: false });
   mocks.entitlementResult = { data: null, error: null };
   mocks.createSignedUrl.mockResolvedValue({
     data: { signedUrl: "signed-result" },
@@ -80,6 +80,34 @@ describe("protected audio authorization", () => {
   it("denies a non-member protected full episode", async () => {
     const { result } = await call({ episodeId: "conversation-ep2" });
     expect(result.statusCode).toBe(403);
+  });
+
+  it.each(["conflict", "unavailable"])(
+    "returns a generic 503 for %s membership without an entitlement",
+    async (outcome) => {
+      mocks.validateMembership.mockResolvedValue({ outcome, active: false });
+      const { result } = await call({ episodeId: "conversation-ep2" });
+      expect(result.statusCode).toBe(503);
+      expect(result.body).toEqual({ error: "Unable to authorize audio." });
+      expect(mocks.storageFrom).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(["inactive", "conflict", "unavailable"])(
+    "preserves an exact historical entitlement during %s membership",
+    async (outcome) => {
+      mocks.validateMembership.mockResolvedValue({ outcome, active: false });
+      mocks.entitlementResult = { data: { id: "entitlement" }, error: null };
+      const { result } = await call({ episodeId: "conversation-ep2" });
+      expect(result.statusCode).toBe(200);
+    },
+  );
+
+  it("does not require an entitlement for active membership", async () => {
+    mocks.validateMembership.mockResolvedValue({ outcome: "active", active: true });
+    const { result } = await call({ episodeId: "conversation-ep2" });
+    expect(result.statusCode).toBe(200);
+    expect(mocks.entitlementEq).not.toHaveBeenCalled();
   });
 
   it("allows a valid member and cancellation-period member", async () => {

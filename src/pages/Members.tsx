@@ -240,6 +240,9 @@ export default function Members() {
   const [isSubscriber, setIsSubscriber] =
     useState(false);
 
+  const [membershipUnavailable, setMembershipUnavailable] =
+    useState(false);
+
   const [
     cancellationScheduled,
     setCancellationScheduled,
@@ -347,6 +350,7 @@ export default function Members() {
     setStatus("");
     setSignedUrl(null);
     setIsSubscriber(false);
+    setMembershipUnavailable(false);
     setCancellationScheduled(false);
     setCancellationEffectiveAt(null);
   }
@@ -364,6 +368,7 @@ export default function Members() {
       if (!token) {
         setStatus("Please sign in again to verify your membership.");
         setIsSubscriber(false);
+        setMembershipUnavailable(true);
         return false;
       }
 
@@ -378,6 +383,7 @@ export default function Members() {
 
       if (!response.ok) {
         setIsSubscriber(false);
+        setMembershipUnavailable(true);
         setCancellationScheduled(false);
         setCancellationEffectiveAt(null);
 
@@ -392,6 +398,7 @@ export default function Members() {
       const active = Boolean(result.isSubscriber);
 
       setIsSubscriber(active);
+      setMembershipUnavailable(false);
 
       setCancellationScheduled(
         Boolean(result.cancellationScheduled),
@@ -404,6 +411,7 @@ export default function Members() {
       return active;
     } catch (error) {
       setIsSubscriber(false);
+      setMembershipUnavailable(true);
       setCancellationScheduled(false);
       setCancellationEffectiveAt(null);
 
@@ -440,6 +448,7 @@ export default function Members() {
 
     if (!token || !email) {
       setIsSubscriber(false);
+      setMembershipUnavailable(false);
       setCancellationScheduled(false);
       setCancellationEffectiveAt(null);
 
@@ -675,6 +684,7 @@ export default function Members() {
 
     setSignedUrl(null);
     setIsSubscriber(false);
+    setMembershipUnavailable(false);
     setCancellationScheduled(false);
     setCancellationEffectiveAt(null);
     setCancelMessage("");
@@ -831,7 +841,7 @@ export default function Members() {
                     </p>
 
                     <div className="flex flex-wrap gap-2">
-                      {!isSubscriber && (
+                      {!isSubscriber && !checkingAccess && !membershipUnavailable && (
                         <Button
                           asChild
                           className="rounded-full bg-[#d7af65] text-black hover:bg-[#e7ca90]"
@@ -1202,7 +1212,9 @@ export default function Members() {
                   ) : (
                     <div className="mt-5">
                       {!selectedIsFree &&
-                        !isSubscriber && (
+                        !isSubscriber &&
+                        !checkingAccess &&
+                        !membershipUnavailable && (
                           <div className="rounded-2xl border border-[#d7af65]/20 bg-[#d7af65]/[0.045] p-5">
                             <p className="text-sm font-medium text-white">
                               Full Library Access

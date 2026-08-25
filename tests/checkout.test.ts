@@ -5,6 +5,7 @@ import { authError, request, response } from "./helpers.js";
 
 const mocks = vi.hoisted(() => ({
   requireUser: vi.fn(),
+  reconcileMembership: vi.fn(),
   profileResult: { data: null as unknown, error: null as unknown },
   profileEq: vi.fn(),
   profileUpsert: vi.fn(),
@@ -12,6 +13,10 @@ const mocks = vi.hoisted(() => ({
   createCustomer: vi.fn(),
   listSubscriptions: vi.fn(),
   createSession: vi.fn(),
+}));
+
+vi.mock("../api/_membership.js", () => ({
+  reconcileAuthenticatedMembership: mocks.reconcileMembership,
 }));
 
 vi.mock("../api/_lib.js", () => ({
@@ -44,11 +49,18 @@ beforeEach(() => {
   process.env.STRIPE_PRICE_ID_SUBSCRIPTION = "price_subscription_server";
   process.env.SITE_URL = "https://site.invalid";
   mocks.requireUser.mockResolvedValue({ id: "user-current", email: "trusted" });
+  mocks.reconcileMembership.mockResolvedValue({
+    outcome: "inactive",
+    active: false,
+    cancellationScheduled: false,
+    cancellationEffectiveAt: null,
+    customerId: "customer-linked",
+  });
   mocks.profileResult = {
     data: { id: "user-current", stripe_customer_id: "customer-linked" },
     error: null,
   };
-  mocks.retrieveCustomer.mockResolvedValue({ email: "trusted" });
+  mocks.retrieveCustomer.mockResolvedValue({ id: "customer-linked", email: "trusted" });
   mocks.createCustomer.mockResolvedValue({ id: "customer-created" });
   mocks.listSubscriptions.mockResolvedValue({ data: [], has_more: false });
   mocks.profileUpsert.mockResolvedValue({ error: null });
@@ -124,17 +136,29 @@ describe("authenticated checkout creation", () => {
     expect(source).not.toContain('purchaseType: "one_time"');
   });
 
-  it("rejects a mismatched stored customer identity", async () => {
-    mocks.retrieveCustomer.mockResolvedValue({ email: "different" });
+  it("fails closed when trusted reconciliation reports a customer conflict", async () => {
+    mocks.reconcileMembership.mockResolvedValue({
+      outcome: "conflict",
+      active: false,
+      cancellationScheduled: false,
+      cancellationEffectiveAt: null,
+      customerId: null,
+    });
     const { result } = await call({ mode: "subscription" });
-    expect(result.statusCode).toBe(400);
+    expect(result.statusCode).toBe(409);
     expect(mocks.createSession).not.toHaveBeenCalled();
   });
 
-  it("rejects a deleted stored customer before subscription lookup", async () => {
-    mocks.retrieveCustomer.mockResolvedValue({ deleted: true });
+  it("fails closed when trusted reconciliation is unavailable", async () => {
+    mocks.reconcileMembership.mockResolvedValue({
+      outcome: "unavailable",
+      active: false,
+      cancellationScheduled: false,
+      cancellationEffectiveAt: null,
+      customerId: null,
+    });
     const { result } = await call({ mode: "subscription" });
-    expect(result.statusCode).toBe(400);
+    expect(result.statusCode).toBe(409);
     expect(mocks.listSubscriptions).not.toHaveBeenCalled();
     expect(mocks.createSession).not.toHaveBeenCalled();
   });
@@ -162,6 +186,23 @@ describe("authenticated checkout creation", () => {
       });
     },
   );
+
+  it("blocks before customer or Session creation when reconciliation repairs an active member", async () => {
+    mocks.reconcileMembership.mockResolvedValue({
+      outcome: "active",
+      active: true,
+      cancellationScheduled: false,
+      cancellationEffectiveAt: null,
+      customerId: "customer-repaired",
+    });
+    const { result } = await call({ mode: "subscription" });
+    expect(result.statusCode).toBe(409);
+    expect(result.body).toEqual({
+      error: "An active membership already exists for this account.",
+    });
+    expect(mocks.createCustomer).not.toHaveBeenCalled();
+    expect(mocks.createSession).not.toHaveBeenCalled();
+  });
 
   it.each(["canceled", "incomplete_expired"])(
     "allows the conclusively terminal %s status",
@@ -332,6 +373,13 @@ describe("authenticated checkout creation", () => {
       email: "trusted-email-sensitive",
     });
     mocks.profileResult = { data: null, error: null };
+    mocks.reconcileMembership.mockResolvedValue({
+      outcome: "inactive",
+      active: false,
+      cancellationScheduled: false,
+      cancellationEffectiveAt: null,
+      customerId: null,
+    });
 
     await call({ mode: "subscription" });
 
@@ -356,6 +404,13 @@ describe("authenticated checkout creation", () => {
 
   it("reuses the customer-creation key for concurrent trusted-user requests", async () => {
     mocks.profileResult = { data: null, error: null };
+    mocks.reconcileMembership.mockResolvedValue({
+      outcome: "inactive",
+      active: false,
+      cancellationScheduled: false,
+      cancellationEffectiveAt: null,
+      customerId: null,
+    });
     await Promise.all([
       call({ mode: "subscription" }),
       call({ mode: "subscription" }),
