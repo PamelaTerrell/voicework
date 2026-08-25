@@ -9,9 +9,10 @@ const REQUIRED_NAMES = [
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
   "STRIPE_PRICE_ID_SUBSCRIPTION",
-  "STRIPE_PRICE_ID_ONE_TIME",
   "SITE_URL",
 ] as const;
+
+const TRACKED_NAMES = [...REQUIRED_NAMES, "STRIPE_PRICE_ID_ONE_TIME"] as const;
 
 const originalValues = new Map<string, string | undefined>();
 
@@ -48,7 +49,7 @@ function setAllRequired() {
 
 beforeEach(() => {
   originalValues.clear();
-  for (const name of REQUIRED_NAMES) originalValues.set(name, process.env[name]);
+  for (const name of TRACKED_NAMES) originalValues.set(name, process.env[name]);
   setAllRequired();
 });
 
@@ -61,6 +62,7 @@ afterEach(() => {
 
 describe("public health endpoint", () => {
   it("returns only healthy state when all required configuration is present", () => {
+    delete process.env.STRIPE_PRICE_ID_ONE_TIME;
     const { res, result } = response();
     health(request({ method: "GET" }), res);
     expect(result.statusCode).toBe(200);
@@ -88,7 +90,7 @@ describe("public health endpoint", () => {
     health(request({ method: "GET" }), res);
 
     const serialized = JSON.stringify(result.body);
-    for (const name of REQUIRED_NAMES) expect(serialized).not.toContain(name);
+    for (const name of TRACKED_NAMES) expect(serialized).not.toContain(name);
     expect(serialized).not.toContain("configured-test-placeholder");
     expect(Object.keys(result.body as object)).toEqual(["ok"]);
   });

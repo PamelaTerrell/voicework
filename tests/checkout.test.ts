@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { authError, request, response } from "./helpers.js";
 
 const mocks = vi.hoisted(() => ({
@@ -37,7 +39,6 @@ import checkout from "../api/checkout.js";
 
 beforeEach(() => {
   process.env.STRIPE_PRICE_ID_SUBSCRIPTION = "price_subscription_server";
-  process.env.STRIPE_PRICE_ID_ONE_TIME = "price_episode_server";
   process.env.SITE_URL = "https://site.invalid";
   mocks.requireUser.mockResolvedValue({ id: "user-current", email: "trusted" });
   mocks.profileResult = {
@@ -57,23 +58,19 @@ async function call(body: unknown) {
 }
 
 describe("authenticated checkout creation", () => {
-  it.each(["subscription", "one_time"])("requires authentication for %s checkout", async (mode) => {
+  it("requires authentication for subscription checkout", async () => {
     mocks.requireUser.mockRejectedValue(authError("Missing Authorization Bearer token"));
-    const { result } = await call(
-      mode === "subscription"
-        ? { mode }
-        : { mode, episodeId: "conversation-ep2" }
-    );
+    const { result } = await call({ mode: "subscription" });
     expect(result.statusCode).toBe(401);
     expect(mocks.createSession).not.toHaveBeenCalled();
   });
 
   it.each([
     { mode: "one_time" },
-    { mode: "one_time", episodeId: "" },
-    { mode: "one_time", episodeId: "invented-ep99" },
-    { mode: "one_time", episodeId: "../full.mp3" },
-  ])("rejects invalid episode request %#", async (body) => {
+    { mode: "one_time", episodeId: "conversation-ep2" },
+    { mode: "subscription", episodeId: "conversation-ep2" },
+    { mode: "subscription", unexpected: true },
+  ])("rejects one-time or unsupported checkout request %#", async (body) => {
     const { result } = await call(body);
     expect(result.statusCode).toBe(400);
     expect(mocks.createSession).not.toHaveBeenCalled();
@@ -88,28 +85,8 @@ describe("authenticated checkout creation", () => {
     }
   );
 
-  it("accepts canonical one-time checkout with server price and trusted metadata", async () => {
-    const { result } = await call({
-      mode: "one_time",
-      episodeId: "love-him-anyway-15",
-    });
-    expect(result.statusCode).toBe(200);
-    expect(mocks.createSession).toHaveBeenCalledWith(
-      expect.objectContaining({
-        mode: "payment",
-        customer: "customer-linked",
-        line_items: [{ price: "price_episode_server", quantity: 1 }],
-        client_reference_id: "user-current",
-        metadata: {
-          userId: "user-current",
-          purchaseType: "one_time",
-          episodeId: "love-him-anyway-15",
-        },
-      })
-    );
-  });
-
   it("creates subscription checkout using only server configuration", async () => {
+    delete process.env.STRIPE_PRICE_ID_ONE_TIME;
     const { result } = await call({ mode: "subscription" });
     expect(result.statusCode).toBe(200);
     expect(mocks.createSession).toHaveBeenCalledWith(
@@ -117,8 +94,18 @@ describe("authenticated checkout creation", () => {
         mode: "subscription",
         line_items: [{ price: "price_subscription_server", quantity: 1 }],
         metadata: { userId: "user-current", purchaseType: "subscription" },
-      })
+        subscription_data: {
+          metadata: { userId: "user-current", purchaseType: "subscription" },
+        },
+      }),
     );
+  });
+
+  it("contains no one-time price read or payment-mode session creation", () => {
+    const source = readFileSync(resolve("api/checkout.ts"), "utf8");
+    expect(source).not.toContain("STRIPE_PRICE_ID_ONE_TIME");
+    expect(source).not.toContain('mode: "payment"');
+    expect(source).not.toContain('purchaseType: "one_time"');
   });
 
   it("rejects a mismatched stored customer identity", async () => {

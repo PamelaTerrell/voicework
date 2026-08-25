@@ -1,5 +1,4 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { isApprovedEpisodeId } from "./_episodes.js";
 import {
   normalizeEmail,
   requireUser,
@@ -7,9 +6,7 @@ import {
   supabaseAdmin,
 } from "./_lib.js";
 
-type CheckoutRequest =
-  | { mode: "subscription" }
-  | { mode: "one_time"; episodeId: string };
+type CheckoutRequest = { mode: "subscription" };
 
 function authenticationError(error: unknown) {
   if (!(error instanceof Error)) return null;
@@ -34,16 +31,6 @@ function parseCheckoutRequest(body: unknown): CheckoutRequest | null {
     keys[0] === "mode"
   ) {
     return { mode: "subscription" };
-  }
-
-  if (
-    record.mode === "one_time" &&
-    keys.length === 2 &&
-    keys[0] === "episodeId" &&
-    keys[1] === "mode" &&
-    isApprovedEpisodeId(record.episodeId)
-  ) {
-    return { mode: "one_time", episodeId: record.episodeId };
   }
 
   return null;
@@ -78,10 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: "Invalid checkout request." });
     }
 
-    const priceId =
-      body.mode === "subscription"
-        ? process.env.STRIPE_PRICE_ID_SUBSCRIPTION
-        : process.env.STRIPE_PRICE_ID_ONE_TIME;
+    const priceId = process.env.STRIPE_PRICE_ID_SUBSCRIPTION;
     const siteUrl = process.env.SITE_URL;
 
     if (!priceId || !siteUrl) {
@@ -134,26 +118,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    const purchaseMetadata =
-      body.mode === "subscription"
-        ? { userId: user.id, purchaseType: "subscription" }
-        : {
-            userId: user.id,
-            purchaseType: "one_time",
-            episodeId: body.episodeId,
-          };
+    const purchaseMetadata = {
+      userId: user.id,
+      purchaseType: "subscription",
+    };
 
     const session = await stripe.checkout.sessions.create({
-      mode: body.mode === "subscription" ? "subscription" : "payment",
+      mode: "subscription",
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${siteUrl}/thanks?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/listen?canceled=1`,
       client_reference_id: user.id,
       metadata: purchaseMetadata,
-      ...(body.mode === "subscription"
-        ? { subscription_data: { metadata: purchaseMetadata } }
-        : { payment_intent_data: { metadata: purchaseMetadata } }),
+      subscription_data: { metadata: purchaseMetadata },
     });
 
     if (!session.url) {
