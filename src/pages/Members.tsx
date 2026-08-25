@@ -24,6 +24,11 @@ type MemberAccessResponse = {
   error?: string;
 };
 
+type SignedAudioResponse = {
+  url?: string;
+  error?: string;
+};
+
 const FREE_EPISODE_IDS = new Set([
   "say-sorry-ep3",
 ]);
@@ -450,12 +455,7 @@ export default function Members() {
         },
       );
 
-      const result = (await response.json()) as {
-        cancellationScheduled?: boolean;
-        cancellationEffectiveAt?: number | null;
-        alreadyScheduled?: boolean;
-        error?: string;
-      };
+      const result = (await response.json()) as SignedAudioResponse;
 
       if (!response.ok) {
         if (
@@ -480,6 +480,12 @@ export default function Members() {
           );
         }
 
+        return;
+      }
+
+      if (!result.url) {
+        setSignedUrl(null);
+        setStatus("Unable to open this story. Please try again.");
         return;
       }
 
