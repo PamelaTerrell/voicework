@@ -450,7 +450,12 @@ export default function Members() {
         },
       );
 
-      const result = await response.json();
+      const result = (await response.json()) as {
+        cancellationScheduled?: boolean;
+        cancellationEffectiveAt?: number | null;
+        alreadyScheduled?: boolean;
+        error?: string;
+      };
 
       if (!response.ok) {
         if (
@@ -549,32 +554,37 @@ export default function Members() {
 
       if (!response.ok) {
         setCancelMessage(
-          result.error ||
-            "Unable to cancel membership.",
+          result.error || "Unable to schedule cancellation safely.",
         );
         return;
       }
 
+      if (!result.cancellationScheduled) {
+        setCancelMessage("Unable to confirm the cancellation schedule.");
+        return;
+      }
+
+      setCancellationScheduled(true);
+      setCancellationEffectiveAt(result.cancellationEffectiveAt ?? null);
+
+      const effectiveDate = formatDate(result.cancellationEffectiveAt ?? null);
       setCancelMessage(
-        result.message ||
-          "Your membership has been canceled. Access will continue through the end of your current billing period.",
+        result.alreadyScheduled
+          ? effectiveDate
+            ? `Your cancellation was already scheduled. Access continues through ${effectiveDate}.`
+            : "Your cancellation was already scheduled."
+          : effectiveDate
+            ? `Your cancellation is scheduled. Access continues through ${effectiveDate}.`
+            : "Your cancellation is scheduled.",
       );
 
       trackEvent(
         "member_cancel_membership",
       );
 
-      if (sessionEmail) {
-        await checkMemberAccess();
-      }
-
       setSignedUrl(null);
-    } catch (error) {
-      setCancelMessage(
-        error instanceof Error
-          ? error.message
-          : "Unable to cancel membership.",
-      );
+    } catch {
+      setCancelMessage("Unable to schedule cancellation safely.");
     } finally {
       setCancelLoading(false);
     }
