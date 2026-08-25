@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { createHash } from "node:crypto";
 import {
   normalizeEmail,
   requireUser,
@@ -8,6 +9,80 @@ import {
 import { setApiResponseHeaders } from "./_responseHeaders.js";
 
 type CheckoutRequest = { mode: "subscription" };
+
+const CHECKOUT_IDEMPOTENCY_WINDOW_MS = 10 * 60 * 1000;
+const TERMINAL_SUBSCRIPTION_STATUSES = new Set([
+  "canceled",
+  "incomplete_expired",
+]);
+const ATTENTION_REQUIRED_SUBSCRIPTION_STATUSES = new Set([
+  "incomplete",
+  "past_due",
+  "paused",
+  "unpaid",
+]);
+
+function trustedUserDigest(userId: string) {
+  return createHash("sha256").update(userId).digest("hex");
+}
+
+function customerCreationIdempotencyKey(userId: string) {
+  // Stable per authenticated user so concurrent first-time requests converge.
+  return `night-listener:customer:v1:${trustedUserDigest(userId)}`;
+}
+
+function checkoutSessionIdempotencyKey(userId: string, now = Date.now()) {
+  // Ten-minute epoch buckets deduplicate bursts but permit a deliberate later retry.
+  const window = Math.floor(now / CHECKOUT_IDEMPOTENCY_WINDOW_MS);
+  return `night-listener:subscription-checkout:v1:${trustedUserDigest(userId)}:${window}`;
+}
+
+function subscriptionCustomerId(subscription: { customer?: unknown }) {
+  if (typeof subscription.customer === "string") return subscription.customer;
+  if (
+    subscription.customer &&
+    typeof subscription.customer === "object" &&
+    "id" in subscription.customer &&
+    typeof subscription.customer.id === "string"
+  ) {
+    return subscription.customer.id;
+  }
+  return null;
+}
+
+async function verifyNoCurrentSubscription(customerId: string) {
+  const subscriptions = await stripe.subscriptions.list({
+    customer: customerId,
+    status: "all",
+    limit: 100,
+  });
+
+  if (!Array.isArray(subscriptions.data) || subscriptions.has_more !== false) {
+    return "unclear" as const;
+  }
+
+  let hasCurrentSubscription = false;
+  let hasAttentionRequiredSubscription = false;
+
+  for (const subscription of subscriptions.data) {
+    if (subscriptionCustomerId(subscription) !== customerId) return "unclear" as const;
+    if (subscription.status === "active" || subscription.status === "trialing") {
+      hasCurrentSubscription = true;
+      continue;
+    }
+    if (ATTENTION_REQUIRED_SUBSCRIPTION_STATUSES.has(subscription.status)) {
+      hasAttentionRequiredSubscription = true;
+      continue;
+    }
+    if (!TERMINAL_SUBSCRIPTION_STATUSES.has(subscription.status)) {
+      return "unclear" as const;
+    }
+  }
+
+  if (hasCurrentSubscription) return "current" as const;
+  if (hasAttentionRequiredSubscription) return "attention" as const;
+  return "available" as const;
+}
 
 function authenticationError(error: unknown) {
   if (!(error instanceof Error)) return null;
@@ -98,11 +173,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           error: "The billing account linked to this sign-in cannot be used.",
         });
       }
+
+      const subscriptionState = await verifyNoCurrentSubscription(customerId);
+      if (subscriptionState === "current") {
+        return res.status(409).json({
+          error: "An active membership already exists for this account.",
+        });
+      }
+      if (subscriptionState === "attention") {
+        return res.status(409).json({
+          error:
+            "An existing membership requires attention before starting a new checkout.",
+        });
+      }
+      if (subscriptionState !== "available") {
+        return res.status(409).json({ error: "Unable to start checkout safely." });
+      }
     } else {
-      const customer = await stripe.customers.create({
-        email: trustedEmail,
-        metadata: { userId: user.id },
-      });
+      const customer = await stripe.customers.create(
+        {
+          email: trustedEmail,
+          metadata: { userId: user.id },
+        },
+        { idempotencyKey: customerCreationIdempotencyKey(user.id) },
+      );
       customerId = customer.id;
 
       const { error: profileUpdateError } = await supabaseAdmin
@@ -126,16 +220,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       purchaseType: "subscription",
     };
 
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      customer: customerId,
-      line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${siteUrl}/thanks?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${siteUrl}/listen?canceled=1`,
-      client_reference_id: user.id,
-      metadata: purchaseMetadata,
-      subscription_data: { metadata: purchaseMetadata },
-    });
+    const session = await stripe.checkout.sessions.create(
+      {
+        mode: "subscription",
+        customer: customerId,
+        line_items: [{ price: priceId, quantity: 1 }],
+        success_url: `${siteUrl}/thanks?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${siteUrl}/listen?canceled=1`,
+        client_reference_id: user.id,
+        metadata: purchaseMetadata,
+        subscription_data: { metadata: purchaseMetadata },
+      },
+      { idempotencyKey: checkoutSessionIdempotencyKey(user.id) },
+    );
 
     if (!session.url) {
       return res.status(500).json({ error: "Unable to start checkout." });
