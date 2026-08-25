@@ -39,10 +39,10 @@ export function Auth() {
       if (error) {
         track("Magic Link Failed", {
           location: "site-header",
-          reason: error.message.slice(0, 100),
+          reason: "request-rejected",
         });
 
-        setMessage(error.message);
+        setMessage("We could not send a sign-in link. Please try again.");
         return;
       }
 

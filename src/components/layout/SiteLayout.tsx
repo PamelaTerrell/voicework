@@ -1,9 +1,8 @@
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/react";
 import { Auth } from "@/components/Auth";
+import { SafeAnalytics } from "@/components/SafeAnalytics";
 
 function NavItem({
   to,
@@ -353,8 +352,7 @@ export default function SiteLayout() {
         </div>
       </footer>
 
-      <Analytics />
-      <SpeedInsights />
+      <SafeAnalytics />
     </div>
   );
 }

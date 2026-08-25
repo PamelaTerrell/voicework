@@ -248,7 +248,8 @@
 
       gtag("js", new Date());
 
-      gtag("config", "G-FBR1LBB567");
+      // Route page views are sent by the application with pathname-only URLs.
+      gtag("config", "G-FBR1LBB567", { send_page_view: false });
     </script>
   </head>
 

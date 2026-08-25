@@ -1,24 +1,23 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
+import {
+  clearSensitiveBrowserUrl,
+  resolveAuthDestination,
+} from "@/lib/safeNavigation";
 
 export default function AuthCallback() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState("Finishing sign-in...");
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
 
     async function finishAuth() {
-      const next = searchParams.get("next") || "/members";
+      const next = resolveAuthDestination(searchParams.getAll("next"));
       const code = searchParams.get("code");
-
-      console.log("FULL URL:", window.location.href);
-      console.log("SEARCH:", window.location.search);
-      console.log("HASH:", window.location.hash);
-      console.log("CODE:", code);
-      console.log("NEXT:", next);
 
       // If the user is already signed in, don't fail just because there's no code
       const { data: sessionData } = await supabase.auth.getSession();
@@ -26,6 +25,7 @@ export default function AuthCallback() {
 
       if (existingSession) {
         if (!isMounted) return;
+        clearSensitiveBrowserUrl();
         setStatus("You’re already signed in. Redirecting...");
         navigate(next, { replace: true });
         return;
@@ -38,20 +38,22 @@ export default function AuthCallback() {
         if (!isMounted) return;
 
         if (error) {
-          console.error("Auth callback error:", error);
-          setStatus(`Auth error: ${error.message}`);
+          clearSensitiveBrowserUrl();
+          setFailed(true);
+          setStatus("We could not complete your sign-in. Please request a new sign-in link and try again.");
           return;
         }
 
+        clearSensitiveBrowserUrl();
         setStatus("Success! Redirecting to your library...");
         navigate(next, { replace: true });
         return;
       }
 
       // No session and no code means the callback URL didn't contain PKCE params
-      setStatus(
-        "No auth code was found, but this may be an implicit auth redirect. Please check the console for the full callback URL."
-      );
+      clearSensitiveBrowserUrl();
+      setFailed(true);
+      setStatus("This sign-in link is incomplete or has expired. Please request a new link and try again.");
     }
 
     finishAuth();
@@ -70,6 +72,12 @@ export default function AuthCallback() {
         <p className="mt-3 text-sm leading-6 text-slate-600">
           {status}
         </p>
+        {failed && (
+          <div className="mt-6 flex flex-wrap justify-center gap-4 text-sm">
+            <Link className="underline" to="/members">Try member sign-in again</Link>
+            <Link className="underline" to="/contact">Contact support</Link>
+          </div>
+        )}
       </div>
     </div>
   );

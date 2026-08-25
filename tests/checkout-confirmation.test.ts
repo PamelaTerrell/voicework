@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   initialVerificationState,
+  isVerifiedCheckoutState,
   resolveVerificationState,
   type VerificationState,
 } from "../src/lib/checkoutConfirmation.js";
@@ -25,5 +26,15 @@ describe("checkout confirmation state selection", () => {
   it("retains an explicit verification-failure state for request exceptions", () => {
     const failure: VerificationState = "failure";
     expect(failure).toBe("failure");
+  });
+
+  it("does not permit success analytics before server verification", () => {
+    expect(isVerifiedCheckoutState("direct")).toBe(false);
+    expect(isVerifiedCheckoutState("verifying")).toBe(false);
+    expect(isVerifiedCheckoutState("pending")).toBe(false);
+    expect(isVerifiedCheckoutState("invalid")).toBe(false);
+    expect(isVerifiedCheckoutState("failure")).toBe(false);
+    expect(isVerifiedCheckoutState("verified_subscription")).toBe(true);
+    expect(isVerifiedCheckoutState("verified_one_time")).toBe(true);
   });
 });

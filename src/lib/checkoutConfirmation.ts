@@ -28,3 +28,7 @@ export function resolveVerificationState(
   if (responseOk && result.state === "pending") return "pending";
   return "invalid";
 }
+
+export function isVerifiedCheckoutState(state: VerificationState): boolean {
+  return state === "verified_subscription" || state === "verified_one_time";
+}

@@ -6,10 +6,12 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabaseClient";
 import {
   initialVerificationState,
+  isVerifiedCheckoutState,
   resolveVerificationState,
   type CheckoutVerification,
   type VerificationState,
 } from "@/lib/checkoutConfirmation";
+import { clearSensitiveBrowserUrl } from "@/lib/safeNavigation";
 
 type AnalyticsWindow = Window & {
   gtag?: (...args: unknown[]) => void;
@@ -91,6 +93,7 @@ export default function Thanks() {
 
     const checkoutSessionId = sessionId;
     let cancelled = false;
+    clearSensitiveBrowserUrl();
 
     async function verifyCheckout() {
       try {
@@ -112,11 +115,7 @@ export default function Thanks() {
 
         const nextState = resolveVerificationState(response.ok, result);
 
-        if (
-          nextState === "verified_subscription" ||
-          nextState === "verified_one_time"
-        ) {
-
+        if (isVerifiedCheckoutState(nextState)) {
           setVerificationState(nextState);
 
           if (!successTracked.current) {
@@ -172,9 +171,7 @@ export default function Thanks() {
   }
 
   const copy = COPY[verificationState];
-  const verified =
-    verificationState === "verified_subscription" ||
-    verificationState === "verified_one_time";
+  const verified = isVerifiedCheckoutState(verificationState);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-white text-[#2d2a26]">
