@@ -7,6 +7,7 @@ import {
   stripe,
   supabaseAdmin,
 } from "./_lib.js";
+import { setApiResponseHeaders } from "./_responseHeaders.js";
 
 function authenticationError(error: unknown) {
   if (!(error instanceof Error)) return null;
@@ -40,6 +41,8 @@ function trustedPaidThrough(subscription: Stripe.Subscription): number | null {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  setApiResponseHeaders(res, { varyAuthorization: true });
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }

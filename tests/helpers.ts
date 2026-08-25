@@ -15,12 +15,23 @@ export function request(
 }
 
 export function response() {
+  const headers = new Map<string, string>();
   const result = {
     statusCode: 200,
     body: undefined as unknown,
+  } as {
+    statusCode: number;
+    body: unknown;
+    headers: Map<string, string>;
   };
+  Object.defineProperty(result, "headers", { value: headers, enumerable: false });
 
   const res = {
+    setHeader: vi.fn((name: string, value: number | string | readonly string[]) => {
+      headers.set(name.toLowerCase(), Array.isArray(value) ? value.join(", ") : String(value));
+      return res;
+    }),
+    getHeader: vi.fn((name: string) => headers.get(name.toLowerCase())),
     status: vi.fn((statusCode: number) => {
       result.statusCode = statusCode;
       return res;

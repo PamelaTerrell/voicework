@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { setApiResponseHeaders } from "./_responseHeaders.js";
 
 const REQUIRED_SERVER_CONFIGURATION = [
   "SUPABASE_URL",
@@ -10,7 +11,7 @@ const REQUIRED_SERVER_CONFIGURATION = [
 ] as const;
 
 export default function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader("Cache-Control", "no-store");
+  setApiResponseHeaders(res);
 
   if (req.method !== "GET") {
     return res.status(405).json({ ok: false });

@@ -54,8 +54,19 @@ beforeEach(() => {
 async function call(body: unknown) {
   const output = response();
   await checkout(request({ method: "POST", body }), output.res);
+  expect(output.result.headers.get("cache-control")).toBe("no-store");
+  expect(output.result.headers.get("vary")).toBe("Authorization");
   return output;
 }
+
+it("sets authenticated cache headers before method validation", async () => {
+  const output = response();
+  output.res.setHeader("Vary", "Accept-Encoding");
+  await checkout(request({ method: "GET" }), output.res);
+  expect(output.result.statusCode).toBe(405);
+  expect(output.result.headers.get("cache-control")).toBe("no-store");
+  expect(output.result.headers.get("vary")).toBe("Accept-Encoding, Authorization");
+});
 
 describe("authenticated checkout creation", () => {
   it("requires authentication for subscription checkout", async () => {

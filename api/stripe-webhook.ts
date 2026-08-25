@@ -9,6 +9,7 @@ import {
   normalizeEmail,
   getCustomerEmail,
 } from "./_lib.js";
+import { setApiResponseHeaders } from "./_responseHeaders.js";
 
 export const config = { api: { bodyParser: false } };
 
@@ -90,6 +91,8 @@ async function setSubscriptionByCustomerId(args: {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  setApiResponseHeaders(res);
+
   if (req.method !== "POST") {
     return res.status(405).send("Method not allowed");
   }

@@ -79,6 +79,20 @@ const subscription = (overrides: Record<string, unknown> = {}) => ({
 });
 
 describe("member access endpoint", () => {
+  it("sets authenticated cache headers on success and unsupported methods", async () => {
+    let output = response();
+    await memberAccess(request(), output.res);
+    expect(output.result.statusCode).toBe(200);
+    expect(output.result.headers.get("cache-control")).toBe("no-store");
+    expect(output.result.headers.get("vary")).toBe("Authorization");
+
+    output = response();
+    await memberAccess(request({ method: "POST" }), output.res);
+    expect(output.result.statusCode).toBe(405);
+    expect(output.result.headers.get("cache-control")).toBe("no-store");
+    expect(output.result.headers.get("vary")).toBe("Authorization");
+  });
+
   it.each(["Missing Authorization Bearer token", "Invalid token"])(
     "rejects authentication failure: %s",
     async (message) => {
@@ -125,10 +139,20 @@ describe("member access endpoint", () => {
 });
 
 describe("resume membership endpoint", () => {
+  it("sets authenticated cache headers on successful resumption", async () => {
+    const { res, result } = response();
+    await resumeMembership(request({ method: "POST" }), res);
+    expect(result.statusCode).toBe(200);
+    expect(result.headers.get("cache-control")).toBe("no-store");
+    expect(result.headers.get("vary")).toBe("Authorization");
+  });
+
   it("accepts only POST", async () => {
     const { res, result } = response();
     await resumeMembership(request({ method: "GET" }), res);
     expect(result.statusCode).toBe(405);
+    expect(result.headers.get("cache-control")).toBe("no-store");
+    expect(result.headers.get("vary")).toBe("Authorization");
   });
 
   it.each(["Missing Authorization Bearer token", "Invalid token"])(

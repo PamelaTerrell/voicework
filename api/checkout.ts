@@ -5,6 +5,7 @@ import {
   stripe,
   supabaseAdmin,
 } from "./_lib.js";
+import { setApiResponseHeaders } from "./_responseHeaders.js";
 
 type CheckoutRequest = { mode: "subscription" };
 
@@ -37,6 +38,8 @@ function parseCheckoutRequest(body: unknown): CheckoutRequest | null {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  setApiResponseHeaders(res, { varyAuthorization: true });
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }

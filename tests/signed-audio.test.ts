@@ -49,8 +49,18 @@ beforeEach(() => {
 async function call(query: Record<string, string>) {
   const output = response();
   await signedAudio(request({ query }), output.res);
+  expect(output.result.headers.get("cache-control")).toBe("no-store");
+  expect(output.result.headers.get("vary")).toBe("Authorization");
   return output;
 }
+
+it("sets authenticated cache headers on unsupported methods", async () => {
+  const output = response();
+  await signedAudio(request({ method: "POST" }), output.res);
+  expect(output.result.statusCode).toBe(405);
+  expect(output.result.headers.get("cache-control")).toBe("no-store");
+  expect(output.result.headers.get("vary")).toBe("Authorization");
+});
 
 describe("protected audio authorization", () => {
   it("rejects anonymous access", async () => {

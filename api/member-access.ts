@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { validateAuthenticatedMembership } from "./_membership.js";
 import { normalizeEmail, requireUser } from "./_lib.js";
+import { setApiResponseHeaders } from "./_responseHeaders.js";
 
 function authenticationError(error: unknown) {
   if (!(error instanceof Error)) return null;
@@ -14,6 +15,8 @@ function authenticationError(error: unknown) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  setApiResponseHeaders(res, { varyAuthorization: true });
+
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }

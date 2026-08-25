@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { EPISODE_FILE_MAP, isApprovedEpisodeId } from "./_episodes.js";
 import { validateAuthenticatedMembership } from "./_membership.js";
 import { requireUser, supabaseAdmin } from "./_lib.js";
+import { setApiResponseHeaders } from "./_responseHeaders.js";
 
 const FREE_EPISODE_IDS = new Set(["say-sorry-ep3"]);
 
@@ -17,6 +18,8 @@ function authenticationError(error: unknown) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  setApiResponseHeaders(res, { varyAuthorization: true });
+
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }

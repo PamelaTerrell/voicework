@@ -56,6 +56,8 @@ const subscription = (overrides: Record<string, unknown> = {}) => ({
 async function call(body?: unknown) {
   const result = response();
   await cancelMembership(request({ method: "POST", body }), result.res);
+  expect(result.result.headers.get("cache-control")).toBe("no-store");
+  expect(result.result.headers.get("vary")).toBe("Authorization");
   return result.result;
 }
 
@@ -83,6 +85,8 @@ describe("authenticated membership cancellation", () => {
     const { res, result } = response();
     await cancelMembership(request({ method: "GET" }), res);
     expect(result.statusCode).toBe(405);
+    expect(result.headers.get("cache-control")).toBe("no-store");
+    expect(result.headers.get("vary")).toBe("Authorization");
     expect(mocks.requireUser).not.toHaveBeenCalled();
   });
 

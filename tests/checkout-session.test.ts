@@ -44,8 +44,18 @@ async function call(sessionId = validId) {
     request({ method: "GET", query: { session_id: sessionId } }),
     output.res
   );
+  expect(output.result.headers.get("cache-control")).toBe("no-store");
+  expect(output.result.headers.get("vary")).toBe("Authorization");
   return output;
 }
+
+it("sets authenticated cache headers on unsupported methods", async () => {
+  const output = response();
+  await checkoutSession(request({ method: "POST" }), output.res);
+  expect(output.result.statusCode).toBe(405);
+  expect(output.result.headers.get("cache-control")).toBe("no-store");
+  expect(output.result.headers.get("vary")).toBe("Authorization");
+});
 
 describe("checkout session verification", () => {
   it("requires authentication", async () => {

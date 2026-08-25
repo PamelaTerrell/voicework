@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { isApprovedEpisodeId } from "./_episodes.js";
 import { isActiveSub, requireUser, stripe } from "./_lib.js";
+import { setApiResponseHeaders } from "./_responseHeaders.js";
 
 const CHECKOUT_SESSION_ID = /^cs_(?:test|live)_[A-Za-z0-9]{10,}$/;
 
@@ -16,6 +17,8 @@ function authenticationError(error: unknown) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  setApiResponseHeaders(res, { varyAuthorization: true });
+
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }

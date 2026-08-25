@@ -77,8 +77,18 @@ async function call(signature: string | null = "isolated-signature") {
     }),
     output.res
   );
+  expect(output.result.headers.get("cache-control")).toBe("no-store");
+  expect(output.result.headers.has("vary")).toBe(false);
   return output;
 }
+
+it("sets no-store without authorization-dependent behavior on unsupported methods", async () => {
+  const output = response();
+  await webhook(request({ method: "GET" }), output.res);
+  expect(output.result.statusCode).toBe(405);
+  expect(output.result.headers.get("cache-control")).toBe("no-store");
+  expect(output.result.headers.has("vary")).toBe(false);
+});
 
 describe("Stripe webhook authorization", () => {
   it("rejects missing and invalid signatures without exposing secrets", async () => {
