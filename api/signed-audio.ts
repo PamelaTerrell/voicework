@@ -1,17 +1,21 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { supabaseAdmin, requireUser } from "./_lib.js";
 
-// Allow multiple free episodes
-const FREE_EPISODE_IDS = ["say-sorry-ep3", "im-fine-ep6"];
+// The only complete episode approved for free access.
+const FREE_EPISODE_IDS = ["say-sorry-ep3"];
 
-// Centralized episode file mapping
-const EPISODE_FILE_MAP: Record<string, { preview: string; full: string }> = {
+// A null preview means no approved preview is available. Never map a preview
+// request to a full recording.
+const EPISODE_FILE_MAP: Record<
+  string,
+  { preview: string | null; full: string }
+> = {
   "versions-ep5": {
     preview: "never-meant-to-see-ep5/preview.mp3",
     full: "versions-ep5/full.mp3",
   },
   "conversation-ep2": {
-    preview: "conversation-ep2/preview.mp3",
+    preview: null,
     full: "conversation-ep2/full.mp3",
   },
   "replays-ep1": {
@@ -27,7 +31,7 @@ const EPISODE_FILE_MAP: Record<string, { preview: string; full: string }> = {
     full: "resentment-ep4/full.mp3",
   },
   "im-fine-ep6": {
-    preview: "im-fine-ep6/preview.mp3",
+    preview: null,
     full: "im-fine-ep6/full.mp3",
   },
 
@@ -42,37 +46,37 @@ const EPISODE_FILE_MAP: Record<string, { preview: string; full: string }> = {
 },
 
 "had-everything-part1-ep9": {
-  preview: "had-everything-part1-ep9/full.mp3",
+  preview: null,
   full: "had-everything-part1-ep9/full.mp3",
 },
 
 "had-everything-part2-ep10": {
-  preview: "had-everything-part2-ep10/full.mp3",
+  preview: null,
   full: "had-everything-part2-ep10/full.mp3",
 },
 
 "never-made-you-guess-ep11": {
-  preview: "never-made-you-guess-ep11/full.mp3",
+  preview: null,
   full: "never-made-you-guess-ep11/full.mp3",
 },
 
 "the-hardest-people-ep12": {
-  preview: "the-hardest-people-ep12/full.mp3",
+  preview: null,
   full: "the-hardest-people-ep12/full.mp3",
 },
 
 "life-you-didnt-get-ep13": {
-  preview: "life-you-didnt-get-ep13/full.mp3",
+  preview: null,
   full: "life-you-didnt-get-ep13/full.mp3",
 },
 
 "toast-ep14": {
-  preview: "toast-ep14/full.mp3",
+  preview: null,
   full: "toast-ep14/full.mp3",
 },
 
 "love-him-anyway-15": {
-  preview: "love-him-anyway-15/full.mp3",
+  preview: null,
   full: "love-him-anyway-15/full.mp3",
 },
 
@@ -107,6 +111,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const user = await requireUser(req);
+
+    if (type === "preview" && !fileEntry.preview) {
+      return res.status(404).json({
+        error: "No preview is available for this episode.",
+      });
+    }
 
     // Allow free episodes for any signed-in user, and allow previews
     let allowed = FREE_EPISODE_IDS.includes(episodeId) || type === "preview";
@@ -147,14 +157,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const path = fileEntry[type];
 
+    if (!path) {
+      return res.status(404).json({
+        error: "Audio is unavailable.",
+      });
+    }
+
     const { data, error } = await supabaseAdmin.storage
       .from("episodes")
       .createSignedUrl(path, 60 * 10);
 
     if (error || !data?.signedUrl) {
-      return res.status(404).json({
-        error: `Audio file not found for ${path}`,
-      });
+      return res.status(404).json({ error: "Audio is unavailable." });
     }
 
     return res.status(200).json({ url: data.signedUrl });

@@ -211,7 +211,7 @@ export default function Join() {
 
                   <p className="mt-1 text-sm leading-6 text-slate-500">
                     Start with the free full story on the
-                    Stabile USA home page and get a feel for
+                    Night Listener listening page and get a feel for
                     Night Listener first.
                   </p>
 
@@ -220,7 +220,7 @@ export default function Join() {
                     variant="outline"
                     className="mt-4 rounded-full border-white/15 bg-transparent text-white hover:bg-white/10 hover:text-white"
                   >
-                    <Link to="/">
+                    <Link to="/listen">
                       Listen to the free story
                     </Link>
                   </Button>

@@ -42,7 +42,6 @@ type MemberAccessResponse = {
 
 const FREE_EPISODE_IDS = new Set([
   "say-sorry-ep3",
-  "im-fine-ep6",
 ]);
 
 const DEFAULT_EPISODE_ID = "say-sorry-ep3";

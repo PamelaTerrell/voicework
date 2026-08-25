@@ -56,6 +56,7 @@ function EpisodeCard({ episode }: { episode: Episode }) {
   } = episode;
 
   const [loading, setLoading] = useState(false);
+  const hasPublicAudio = Boolean(previewMp3 || previewWav);
 
   function onPreviewPlay() {
     trackEvent("preview_play", {
@@ -83,7 +84,9 @@ function EpisodeCard({ episode }: { episode: Episode }) {
   const badgeLabel = isFreeFullEpisode
     ? "Free full episode"
     : isMembersOnly
-      ? "Preview + Members"
+      ? hasPublicAudio
+        ? "Preview + Members"
+        : "Members only"
       : "Free";
 
   const playerLabel = isFreeFullEpisode
@@ -190,43 +193,45 @@ function EpisodeCard({ episode }: { episode: Episode }) {
           )}
         </div>
 
-        <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4">
-          <div className="flex items-center justify-between gap-4">
-            <p className="text-sm font-medium text-white">
-              {playerLabel}
-            </p>
+        {hasPublicAudio && (
+          <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4">
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm font-medium text-white">
+                {playerLabel}
+              </p>
 
-            <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] text-slate-400">
-              {playerBadge}
-            </span>
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] text-slate-400">
+                {playerBadge}
+              </span>
+            </div>
+
+            <audio
+              controls
+              preload="metadata"
+              className="mt-4 w-full"
+              onPlay={(e) => {
+                stopOtherAudio(e.currentTarget);
+                onPreviewPlay();
+              }}
+            >
+              {previewMp3 && (
+                <source
+                  src={previewMp3}
+                  type="audio/mpeg"
+                />
+              )}
+
+              {previewWav && (
+                <source
+                  src={previewWav}
+                  type="audio/wav"
+                />
+              )}
+
+              Your browser does not support the audio element.
+            </audio>
           </div>
-
-          <audio
-            controls
-            preload="metadata"
-            className="mt-4 w-full"
-            onPlay={(e) => {
-              stopOtherAudio(e.currentTarget);
-              onPreviewPlay();
-            }}
-          >
-            {previewMp3 && (
-              <source
-                src={previewMp3}
-                type="audio/mpeg"
-              />
-            )}
-
-            {previewWav && (
-              <source
-                src={previewWav}
-                type="audio/wav"
-              />
-            )}
-
-            Your browser does not support the audio element.
-          </audio>
-        </div>
+        )}
 
         {isMembersOnly && !isFreeFullEpisode && (
           <div className="mt-5 rounded-2xl border border-[#d7af65]/20 bg-[#d7af65]/[0.045] p-5">
@@ -241,8 +246,10 @@ function EpisodeCard({ episode }: { episode: Episode }) {
             </div>
 
             <p className="mt-3 text-sm leading-7 text-slate-400">
-              Love the preview? Membership unlocks the
-              complete Night Listener library so you can
+              {hasPublicAudio
+                ? "Continue from this preview with membership. "
+                : "This complete story is available to members. "}
+              Membership unlocks the complete Night Listener library so you can
               return whenever you want something thoughtful,
               calm, and deeply human.
             </p>
@@ -368,15 +375,13 @@ export default function Listen() {
         "A quiet story about the moment something shifts—and why we often say “I’m fine” instead of what we actually feel.",
       thumbnailSrc:
         "/images/im-fine.png",
-      previewMp3:
-        "/audio/imfine.mp3",
-      isFreeFullEpisode: true,
+      isMembersOnly: true,
       tags: [
         "story",
         "relationships",
         "human behavior",
       ],
-      category: "free_story",
+      category: "members_story",
     },
     {
       id: "conversation-ep2",
@@ -386,8 +391,6 @@ export default function Listen() {
         "A quiet story about misunderstanding, belief, and the words we never get the chance to finish.",
       thumbnailSrc:
         "/images/coffee-shop.png",
-      previewMp3:
-        "/audio/conversation-preview.mp3",
       isMembersOnly: true,
       tags: [
         "story",
@@ -447,7 +450,7 @@ export default function Listen() {
           </h1>
 
           <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-400 sm:text-lg">
-            Start with free full stories, explore
+            Start with one free full story, explore
             previews, and discover Night Listener
             through relationships, human behavior,
             memory, and the moments that stay with us.
@@ -455,11 +458,11 @@ export default function Listen() {
 
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <span className="rounded-full border border-white/10 bg-white/[0.025] px-4 py-2 text-xs text-slate-500">
-              Free full stories
+              One free full story
             </span>
 
             <span className="rounded-full border border-white/10 bg-white/[0.025] px-4 py-2 text-xs text-slate-500">
-              Member previews
+              Members-only stories
             </span>
 
             <span className="rounded-full border border-white/10 bg-white/[0.025] px-4 py-2 text-xs text-slate-500">

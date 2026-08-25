@@ -156,7 +156,7 @@ export default function Home() {
       title:
         "A Toast to the End of Us | Stabile USA Night Listener",
       text:
-        "Listen to this free Night Listener story: A Toast to the End of Us.",
+        "Discover this Night Listener story: A Toast to the End of Us.",
       url: shareUrl,
     };
 
@@ -611,7 +611,7 @@ export default function Home() {
                   asChild
                   className="h-11 rounded-full bg-[#d6ae65] px-6 text-black hover:bg-[#e8ca91]"
                 >
-                  <a href="#featured-story">Listen free</a>
+                  <Link to="/listen">Listen free</Link>
                 </Button>
 
                 <Button
@@ -649,7 +649,7 @@ export default function Home() {
 
                 <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-10 xl:p-12">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#d6ae65]">
-                    Free full episode
+                    Members-only story
                   </p>
 
                   <h3 className="mt-4 text-2xl font-medium tracking-[-0.03em] lg:text-3xl">
@@ -661,18 +661,6 @@ export default function Home() {
                     eye rolls, and the small everyday
                     criticisms that can slowly end a marriage.
                   </p>
-
-                  <audio
-                    controls
-                    preload="metadata"
-                    className="mt-6 w-full"
-                  >
-                    <source
-                      src="/audio/toast-ep14.mp3"
-                      type="audio/mpeg"
-                    />
-                    Your browser does not support the audio element.
-                  </audio>
 
                   <div className="mt-5 flex flex-wrap gap-5 text-xs text-slate-500">
                     <button
@@ -690,7 +678,7 @@ export default function Home() {
                       to="/join"
                       className="underline underline-offset-4 transition hover:text-white"
                     >
-                      Continue into the library →
+                      Unlock this story →
                     </Link>
                   </div>
 
