@@ -1,12 +1,69 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { stripe, supabaseAdmin } from "./_lib.js";
+import type Stripe from "stripe";
+import {
+  isActiveSub,
+  normalizeEmail,
+  requireUser,
+  stripe,
+  supabaseAdmin,
+} from "./_lib.js";
 
-function normalizeEmail(email?: string | null) {
-  return email?.trim().toLowerCase() ?? null;
+function getRelevantSubscription(subscriptions: Stripe.Subscription[]) {
+  return (
+    subscriptions.find(
+      (subscription) =>
+        subscription.status === "active" ||
+        subscription.status === "trialing" ||
+        subscription.status === "past_due" ||
+        subscription.status === "unpaid"
+    ) ?? null
+  );
 }
 
-function isActiveStatus(status?: string | null) {
-  return status === "active" || status === "trialing";
+async function findUniqueActiveCustomer(trustedEmail: string) {
+  const customers = await stripe.customers.list({
+    email: trustedEmail,
+    limit: 10,
+  });
+
+  const matches: Array<{
+    customerId: string;
+    subscription: Stripe.Subscription;
+  }> = [];
+
+  for (const customer of customers.data) {
+    if (normalizeEmail(customer.email) !== trustedEmail) continue;
+
+    const subscriptions = await stripe.subscriptions.list({
+      customer: customer.id,
+      status: "all",
+      limit: 10,
+    });
+
+    const activeSubscription = subscriptions.data.find((subscription) =>
+      isActiveSub(subscription.status)
+    );
+
+    if (activeSubscription) {
+      matches.push({
+        customerId: customer.id,
+        subscription: activeSubscription,
+      });
+    }
+  }
+
+  return matches.length === 1 ? matches[0] : null;
+}
+
+function authenticationError(error: unknown) {
+  if (!(error instanceof Error)) return null;
+
+  const status = (error as Error & { status?: number }).status;
+  if (status !== 401) return null;
+
+  return error.message.includes("Missing Authorization")
+    ? "Authentication required."
+    : "Authentication expired or invalid.";
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -14,62 +71,58 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
+  const body =
+    req.body && typeof req.body === "object"
+      ? (req.body as Record<string, unknown>)
+      : null;
+
   try {
-    const email = normalizeEmail(
-      typeof req.query.email === "string" ? req.query.email : null
-    );
+    const user = await requireUser(req);
 
-    const userId =
-      typeof req.query.userId === "string" ? req.query.userId : null;
-
-    if (!email) {
-      return res.status(400).json({ error: "Missing email" });
+    if (
+      req.query.email !== undefined ||
+      req.query.userId !== undefined ||
+      body?.email !== undefined ||
+      body?.userId !== undefined
+    ) {
+      return res.status(400).json({
+        error: "Identity parameters are not accepted.",
+      });
     }
 
-    // ---------------------------------------
-    // 1. Lookup profile
-    // ---------------------------------------
-    let { data: profile, error } = await supabaseAdmin
+    const trustedEmail = normalizeEmail(user.email);
+
+    if (!trustedEmail) {
+      return res.status(400).json({
+        error: "A verified account email is required.",
+      });
+    }
+
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles")
-      .select(
-        "id, email, is_subscriber, subscription_status, stripe_customer_id"
-      )
-      .ilike("email", email)
+      .select("id, is_subscriber, subscription_status, stripe_customer_id")
+      .eq("id", user.id)
       .maybeSingle();
 
-    if (error) {
-      return res.status(500).json({ error: error.message });
+    if (profileError) {
+      console.error("Unable to read authenticated membership profile.");
+      return res.status(500).json({ error: "Unable to verify membership." });
     }
 
-    let stripeCustomerId = profile?.stripe_customer_id ?? null;
+    const storedCustomerId = profile?.stripe_customer_id ?? null;
+    let stripeCustomerId: string | null = null;
+    let stripeSubscription: Stripe.Subscription | null = null;
 
-    // ---------------------------------------
-    // 2. Fallback: find Stripe customer by email
-    // ---------------------------------------
-    if (!stripeCustomerId) {
-      const customers = await stripe.customers.list({
-        email,
-        limit: 10,
-      });
+    if (storedCustomerId) {
+      const customer = await stripe.customers.retrieve(storedCustomerId);
 
-      const match =
-        customers.data.find((c) => normalizeEmail(c.email) === email) ?? null;
-
-      if (match) {
-        stripeCustomerId = match.id;
+      if (
+        !("deleted" in customer && customer.deleted) &&
+        normalizeEmail(customer.email) === trustedEmail
+      ) {
+        stripeCustomerId = storedCustomerId;
       }
     }
-
-    // ---------------------------------------
-    // 3. Get subscription from Stripe
-    // ---------------------------------------
-    let stripeSubscription: {
-      id: string;
-      status: string;
-      cancel_at_period_end: boolean;
-      cancel_at: number | null;
-      current_period_end: number | null;
-    } | null = null;
 
     if (stripeCustomerId) {
       const subscriptions = await stripe.subscriptions.list({
@@ -78,94 +131,99 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         limit: 10,
       });
 
-      const relevantSub =
-        subscriptions.data.find(
-          (sub) =>
-            sub.status === "active" ||
-            sub.status === "trialing" ||
-            sub.status === "past_due" ||
-            (sub.status === "canceled" && !!sub.cancel_at_period_end)
-        ) ?? null;
-
-      if (relevantSub) {
-        stripeSubscription = {
-          id: relevantSub.id,
-          status: relevantSub.status,
-          cancel_at_period_end: relevantSub.cancel_at_period_end ?? false,
-          cancel_at: relevantSub.cancel_at ?? null,
-          current_period_end: relevantSub.current_period_end ?? null,
-        };
-      }
+      stripeSubscription = getRelevantSubscription(subscriptions.data);
     }
 
-    // ---------------------------------------
-    // 4. Determine access
-    // ---------------------------------------
-    const isSubscriber =
-      !!profile?.is_subscriber ||
-      isActiveStatus(profile?.subscription_status) ||
-      isActiveStatus(stripeSubscription?.status);
+    if (!stripeCustomerId) {
+      const uniqueMatch = await findUniqueActiveCustomer(trustedEmail);
 
-    // ---------------------------------------
-    // 5. Self-heal profile (CRITICAL)
-    // ---------------------------------------
-    if (userId && stripeCustomerId && stripeSubscription) {
-      const { error: upsertErr } = await supabaseAdmin
-        .from("profiles")
-        .upsert(
+      if (uniqueMatch) {
+        stripeCustomerId = uniqueMatch.customerId;
+        stripeSubscription = uniqueMatch.subscription;
+
+        const { error: linkError } = await supabaseAdmin.from("profiles").upsert(
           {
-            id: userId,
-            email,
+            id: user.id,
+            email: trustedEmail,
             stripe_customer_id: stripeCustomerId,
-            is_subscriber: isActiveStatus(stripeSubscription.status),
+            is_subscriber: true,
             subscription_status: stripeSubscription.status,
           },
           { onConflict: "id" }
         );
 
-      if (upsertErr) {
-        console.error("Profile upsert failed:", upsertErr);
-      } else {
-        const refreshed = await supabaseAdmin
-          .from("profiles")
-          .select(
-            "id, email, is_subscriber, subscription_status, stripe_customer_id"
-          )
-          .eq("id", userId)
-          .maybeSingle();
-
-        if (!refreshed.error) {
-          profile = refreshed.data ?? profile;
+        if (linkError) {
+          console.error("Unable to link authenticated membership profile.");
+          return res.status(500).json({ error: "Unable to verify membership." });
         }
       }
     }
 
-    // ---------------------------------------
-    // 6. Response
-    // ---------------------------------------
+    const isSubscriber = stripeCustomerId
+      ? isActiveSub(stripeSubscription?.status)
+      : storedCustomerId
+        ? false
+        : !!profile?.is_subscriber || isActiveSub(profile?.subscription_status);
+
+    if (profile && stripeCustomerId) {
+      const { error: updateError } = await supabaseAdmin
+        .from("profiles")
+        .update({
+          email: trustedEmail,
+          is_subscriber: isSubscriber,
+          subscription_status: stripeSubscription?.status ?? "inactive",
+        })
+        .eq("id", user.id);
+
+      if (updateError) {
+        console.error("Unable to refresh authenticated membership profile.");
+        return res.status(500).json({ error: "Unable to verify membership." });
+      }
+    }
+
+    if (profile && storedCustomerId && !stripeCustomerId) {
+      const { error: invalidLinkError } = await supabaseAdmin
+        .from("profiles")
+        .update({
+          is_subscriber: false,
+          subscription_status: "inactive",
+        })
+        .eq("id", user.id);
+
+      if (invalidLinkError) {
+        console.error("Unable to disable an invalid membership link.");
+        return res.status(500).json({ error: "Unable to verify membership." });
+      }
+    }
+
+    if (!isSubscriber) {
+      return res.status(200).json({
+        ok: true,
+        isSubscriber: false,
+        membershipStatus: "inactive",
+        cancellationScheduled: false,
+        cancellationEffectiveAt: null,
+      });
+    }
+
     return res.status(200).json({
       ok: true,
-      isSubscriber,
+      isSubscriber: true,
+      membershipStatus: "active",
       cancellationScheduled: !!stripeSubscription?.cancel_at_period_end,
       cancellationEffectiveAt:
         stripeSubscription?.cancel_at ??
         stripeSubscription?.current_period_end ??
         null,
-      profile: profile
-        ? {
-            id: profile.id,
-            email: profile.email,
-            is_subscriber: profile.is_subscriber,
-            subscription_status: profile.subscription_status,
-            stripe_customer_id: profile.stripe_customer_id,
-          }
-        : null,
-      subscription: stripeSubscription,
     });
-  } catch (err: any) {
-    console.error("member-access error:", err);
-    return res.status(500).json({
-      error: err?.message || "Failed to check member access",
-    });
+  } catch (error: unknown) {
+    const authMessage = authenticationError(error);
+
+    if (authMessage) {
+      return res.status(401).json({ error: authMessage });
+    }
+
+    console.error("Unable to verify authenticated membership.");
+    return res.status(500).json({ error: "Unable to verify membership." });
   }
 }

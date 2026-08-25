@@ -18,25 +18,9 @@ type MemberEpisode = {
 type MemberAccessResponse = {
   ok?: boolean;
   isSubscriber?: boolean;
+  membershipStatus?: "active" | "inactive";
   cancellationScheduled?: boolean;
   cancellationEffectiveAt?: number | null;
-
-  profile?: {
-    id: string;
-    email: string | null;
-    is_subscriber: boolean | null;
-    subscription_status: string | null;
-    stripe_customer_id?: string | null;
-  } | null;
-
-  subscription?: {
-    id: string;
-    status: string;
-    cancel_at_period_end: boolean;
-    cancel_at: number | null;
-    current_period_end: number | null;
-  } | null;
-
   error?: string;
 };
 
@@ -199,10 +183,6 @@ function trackEvent(
   }
 }
 
-function isActiveStatus(status?: string | null) {
-  return status === "active" || status === "trialing";
-}
-
 function formatDate(timestamp?: number | null) {
   if (!timestamp) return null;
 
@@ -236,9 +216,6 @@ export default function Members() {
   const [sessionEmail, setSessionEmail] =
     useState<string | null>(null);
 
-  const [sessionUserId, setSessionUserId] =
-    useState<string | null>(null);
-
   const [checkingAccess, setCheckingAccess] =
     useState(false);
 
@@ -254,9 +231,6 @@ export default function Members() {
     cancellationEffectiveAt,
     setCancellationEffectiveAt,
   ] = useState<number | null>(null);
-
-  const [stripeCustomerId, setStripeCustomerId] =
-    useState<string | null>(null);
 
   const [cancelLoading, setCancelLoading] =
     useState(false);
@@ -299,10 +273,6 @@ export default function Members() {
       setSessionEmail(
         data.session?.user.email ?? null,
       );
-
-      setSessionUserId(
-        data.session?.user.id ?? null,
-      );
     });
 
     const { data: sub } =
@@ -310,10 +280,6 @@ export default function Members() {
         (_event, session) => {
           setSessionEmail(
             session?.user.email ?? null,
-          );
-
-          setSessionUserId(
-            session?.user.id ?? null,
           );
         },
       );
@@ -365,10 +331,9 @@ export default function Members() {
     setIsSubscriber(false);
     setCancellationScheduled(false);
     setCancellationEffectiveAt(null);
-    setStripeCustomerId(null);
   }
 
-  async function checkMemberAccess(email: string) {
+  async function checkMemberAccess() {
     setCheckingAccess(true);
     setCancelMessage("");
 
@@ -376,16 +341,19 @@ export default function Members() {
       const { data } =
         await supabase.auth.getSession();
 
-      const userId =
-        data.session?.user.id ??
-        sessionUserId ??
-        "";
+      const token = data.session?.access_token;
 
-      const response = await fetch(
-        `/api/member-access?email=${encodeURIComponent(
-          email,
-        )}&userId=${encodeURIComponent(userId)}`,
-      );
+      if (!token) {
+        setStatus("Please sign in again to verify your membership.");
+        setIsSubscriber(false);
+        return false;
+      }
+
+      const response = await fetch("/api/member-access", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       const result: MemberAccessResponse =
         await response.json();
@@ -394,7 +362,6 @@ export default function Members() {
         setIsSubscriber(false);
         setCancellationScheduled(false);
         setCancellationEffectiveAt(null);
-        setStripeCustomerId(null);
 
         setStatus(
           result.error ||
@@ -404,14 +371,7 @@ export default function Members() {
         return false;
       }
 
-      const active =
-        Boolean(result.isSubscriber) ||
-        isActiveStatus(
-          result.profile?.subscription_status,
-        ) ||
-        isActiveStatus(
-          result.subscription?.status,
-        );
+      const active = Boolean(result.isSubscriber);
 
       setIsSubscriber(active);
 
@@ -423,17 +383,11 @@ export default function Members() {
         result.cancellationEffectiveAt ?? null,
       );
 
-      setStripeCustomerId(
-        result.profile?.stripe_customer_id ??
-          null,
-      );
-
       return active;
     } catch (error) {
       setIsSubscriber(false);
       setCancellationScheduled(false);
       setCancellationEffectiveAt(null);
-      setStripeCustomerId(null);
 
       setStatus(
         error instanceof Error
@@ -470,7 +424,6 @@ export default function Members() {
       setIsSubscriber(false);
       setCancellationScheduled(false);
       setCancellationEffectiveAt(null);
-      setStripeCustomerId(null);
 
       setStatus(
         episodeIsFree
@@ -483,7 +436,7 @@ export default function Members() {
     }
 
     const hasMembership =
-      await checkMemberAccess(email);
+      await checkMemberAccess();
 
     try {
       const response = await fetch(
@@ -612,9 +565,7 @@ export default function Members() {
       );
 
       if (sessionEmail) {
-        await checkMemberAccess(
-          sessionEmail,
-        );
+        await checkMemberAccess();
       }
 
       setSignedUrl(null);
@@ -630,13 +581,6 @@ export default function Members() {
   }
 
   async function handleResumeMembership() {
-    if (!stripeCustomerId) {
-      setCancelMessage(
-        "Unable to resume membership right now. Please refresh and try again.",
-      );
-      return;
-    }
-
     setCancelLoading(true);
     setCancelMessage("");
 
@@ -660,12 +604,7 @@ export default function Members() {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type":
-              "application/json",
           },
-          body: JSON.stringify({
-            customerId: stripeCustomerId,
-          }),
         },
       );
 
@@ -685,9 +624,7 @@ export default function Members() {
       }
 
       if (sessionEmail) {
-        await checkMemberAccess(
-          sessionEmail,
-        );
+        await checkMemberAccess();
       }
 
       setCancelMessage(
@@ -714,7 +651,6 @@ export default function Members() {
     setIsSubscriber(false);
     setCancellationScheduled(false);
     setCancellationEffectiveAt(null);
-    setStripeCustomerId(null);
     setCancelMessage("");
 
     setStatus(
