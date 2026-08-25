@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import type Stripe from "stripe";
+import { isApprovedEpisodeId } from "./_episodes.js";
 import {
   stripe,
   supabaseAdmin,
@@ -68,29 +69,6 @@ async function upsertProfileSubscription(args: {
       return;
     }
   }
-
-  if (normalizedEmail) {
-    const { data: profileByEmail, error: findByEmailErr } = await supabaseAdmin
-      .from("profiles")
-      .select("id")
-      .ilike("email", normalizedEmail)
-      .maybeSingle();
-
-    if (findByEmailErr) throw findByEmailErr;
-
-    if (profileByEmail?.id) {
-      const { error } = await supabaseAdmin
-        .from("profiles")
-        .update({
-          stripe_customer_id: stripeCustomerId ?? null,
-          is_subscriber: isSubscriber,
-          subscription_status: subscriptionStatus,
-        })
-        .eq("id", profileByEmail.id);
-
-      if (error) throw error;
-    }
-  }
 }
 
 async function setSubscriptionByCustomerId(args: {
@@ -130,8 +108,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       sig,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
-  } catch (err: any) {
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+  } catch {
+    return res.status(400).send("Invalid webhook signature");
   }
 
   try {
@@ -151,55 +129,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         session.customer_details?.email || session.customer_email || null
       );
 
-      if (userId) {
-        const { error } = await supabaseAdmin.from("profiles").upsert(
+      const trustedUserLink =
+        !!userId && session.client_reference_id === userId;
+
+      if (
+        purchaseType === "one_time" &&
+        session.mode === "payment" &&
+        session.status === "complete" &&
+        session.payment_status === "paid" &&
+        trustedUserLink &&
+        isApprovedEpisodeId(episodeId)
+      ) {
+        const { error } = await supabaseAdmin.from("entitlements").upsert(
           {
-            id: userId,
-            email,
-            stripe_customer_id: customerId,
+            user_id: userId,
+            episode_id: episodeId,
+            source: "stripe_one_time",
           },
-          { onConflict: "id" }
+          { onConflict: "user_id,episode_id" }
         );
 
         if (error) throw error;
-      } else if (email && customerId) {
-        const { data: existingProfile, error: existingProfileErr } =
-          await supabaseAdmin
-            .from("profiles")
-            .select("id")
-            .ilike("email", email)
-            .maybeSingle();
-
-        if (existingProfileErr) throw existingProfileErr;
-
-        if (existingProfile?.id) {
-          const { error } = await supabaseAdmin
-            .from("profiles")
-            .update({
-              stripe_customer_id: customerId,
-            })
-            .eq("id", existingProfile.id);
-
-          if (error) throw error;
-        }
       }
 
-      if (purchaseType === "one_time") {
-        if (session.payment_status === "paid" && userId && episodeId) {
-          const { error } = await supabaseAdmin.from("entitlements").upsert(
-            {
-              user_id: userId,
-              episode_id: episodeId,
-              source: "stripe_one_time",
-            },
-            { onConflict: "user_id,episode_id" }
-          );
-
-          if (error) throw error;
-        }
-      }
-
-      if (purchaseType === "subscription" && session.payment_status === "paid") {
+      if (
+        purchaseType === "subscription" &&
+        session.mode === "subscription" &&
+        session.status === "complete" &&
+        (session.payment_status === "paid" ||
+          session.payment_status === "no_payment_required") &&
+        trustedUserLink &&
+        customerId &&
+        session.subscription
+      ) {
         await upsertProfileSubscription({
           userId,
           email,
@@ -273,8 +235,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     return res.status(200).json({ received: true });
-  } catch (err: any) {
-    console.error("Stripe webhook error:", err);
-    return res.status(500).send(err?.message || "Webhook handler failed");
+  } catch {
+    console.error("Stripe webhook processing failed.");
+    return res.status(500).send("Webhook handler failed");
   }
 }

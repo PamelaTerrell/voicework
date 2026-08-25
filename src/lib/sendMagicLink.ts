@@ -10,9 +10,6 @@ export async function sendMagicLink(email: string) {
     email,
     options: {
       emailRedirectTo: redirectTo,
-      data: {
-        isSubscriber: true,
-      },
     },
   });
 }

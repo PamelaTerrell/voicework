@@ -8,14 +8,13 @@ import { Input } from "@/components/ui/input";
 
 const FORM_ENDPOINT = "https://formspree.io/f/xykjjvdb";
 
-const STRIPE_SUBSCRIBE_URL =
-  "https://buy.stripe.com/9B64gs7sCg7o5k53Pd2cg05";
-
 export default function Join() {
   const [email, setEmail] = useState("");
   const [sessionEmail, setSessionEmail] =
     useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutMessage, setCheckoutMessage] = useState("");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -56,6 +55,47 @@ export default function Join() {
   async function signOut() {
     await supabase.auth.signOut();
     setMessage("");
+  }
+
+  async function handleSubscribe() {
+    setCheckoutMessage("");
+    setCheckoutLoading(true);
+
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+
+      if (!token) {
+        setCheckoutMessage(
+          "Sign in with your email below before starting secure checkout.",
+        );
+        return;
+      }
+
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ mode: "subscription" }),
+      });
+      const result = (await response.json()) as {
+        url?: string;
+        error?: string;
+      };
+
+      if (!response.ok || !result.url) {
+        setCheckoutMessage(result.error || "Unable to start secure checkout.");
+        return;
+      }
+
+      window.location.assign(result.url);
+    } catch {
+      setCheckoutMessage("Unable to start secure checkout.");
+    } finally {
+      setCheckoutLoading(false);
+    }
   }
 
   return (
@@ -180,7 +220,9 @@ export default function Join() {
 
               <div className="mt-auto pt-8">
                 <Button
-                  asChild
+                  type="button"
+                  onClick={handleSubscribe}
+                  disabled={checkoutLoading}
                   className="
                     h-12
                     w-full
@@ -190,14 +232,16 @@ export default function Join() {
                     hover:bg-[#e7ca90]
                   "
                 >
-                  <a
-                    href={STRIPE_SUBSCRIBE_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Unlock the Full Library — $4.99/month
-                  </a>
+                  {checkoutLoading
+                    ? "Opening secure checkout…"
+                    : "Unlock the Full Library — $4.99/month"}
                 </Button>
+
+                {checkoutMessage && (
+                  <p className="mt-3 text-center text-xs leading-6 text-slate-400">
+                    {checkoutMessage}
+                  </p>
+                )}
 
                 <p className="mt-4 text-center text-xs leading-6 text-slate-600">
                   Secure checkout powered by Stripe. A receipt

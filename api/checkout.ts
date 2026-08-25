@@ -1,119 +1,171 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { stripe, supabaseAdmin, requireUser } from "./_lib.js";
+import { isApprovedEpisodeId } from "./_episodes.js";
+import {
+  normalizeEmail,
+  requireUser,
+  stripe,
+  supabaseAdmin,
+} from "./_lib.js";
 
-type Body =
+type CheckoutRequest =
   | { mode: "subscription" }
   | { mode: "one_time"; episodeId: string };
 
+function authenticationError(error: unknown) {
+  if (!(error instanceof Error)) return null;
+
+  const status = (error as Error & { status?: number }).status;
+  if (status !== 401) return null;
+
+  return error.message.includes("Missing Authorization")
+    ? "Authentication required."
+    : "Authentication expired or invalid.";
+}
+
+function parseCheckoutRequest(body: unknown): CheckoutRequest | null {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return null;
+
+  const record = body as Record<string, unknown>;
+  const keys = Object.keys(record).sort();
+
+  if (
+    record.mode === "subscription" &&
+    keys.length === 1 &&
+    keys[0] === "mode"
+  ) {
+    return { mode: "subscription" };
+  }
+
+  if (
+    record.mode === "one_time" &&
+    keys.length === 2 &&
+    keys[0] === "episodeId" &&
+    keys[1] === "mode" &&
+    isApprovedEpisodeId(record.episodeId)
+  ) {
+    return { mode: "one_time", episodeId: record.episodeId };
+  }
+
+  return null;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
   try {
-    if (req.method !== "POST") {
-      return res.status(405).json({ error: "Method not allowed" });
-    }
-
     const user = await requireUser(req);
-    const body = (
-      typeof req.body === "string" ? JSON.parse(req.body) : req.body
-    ) as Body;
+    const trustedEmail = normalizeEmail(user.email);
 
-    const siteUrl = process.env.SITE_URL || "http://localhost:5173";
-
-    const { data: profile, error: pErr } = await supabaseAdmin
-      .from("profiles")
-      .select("id,email,stripe_customer_id")
-      .eq("id", user.id)
-      .single();
-
-    if (pErr) {
-      return res.status(500).json({ error: pErr.message });
+    if (!trustedEmail) {
+      return res.status(400).json({
+        error: "A verified account email is required.",
+      });
     }
 
-    // Ensure Stripe customer
-    let customerId = profile.stripe_customer_id as string | null;
-
-    if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: profile.email || user.email || undefined,
-        metadata: { userId: user.id },
-      });
-
-      customerId = customer.id;
-
-      const { error: uErr } = await supabaseAdmin
-        .from("profiles")
-        .update({ stripe_customer_id: customerId })
-        .eq("id", user.id);
-
-      if (uErr) {
-        return res.status(500).json({ error: uErr.message });
+    let rawBody: unknown = req.body;
+    if (typeof rawBody === "string") {
+      try {
+        rawBody = JSON.parse(rawBody);
+      } catch {
+        return res.status(400).json({ error: "Invalid checkout request." });
       }
     }
 
-    const successUrl = `${siteUrl}/thanks?success=1&session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `${siteUrl}/listen?canceled=1`;
+    const body = parseCheckoutRequest(rawBody);
+    if (!body) {
+      return res.status(400).json({ error: "Invalid checkout request." });
+    }
 
-    if (body.mode === "subscription") {
-      const session = await stripe.checkout.sessions.create({
-        mode: "subscription",
-        customer: customerId,
-        line_items: [
-          {
-            price: process.env.STRIPE_PRICE_ID_SUBSCRIPTION!,
-            quantity: 1,
-          },
-        ],
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-        client_reference_id: user.id,
-        metadata: {
-          userId: user.id,
-          purchaseType: "subscription",
-        },
-        subscription_data: {
-          metadata: {
-            userId: user.id,
-            purchaseType: "subscription",
-          },
-        },
+    const priceId =
+      body.mode === "subscription"
+        ? process.env.STRIPE_PRICE_ID_SUBSCRIPTION
+        : process.env.STRIPE_PRICE_ID_ONE_TIME;
+    const siteUrl = process.env.SITE_URL;
+
+    if (!priceId || !siteUrl) {
+      console.error("Checkout is not configured.");
+      return res.status(500).json({ error: "Unable to start checkout." });
+    }
+
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .select("id, stripe_customer_id")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      return res.status(500).json({ error: "Unable to start checkout." });
+    }
+
+    let customerId = profile?.stripe_customer_id ?? null;
+
+    if (customerId) {
+      const customer = await stripe.customers.retrieve(customerId);
+      if (
+        ("deleted" in customer && customer.deleted) ||
+        normalizeEmail(customer.email) !== trustedEmail
+      ) {
+        return res.status(400).json({
+          error: "The billing account linked to this sign-in cannot be used.",
+        });
+      }
+    } else {
+      const customer = await stripe.customers.create({
+        email: trustedEmail,
+        metadata: { userId: user.id },
       });
+      customerId = customer.id;
 
-      return res.status(200).json({ url: session.url });
+      const { error: profileUpdateError } = await supabaseAdmin
+        .from("profiles")
+        .upsert(
+          {
+            id: user.id,
+            email: trustedEmail,
+            stripe_customer_id: customerId,
+          },
+          { onConflict: "id" }
+        );
+
+      if (profileUpdateError) {
+        return res.status(500).json({ error: "Unable to start checkout." });
+      }
     }
 
-    if (!("episodeId" in body) || !body.episodeId) {
-      return res.status(400).json({ error: "episodeId required" });
-    }
+    const purchaseMetadata =
+      body.mode === "subscription"
+        ? { userId: user.id, purchaseType: "subscription" }
+        : {
+            userId: user.id,
+            purchaseType: "one_time",
+            episodeId: body.episodeId,
+          };
 
     const session = await stripe.checkout.sessions.create({
-      mode: "payment",
+      mode: body.mode === "subscription" ? "subscription" : "payment",
       customer: customerId,
-      line_items: [
-        {
-          price: process.env.STRIPE_PRICE_ID_ONE_TIME!,
-          quantity: 1,
-        },
-      ],
-      success_url: `${successUrl}&episodeId=${encodeURIComponent(body.episodeId)}`,
-      cancel_url: cancelUrl,
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${siteUrl}/thanks?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${siteUrl}/listen?canceled=1`,
       client_reference_id: user.id,
-      metadata: {
-        userId: user.id,
-        episodeId: body.episodeId,
-        purchaseType: "one_time",
-      },
-      payment_intent_data: {
-        metadata: {
-          userId: user.id,
-          episodeId: body.episodeId,
-          purchaseType: "one_time",
-        },
-      },
+      metadata: purchaseMetadata,
+      ...(body.mode === "subscription"
+        ? { subscription_data: { metadata: purchaseMetadata } }
+        : { payment_intent_data: { metadata: purchaseMetadata } }),
     });
 
+    if (!session.url) {
+      return res.status(500).json({ error: "Unable to start checkout." });
+    }
+
     return res.status(200).json({ url: session.url });
-  } catch (e: any) {
-    return res.status(e?.status || 500).json({
-      error: e?.message || "Server error",
-    });
+  } catch (error: unknown) {
+    const authMessage = authenticationError(error);
+    if (authMessage) return res.status(401).json({ error: authMessage });
+
+    console.error("Unable to create authenticated checkout.");
+    return res.status(500).json({ error: "Unable to start checkout." });
   }
 }
