@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type Stripe from "stripe";
 import {
+  isActiveSub,
   normalizeEmail,
   requireUser,
   stripe,
@@ -17,22 +19,39 @@ function authenticationError(error: unknown) {
     : "Authentication expired or invalid.";
 }
 
+function hasRequestParameters(req: VercelRequest): boolean {
+  if (Object.keys(req.query).length > 0) return true;
+  const { body } = req;
+  if (body === undefined || body === null || body === "") return false;
+  if (typeof body !== "object" || Array.isArray(body)) return true;
+  return Object.keys(body as Record<string, unknown>).length > 0;
+}
+
+function subscriptionCustomerId(subscription: Stripe.Subscription) {
+  return typeof subscription.customer === "string"
+    ? subscription.customer
+    : subscription.customer.id;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const body =
-    req.body && typeof req.body === "object"
-      ? (req.body as Record<string, unknown>)
-      : null;
-
   try {
     const user = await requireUser(req);
 
-    if (body?.customerId !== undefined) {
+    if (hasRequestParameters(req)) {
       return res.status(400).json({
-        error: "Customer identity parameters are not accepted.",
+        error: "Membership resumption parameters are not accepted.",
+      });
+    }
+
+    const trustedEmail = normalizeEmail(user.email);
+
+    if (!trustedEmail) {
+      return res.status(400).json({
+        error: "A verified account email is required.",
       });
     }
 
@@ -53,14 +72,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    const trustedEmail = normalizeEmail(user.email);
-
-    if (!trustedEmail) {
-      return res.status(400).json({
-        error: "A verified account email is required.",
-      });
-    }
-
     const customer = await stripe.customers.retrieve(profile.stripe_customer_id);
 
     if (
@@ -72,43 +83,72 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    const subscriptionPriceId = process.env.STRIPE_PRICE_ID_SUBSCRIPTION;
-    const siteUrl = process.env.SITE_URL;
-
-    if (!subscriptionPriceId || !siteUrl) {
-      console.error("Membership resumption is not configured.");
-      return res.status(500).json({ error: "Unable to resume membership." });
-    }
-
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
+    const subscriptions = await stripe.subscriptions.list({
       customer: profile.stripe_customer_id,
-      line_items: [
-        {
-          price: subscriptionPriceId,
-          quantity: 1,
-        },
-      ],
-      success_url: `${siteUrl}/members`,
-      cancel_url: `${siteUrl}/members`,
-      client_reference_id: user.id,
-      metadata: {
-        userId: user.id,
-        purchaseType: "subscription",
-      },
-      subscription_data: {
-        metadata: {
-          userId: user.id,
-          purchaseType: "subscription",
-        },
-      },
+      status: "all",
+      limit: 10,
     });
 
-    if (!session.url) {
-      return res.status(500).json({ error: "Unable to resume membership." });
+    if (subscriptions.has_more) {
+      return res.status(409).json({ error: "Unable to resume membership safely." });
     }
 
-    return res.status(200).json({ url: session.url });
+    const candidates = subscriptions.data.filter((subscription) =>
+      isActiveSub(subscription.status),
+    );
+
+    if (candidates.length !== 1) {
+      return res.status(candidates.length === 0 ? 400 : 409).json({
+        error:
+          candidates.length === 0
+            ? "No eligible active membership is available to resume."
+            : "Unable to resume membership safely.",
+      });
+    }
+
+    const candidate = candidates[0];
+    if (subscriptionCustomerId(candidate) !== profile.stripe_customer_id) {
+      return res.status(409).json({ error: "Unable to resume membership safely." });
+    }
+
+    if (candidate.cancel_at !== null) {
+      return res.status(409).json({ error: "Unable to resume membership safely." });
+    }
+
+    const alreadyActive = !candidate.cancel_at_period_end;
+    let verifiedSubscription = candidate;
+
+    if (!alreadyActive) {
+      const updated = await stripe.subscriptions.update(candidate.id, {
+        cancel_at_period_end: false,
+      });
+
+      if (
+        subscriptionCustomerId(updated) !== profile.stripe_customer_id ||
+        !isActiveSub(updated.status) ||
+        updated.cancel_at_period_end ||
+        updated.cancel_at !== null
+      ) {
+        return res.status(409).json({ error: "Unable to resume membership safely." });
+      }
+
+      verifiedSubscription = updated;
+    }
+
+    const { error: updateError } = await supabaseAdmin
+      .from("profiles")
+      .update({
+        is_subscriber: true,
+        subscription_status: verifiedSubscription.status,
+      })
+      .eq("id", user.id);
+
+    if (updateError) {
+      console.error("Unable to synchronize authenticated membership resumption.");
+      return res.status(500).json({ error: "Unable to resume membership safely." });
+    }
+
+    return res.status(200).json({ resumed: true, alreadyActive });
   } catch (error: unknown) {
     const authMessage = authenticationError(error);
 
@@ -116,7 +156,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(401).json({ error: authMessage });
     }
 
-    console.error("Unable to create authenticated membership checkout.");
-    return res.status(500).json({ error: "Unable to resume membership." });
+    console.error("Unable to process authenticated membership resumption.");
+    return res.status(500).json({ error: "Unable to resume membership safely." });
   }
 }

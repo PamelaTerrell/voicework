@@ -29,6 +29,19 @@ type SignedAudioResponse = {
   error?: string;
 };
 
+type ResumeMembershipResponse = {
+  resumed?: boolean;
+  alreadyActive?: boolean;
+  error?: string;
+};
+
+type CancellationResponse = {
+  cancellationScheduled?: boolean;
+  cancellationEffectiveAt?: number | null;
+  alreadyScheduled?: boolean;
+  error?: string;
+};
+
 const FREE_EPISODE_IDS = new Set([
   "say-sorry-ep3",
 ]);
@@ -556,7 +569,7 @@ export default function Members() {
         },
       );
 
-      const result = await response.json();
+      const result = (await response.json()) as CancellationResponse;
 
       if (!response.ok) {
         setCancelMessage(
@@ -624,34 +637,31 @@ export default function Members() {
         },
       );
 
-      const result = await response.json();
+      const result = (await response.json()) as ResumeMembershipResponse;
 
       if (!response.ok) {
         setCancelMessage(
-          result.error ||
-            "Unable to resume membership.",
+          result.error || "Unable to resume membership safely.",
         );
         return;
       }
 
-      if (result.url) {
-        window.location.href = result.url;
+      if (!result.resumed) {
+        setCancelMessage("Unable to confirm membership resumption.");
         return;
       }
 
-      if (sessionEmail) {
-        await checkMemberAccess();
-      }
+      await checkMemberAccess();
+      setCancellationScheduled(false);
+      setCancellationEffectiveAt(null);
 
       setCancelMessage(
-        "Your membership has been resumed.",
+        result.alreadyActive
+          ? "Your membership is already active."
+          : "Your membership has been resumed.",
       );
-    } catch (error) {
-      setCancelMessage(
-        error instanceof Error
-          ? error.message
-          : "Unable to resume membership.",
-      );
+    } catch {
+      setCancelMessage("Unable to resume membership safely.");
     } finally {
       setCancelLoading(false);
     }
