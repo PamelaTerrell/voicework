@@ -209,7 +209,6 @@ export default function Home() {
           name_preference: namePreference,
           submitter_name: submitterName.trim() || null,
           submitter_email: submitterEmail.trim() || null,
-          status: "new",
         });
 
       if (error) {
