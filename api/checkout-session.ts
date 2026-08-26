@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { isApprovedEpisodeId } from "./_episodes.js";
 import { isActiveSub, requireUser, stripe } from "./_lib.js";
 import { setApiResponseHeaders } from "./_responseHeaders.js";
+import { transitionAttemptFromVerifiedSession } from "./_checkoutAttempt.js";
 
 const CHECKOUT_SESSION_ID = /^cs_(?:test|live)_[A-Za-z0-9]{10,}$/;
 
@@ -49,28 +50,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       purchaseType === "one_time" &&
       session.mode === "payment" &&
       isApprovedEpisodeId(session.metadata?.episodeId);
+    const subscriptionCheckout =
+      purchaseType === "subscription" && session.mode === "subscription";
     const subscription =
       session.subscription && typeof session.subscription !== "string"
         ? session.subscription
         : null;
     const validSubscription =
-      purchaseType === "subscription" &&
-      session.mode === "subscription" &&
+      subscriptionCheckout &&
       !!subscription &&
       isActiveSub(subscription.status);
+
+    if (session.status === "expired" && (validOneTime || subscriptionCheckout)) {
+      if (subscriptionCheckout) {
+        await transitionAttemptFromVerifiedSession(user.id, session);
+      }
+      return res.status(200).json({
+        state: "failed",
+        purchaseType: validOneTime ? "one_time" : "subscription",
+      });
+    }
 
     if (!validOneTime && !validSubscription) {
       return res.status(404).json({ state: "invalid" });
     }
 
     const responsePurchaseType = validOneTime ? "one_time" : "subscription";
-
-    if (session.status === "expired") {
-      return res.status(200).json({
-        state: "failed",
-        purchaseType: responsePurchaseType,
-      });
-    }
 
     const paymentComplete = validOneTime
       ? session.payment_status === "paid"
@@ -82,6 +87,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         state: "pending",
         purchaseType: responsePurchaseType,
       });
+    }
+
+    if (validSubscription) {
+      await transitionAttemptFromVerifiedSession(user.id, session);
     }
 
     return res.status(200).json({

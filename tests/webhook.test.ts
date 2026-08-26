@@ -7,6 +7,13 @@ const mocks = vi.hoisted(() => ({
   profileUpsert: vi.fn(),
   profileUpdate: vi.fn(),
   profileEq: vi.fn(),
+  transitionAttempt: vi.fn(),
+  invalidateOwnedAttempt: vi.fn(),
+}));
+
+vi.mock("../api/_checkoutAttempt.js", () => ({
+  transitionAttemptFromVerifiedSession: mocks.transitionAttempt,
+  invalidateOwnedOpenAttemptForCustomer: mocks.invalidateOwnedAttempt,
 }));
 
 vi.mock("../api/_lib.js", () => ({
@@ -43,6 +50,7 @@ function checkoutEvent(overrides: Record<string, unknown> = {}) {
     type: "checkout.session.completed",
     data: {
       object: {
+        id: "cs_test_1234567890abcdef",
         mode: "payment",
         status: "complete",
         payment_status: "paid",
@@ -55,6 +63,9 @@ function checkoutEvent(overrides: Record<string, unknown> = {}) {
           episodeId: "conversation-ep2",
         },
         subscription: null,
+        success_url: "https://site.invalid/thanks?session_id={CHECKOUT_SESSION_ID}",
+        cancel_url: "https://site.invalid/listen?canceled=1",
+        expires_at: 9999999999,
         ...overrides,
       },
     },
@@ -66,6 +77,8 @@ beforeEach(() => {
   mocks.constructEvent.mockReturnValue(checkoutEvent());
   mocks.entitlementUpsert.mockResolvedValue({ error: null });
   mocks.profileUpsert.mockResolvedValue({ error: null });
+  mocks.transitionAttempt.mockResolvedValue(undefined);
+  mocks.invalidateOwnedAttempt.mockResolvedValue(undefined);
 });
 
 async function call(signature: string | null = "isolated-signature") {
@@ -158,6 +171,10 @@ describe("Stripe webhook authorization", () => {
       expect.objectContaining({ id: "user-current", is_subscriber: true }),
       { onConflict: "id" }
     );
+    expect(mocks.transitionAttempt).toHaveBeenCalledWith(
+      "user-current",
+      expect.objectContaining({ id: "cs_test_1234567890abcdef" }),
+    );
 
     vi.clearAllMocks();
     mocks.constructEvent.mockReturnValue(
@@ -170,6 +187,35 @@ describe("Stripe webhook authorization", () => {
     );
     await call();
     expect(mocks.profileUpsert).not.toHaveBeenCalled();
+    expect(mocks.transitionAttempt).not.toHaveBeenCalled();
+  });
+
+  it("invalidates an owned open attempt for a current subscription event", async () => {
+    mocks.constructEvent.mockReturnValue({
+      type: "customer.subscription.updated",
+      data: {
+        object: {
+          customer: "customer-linked",
+          status: "past_due",
+        },
+      },
+    });
+    await call();
+    expect(mocks.invalidateOwnedAttempt).toHaveBeenCalledWith("customer-linked");
+  });
+
+  it("keeps webhook retry behavior when owned Session invalidation is ambiguous", async () => {
+    mocks.constructEvent.mockReturnValue({
+      type: "customer.subscription.created",
+      data: {
+        object: {
+          customer: "customer-linked",
+          status: "active",
+        },
+      },
+    });
+    mocks.invalidateOwnedAttempt.mockRejectedValue(new Error("isolated"));
+    expect((await call()).result.statusCode).toBe(500);
   });
 
   it("ignores unsupported events and logs only a generic processing failure", async () => {

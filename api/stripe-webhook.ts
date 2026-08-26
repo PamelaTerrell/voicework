@@ -10,8 +10,21 @@ import {
   getCustomerEmail,
 } from "./_lib.js";
 import { setApiResponseHeaders } from "./_responseHeaders.js";
+import {
+  invalidateOwnedOpenAttemptForCustomer,
+  transitionAttemptFromVerifiedSession,
+} from "./_checkoutAttempt.js";
 
 export const config = { api: { bodyParser: false } };
+
+const INVALIDATES_OPEN_CHECKOUT = new Set([
+  "active",
+  "trialing",
+  "incomplete",
+  "past_due",
+  "paused",
+  "unpaid",
+]);
 
 async function upsertProfileSubscription(args: {
   userId?: string | null;
@@ -172,6 +185,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           isSubscriber: true,
           subscriptionStatus: "active",
         });
+        await transitionAttemptFromVerifiedSession(userId, session);
       }
 
       return res.status(200).json({ received: true });
@@ -195,6 +209,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         isSubscriber: isActiveSub(sub.status),
         subscriptionStatus: sub.status,
       });
+
+      if (INVALIDATES_OPEN_CHECKOUT.has(sub.status)) {
+        await invalidateOwnedOpenAttemptForCustomer(customerId);
+      }
 
       return res.status(200).json({ received: true });
     }

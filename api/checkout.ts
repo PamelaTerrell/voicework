@@ -8,10 +8,23 @@ import {
 } from "./_lib.js";
 import { setApiResponseHeaders } from "./_responseHeaders.js";
 import { reconcileAuthenticatedMembership } from "./_membership.js";
+import {
+  bindCheckoutAttempt,
+  checkoutAttemptIdempotencyKey,
+  claimCheckoutAttempt,
+  inspectOwnedCheckoutSession,
+  invalidateOwnedOpenAttemptForUser,
+  retrieveOwnedCheckoutSession,
+  transitionCheckoutAttempt,
+} from "./_checkoutAttempt.js";
 
 type CheckoutRequest = { mode: "subscription" };
 
-const CHECKOUT_IDEMPOTENCY_WINDOW_MS = 10 * 60 * 1000;
+const STRIPE_MINIMUM_CHECKOUT_FUTURE_SECONDS = 30 * 60;
+const CHECKOUT_CREATION_TRANSIT_BUFFER_SECONDS = 2 * 60;
+const MINIMUM_SAFE_CHECKOUT_FUTURE_SECONDS =
+  STRIPE_MINIMUM_CHECKOUT_FUTURE_SECONDS +
+  CHECKOUT_CREATION_TRANSIT_BUFFER_SECONDS;
 const TERMINAL_SUBSCRIPTION_STATUSES = new Set([
   "canceled",
   "incomplete_expired",
@@ -30,12 +43,6 @@ function trustedUserDigest(userId: string) {
 function customerCreationIdempotencyKey(userId: string) {
   // Stable per authenticated user so concurrent first-time requests converge.
   return `night-listener:customer:v1:${trustedUserDigest(userId)}`;
-}
-
-function checkoutSessionIdempotencyKey(userId: string, now = Date.now()) {
-  // Ten-minute epoch buckets deduplicate bursts but permit a deliberate later retry.
-  const window = Math.floor(now / CHECKOUT_IDEMPOTENCY_WINDOW_MS);
-  return `night-listener:subscription-checkout:v1:${trustedUserDigest(userId)}:${window}`;
 }
 
 function subscriptionCustomerId(subscription: { customer?: unknown }) {
@@ -156,6 +163,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       reconcileByVerifiedEmail: true,
     });
     if (membership.outcome === "active") {
+      if (membership.customerId) {
+        await invalidateOwnedOpenAttemptForUser(user.id, membership.customerId);
+      }
       return res.status(409).json({
         error: "An active membership already exists for this account.",
       });
@@ -169,11 +179,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (customerId) {
       const subscriptionState = await verifyNoCurrentSubscription(customerId);
       if (subscriptionState === "current") {
+        await invalidateOwnedOpenAttemptForUser(user.id, customerId);
         return res.status(409).json({
           error: "An active membership already exists for this account.",
         });
       }
       if (subscriptionState === "attention") {
+        await invalidateOwnedOpenAttemptForUser(user.id, customerId);
         return res.status(409).json({
           error:
             "An existing membership requires attention before starting a new checkout.",
@@ -212,26 +224,120 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       userId: user.id,
       purchaseType: "subscription",
     };
+    const successUrl = `${siteUrl}/thanks?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${siteUrl}/listen?canceled=1`;
+
+    const attempt = await claimCheckoutAttempt({
+      userId: user.id,
+      customerId,
+      priceId,
+      successUrl,
+      cancelUrl,
+    });
+
+    if (attempt.outcome === "busy") {
+      return res.status(409).json({
+        error: "Checkout is already being prepared. Please try again shortly.",
+      });
+    }
+    if (attempt.outcome === "blocked") {
+      return res.status(409).json({ error: "Unable to start checkout safely." });
+    }
+
+    if (attempt.outcome === "open") {
+      const { inspection } = await retrieveOwnedCheckoutSession(attempt);
+      if (inspection.state === "open") {
+        return res.status(200).json({ url: inspection.url });
+      }
+
+      const transition = await transitionCheckoutAttempt({
+        attempt,
+        targetState: inspection.state,
+      });
+      if (transition === "stale") {
+        return res.status(409).json({ error: "Unable to start checkout safely." });
+      }
+      return res.status(409).json({
+        error: inspection.state === "completed"
+          ? "An existing checkout has already been completed."
+          : "The previous checkout has expired. Please try again.",
+      });
+    }
+
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    if (
+      attempt.stripeExpiresAt <=
+      nowSeconds + MINIMUM_SAFE_CHECKOUT_FUTURE_SECONDS
+    ) {
+      const transition = await transitionCheckoutAttempt({
+        attempt,
+        targetState: "blocked",
+        leaseToken: attempt.leaseToken,
+      });
+      if (transition !== "transitioned") {
+        return res.status(409).json({ error: "Unable to start checkout safely." });
+      }
+      return res.status(409).json({ error: "Unable to start checkout safely." });
+    }
 
     const session = await stripe.checkout.sessions.create(
       {
         mode: "subscription",
         customer: customerId,
-        line_items: [{ price: priceId, quantity: 1 }],
-        success_url: `${siteUrl}/thanks?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${siteUrl}/listen?canceled=1`,
+        line_items: [{ price: attempt.priceId, quantity: 1 }],
+        success_url: attempt.successUrl,
+        cancel_url: attempt.cancelUrl,
         client_reference_id: user.id,
         metadata: purchaseMetadata,
         subscription_data: { metadata: purchaseMetadata },
+        expires_at: attempt.stripeExpiresAt,
       },
-      { idempotencyKey: checkoutSessionIdempotencyKey(user.id) },
+      { idempotencyKey: checkoutAttemptIdempotencyKey(attempt.attemptId) },
     );
-
-    if (!session.url) {
+    const candidateAttempt = {
+      ...attempt,
+      sessionId: session.id,
+    };
+    const returnedInspection = inspectOwnedCheckoutSession(
+      session,
+      candidateAttempt,
+      0,
+    );
+    if (!returnedInspection) {
       return res.status(500).json({ error: "Unable to start checkout." });
     }
 
-    return res.status(200).json({ url: session.url });
+    const { inspection } = await retrieveOwnedCheckoutSession(candidateAttempt);
+    const bound = await bindCheckoutAttempt({
+      attempt,
+      leaseToken: attempt.leaseToken,
+      sessionId: session.id,
+      expiresAt: inspection.expiresAt,
+      state: inspection.state,
+    });
+    if (!bound) {
+      return res.status(500).json({ error: "Unable to start checkout." });
+    }
+    if (inspection.state !== "open") {
+      return res.status(409).json({
+        error: inspection.state === "completed"
+          ? "An existing checkout has already been completed."
+          : "The previous checkout has expired. Please try again.",
+      });
+    }
+
+    const finalSubscriptionState = await verifyNoCurrentSubscription(customerId);
+    if (finalSubscriptionState !== "available") {
+      if (
+        finalSubscriptionState === "current" ||
+        finalSubscriptionState === "attention"
+      ) {
+        await invalidateOwnedOpenAttemptForUser(user.id, customerId);
+      }
+      return res.status(409).json({ error: "Unable to start checkout safely." });
+    }
+
+    return res.status(200).json({ url: inspection.url });
   } catch (error: unknown) {
     const authMessage = authenticationError(error);
     if (authMessage) return res.status(401).json({ error: authMessage });

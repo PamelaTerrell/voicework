@@ -4,6 +4,11 @@ import { authError, request, response } from "./helpers.js";
 const mocks = vi.hoisted(() => ({
   requireUser: vi.fn(),
   retrieveSession: vi.fn(),
+  transitionAttempt: vi.fn(),
+}));
+
+vi.mock("../api/_checkoutAttempt.js", () => ({
+  transitionAttemptFromVerifiedSession: mocks.transitionAttempt,
 }));
 
 vi.mock("../api/_lib.js", () => ({
@@ -36,6 +41,7 @@ function session(overrides: Record<string, unknown> = {}) {
 beforeEach(() => {
   mocks.requireUser.mockResolvedValue({ id: "user-current", email: "trusted" });
   mocks.retrieveSession.mockResolvedValue(session());
+  mocks.transitionAttempt.mockResolvedValue(undefined);
 });
 
 async function call(sessionId = validId) {
@@ -122,6 +128,46 @@ describe("checkout session verification", () => {
       state: "verified",
       purchaseType: "subscription",
     });
+    expect(mocks.transitionAttempt).toHaveBeenCalledWith(
+      "user-current",
+      expect.objectContaining({ mode: "subscription" }),
+    );
+  });
+
+  it("marks an expired subscription attempt without requiring an active subscription", async () => {
+    mocks.retrieveSession.mockResolvedValue(
+      session({
+        status: "expired",
+        payment_status: "unpaid",
+        mode: "subscription",
+        metadata: { userId: "user-current", purchaseType: "subscription" },
+        subscription: null,
+      }),
+    );
+    expect((await call()).result.body).toEqual({
+      state: "failed",
+      purchaseType: "subscription",
+    });
+    expect(mocks.transitionAttempt).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps completed subscription confirmation refreshes replay-safe", async () => {
+    mocks.retrieveSession.mockResolvedValue(
+      session({
+        mode: "subscription",
+        metadata: { userId: "user-current", purchaseType: "subscription" },
+        subscription: { status: "active" },
+      }),
+    );
+    expect((await call()).result.body).toEqual({
+      state: "verified",
+      purchaseType: "subscription",
+    });
+    expect((await call()).result.body).toEqual({
+      state: "verified",
+      purchaseType: "subscription",
+    });
+    expect(mocks.transitionAttempt).toHaveBeenCalledTimes(2);
   });
 
   it.each([
