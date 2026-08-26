@@ -6,11 +6,11 @@ This timestamped migration is one-shot. After it has been applied successfully, 
 
 The corrective migration `20260826210000_fix_durable_checkout_rotation.sql` replaces only the claim RPC to use PostgreSQL's unqualified `greatest(...)` SQL expression during terminal-generation rotation. Fresh environments must apply `20260826180000_durable_subscription_checkout_attempts.sql` and then the corrective migration in timestamp order. Environments where the original migration is already applied must apply only the corrective migration and must not replay or rewrite the original.
 
-Immediately before the production deployment, manually inspect all existing open test-mode subscription Checkout Sessions and expire every one. The application deliberately does not list, discover, adopt, or expire any Session that is not already bound to a trusted `subscription_checkout_attempts` row.
+Immediately before the production deployment, manually inspect all existing open subscription Checkout Sessions in every Stripe mode used by the site, especially Live mode, and expire each confirmed legacy Session. Do not expire a Session while customer completion is uncertain. The application deliberately does not list, discover, adopt, or expire any Session that is not already bound to a trusted `subscription_checkout_attempts` row.
 
 Rollout order:
 
-1. Confirm the existing open test Sessions have been reviewed and expired.
+1. Confirm existing open legacy Sessions in every Stripe mode used by the site, especially Live mode, have been reviewed and safely expired.
 2. Apply all pending durable checkout-attempt migrations in timestamp order, including the corrective rotation migration.
 3. Verify `anon` and `authenticated` have no table, column, or RPC access and `service_role` can call the four RPCs.
 4. Deploy the application code.
