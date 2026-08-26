@@ -45,6 +45,8 @@ vi.mock("../api/_lib.js", () => ({
 }));
 
 import {
+  MEMBERSHIP_DENIAL_REASONS,
+  logMembershipVerificationDenied,
   reconcileAuthenticatedMembership,
 } from "../api/_membership.js";
 
@@ -100,6 +102,83 @@ beforeEach(() => {
 });
 
 describe("authenticated membership validation", () => {
+  it("uses only the closed diagnostic reason allowlist", () => {
+    expect(MEMBERSHIP_DENIAL_REASONS).toEqual([
+      "profile_lookup_failed",
+      "stored_customer_retrieval_failed",
+      "stored_customer_malformed",
+      "stored_customer_identity_conflict",
+      "customer_search_failed",
+      "customer_search_paginated",
+      "candidate_customer_invalid",
+      "candidate_customer_ambiguous",
+      "subscription_list_failed",
+      "subscription_list_paginated",
+      "subscription_malformed",
+      "subscription_ownership_conflict",
+      "subscription_status_unknown",
+      "multiple_current_subscriptions",
+      "cancellation_timing_invalid",
+      "profile_repair_failed",
+      "unexpected_failure",
+    ]);
+  });
+
+  it("logs exactly four safe fields for denied outcomes and nothing for accepted outcomes", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const sensitive = [
+      "person@invalid.test",
+      "00000000-0000-0000-0000-000000000001",
+      "bearer-secret",
+      "cus_sensitive",
+      "sub_sensitive",
+      "episode-sensitive",
+      "signed-url-sensitive",
+      "private/audio.mp3",
+      "provider exploded",
+      "stack trace",
+    ];
+    logMembershipVerificationDenied("member-access", {
+      outcome: "conflict",
+      active: false,
+      cancellationScheduled: false,
+      cancellationEffectiveAt: null,
+      customerId: "cus_sensitive",
+      reason: "subscription_ownership_conflict",
+    });
+    expect(warn).toHaveBeenCalledWith({
+      event: "membership_verification_denied",
+      endpoint: "member-access",
+      outcome: "conflict",
+      reason: "subscription_ownership_conflict",
+    });
+    expect(Object.keys(warn.mock.calls[0][0])).toEqual([
+      "event",
+      "endpoint",
+      "outcome",
+      "reason",
+    ]);
+    const serialized = JSON.stringify(warn.mock.calls);
+    for (const value of sensitive) expect(serialized).not.toContain(value);
+
+    logMembershipVerificationDenied("signed-audio", {
+      outcome: "active",
+      active: true,
+      cancellationScheduled: false,
+      cancellationEffectiveAt: null,
+      customerId: "cus_sensitive",
+      reason: null,
+    });
+    logMembershipVerificationDenied("signed-audio", {
+      outcome: "inactive",
+      active: false,
+      cancellationScheduled: false,
+      cancellationEffectiveAt: null,
+      customerId: null,
+      reason: null,
+    });
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
   it.each([
     ["missing email", { id: "user-current" } as User],
     ["missing profile", user(), null],

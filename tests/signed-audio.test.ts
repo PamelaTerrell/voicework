@@ -12,6 +12,17 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("../api/_membership.js", () => ({
   reconcileAuthenticatedMembership: mocks.validateMembership,
+  logMembershipVerificationDenied: vi.fn((endpoint, membership) => {
+    if (
+      (membership.outcome === "conflict" || membership.outcome === "unavailable") &&
+      membership.reason
+    ) console.warn({
+      event: "membership_verification_denied",
+      endpoint,
+      outcome: membership.outcome,
+      reason: membership.reason,
+    });
+  }),
 }));
 
 vi.mock("../api/_lib.js", () => ({
@@ -85,18 +96,39 @@ describe("protected audio authorization", () => {
   it.each(["conflict", "unavailable"])(
     "returns a generic 503 for %s membership without an entitlement",
     async (outcome) => {
-      mocks.validateMembership.mockResolvedValue({ outcome, active: false });
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+      mocks.validateMembership.mockResolvedValue({
+        outcome,
+        active: false,
+        reason: "unexpected_failure",
+      });
       const { result } = await call({ episodeId: "conversation-ep2" });
       expect(result.statusCode).toBe(503);
       expect(result.body).toEqual({ error: "Unable to authorize audio." });
       expect(mocks.storageFrom).not.toHaveBeenCalled();
+      expect(warn).toHaveBeenCalledWith({
+        event: "membership_verification_denied",
+        endpoint: "signed-audio",
+        outcome,
+        reason: "unexpected_failure",
+      });
+      expect(Object.keys(warn.mock.calls[0][0])).toEqual([
+        "event",
+        "endpoint",
+        "outcome",
+        "reason",
+      ]);
     },
   );
 
   it.each(["inactive", "conflict", "unavailable"])(
     "preserves an exact historical entitlement during %s membership",
     async (outcome) => {
-      mocks.validateMembership.mockResolvedValue({ outcome, active: false });
+      mocks.validateMembership.mockResolvedValue({
+        outcome,
+        active: false,
+        reason: "unexpected_failure",
+      });
       mocks.entitlementResult = { data: { id: "entitlement" }, error: null };
       const { result } = await call({ episodeId: "conversation-ep2" });
       expect(result.statusCode).toBe(200);
@@ -104,10 +136,12 @@ describe("protected audio authorization", () => {
   );
 
   it("does not require an entitlement for active membership", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     mocks.validateMembership.mockResolvedValue({ outcome: "active", active: true });
     const { result } = await call({ episodeId: "conversation-ep2" });
     expect(result.statusCode).toBe(200);
     expect(mocks.entitlementEq).not.toHaveBeenCalled();
+    expect(warn).not.toHaveBeenCalled();
   });
 
   it("allows a valid member and cancellation-period member", async () => {

@@ -17,6 +17,17 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("../api/_membership.js", () => ({
   reconcileAuthenticatedMembership: mocks.validateMembership,
+  logMembershipVerificationDenied: vi.fn((endpoint, membership) => {
+    if (
+      (membership.outcome === "conflict" || membership.outcome === "unavailable") &&
+      membership.reason
+    ) console.warn({
+      event: "membership_verification_denied",
+      endpoint,
+      outcome: membership.outcome,
+      reason: membership.reason,
+    });
+  }),
 }));
 
 vi.mock("../api/_lib.js", () => ({
@@ -144,8 +155,10 @@ describe("member access endpoint", () => {
   it.each(["conflict", "unavailable"])(
     "does not present %s verification as confirmed inactivity",
     async (outcome) => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
       mocks.validateMembership.mockResolvedValue({
         outcome,
+        reason: "unexpected_failure",
         active: false,
         cancellationScheduled: false,
         cancellationEffectiveAt: null,
@@ -155,8 +168,35 @@ describe("member access endpoint", () => {
       await memberAccess(request(), res);
       expect(result.statusCode).toBe(503);
       expect(result.body).toEqual({ error: "Unable to verify membership." });
+      expect(warn).toHaveBeenCalledWith({
+        event: "membership_verification_denied",
+        endpoint: "member-access",
+        outcome,
+        reason: "unexpected_failure",
+      });
+      expect(Object.keys(warn.mock.calls[0][0])).toEqual([
+        "event",
+        "endpoint",
+        "outcome",
+        "reason",
+      ]);
     },
   );
+
+  it.each(["active", "inactive"])("does not log %s membership", async (outcome) => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    mocks.validateMembership.mockResolvedValue({
+      outcome,
+      reason: null,
+      active: outcome === "active",
+      cancellationScheduled: false,
+      cancellationEffectiveAt: null,
+      customerId: null,
+    });
+    const { res } = response();
+    await memberAccess(request(), res);
+    expect(warn).not.toHaveBeenCalled();
+  });
 
   it("keeps the Members unlock state hidden after membership verification errors", () => {
     const client = readFileSync(resolve("src/pages/Members.tsx"), "utf8");

@@ -1,5 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { reconcileAuthenticatedMembership } from "./_membership.js";
+import {
+  logMembershipVerificationDenied,
+  reconcileAuthenticatedMembership,
+} from "./_membership.js";
 import { normalizeEmail, requireUser } from "./_lib.js";
 import { setApiResponseHeaders } from "./_responseHeaders.js";
 
@@ -51,6 +54,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     if (membership.outcome === "conflict" || membership.outcome === "unavailable") {
+      logMembershipVerificationDenied("member-access", membership);
       return res.status(503).json({ error: "Unable to verify membership." });
     }
 

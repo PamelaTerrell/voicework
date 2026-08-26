@@ -1,6 +1,9 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { EPISODE_FILE_MAP, isApprovedEpisodeId } from "./_episodes.js";
-import { reconcileAuthenticatedMembership } from "./_membership.js";
+import {
+  logMembershipVerificationDenied,
+  reconcileAuthenticatedMembership,
+} from "./_membership.js";
 import { requireUser, supabaseAdmin } from "./_lib.js";
 import { setApiResponseHeaders } from "./_responseHeaders.js";
 
@@ -64,6 +67,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       allowed = membership.active;
       membershipUnavailable =
         membership.outcome === "conflict" || membership.outcome === "unavailable";
+      if (membershipUnavailable) {
+        logMembershipVerificationDenied("signed-audio", membership);
+      }
     }
 
     if (!allowed) {
