@@ -7,6 +7,14 @@ const migrationPath = resolve(
 );
 const migration = readFileSync(migrationPath, "utf8");
 const normalized = migration.replace(/\s+/g, " ").trim().toLowerCase();
+const correctiveMigrationPath = resolve(
+  "supabase/migrations/20260826210000_fix_durable_checkout_rotation.sql",
+);
+const correctiveMigration = readFileSync(correctiveMigrationPath, "utf8");
+const correctiveNormalized = correctiveMigration
+  .replace(/\s+/g, " ")
+  .trim()
+  .toLowerCase();
 
 describe("durable subscription checkout migration contract", () => {
   it("creates exactly one constrained current row per authenticated user", () => {
@@ -172,6 +180,71 @@ describe("durable subscription checkout migration contract", () => {
     expect(normalized).not.toContain("public.entitlements");
     expect(normalized).not.toContain("public.story_submissions");
     expect(normalized).not.toContain("checkout.sessions.list");
+  });
+});
+
+describe("durable checkout rotation corrective migration", () => {
+  it("transactionally replaces only the exact claim RPC signature", () => {
+    expect(correctiveNormalized.startsWith("begin;")).toBe(true);
+    expect(correctiveNormalized.endsWith("commit;")).toBe(true);
+    expect(correctiveNormalized).toContain(
+      "create or replace function public.claim_subscription_checkout_attempt( p_user_id uuid, p_stripe_customer_id text, p_stripe_price_id text, p_success_url text, p_cancel_url text )",
+    );
+    expect(correctiveNormalized).toContain(
+      "returns table ( outcome text, attempt_id uuid, generation bigint, lease_token uuid, stripe_checkout_session_id text, stripe_customer_id text, stripe_price_id text, success_url text, cancel_url text, stripe_expires_at bigint )",
+    );
+    expect(
+      correctiveNormalized.match(/create or replace function/g),
+    ).toHaveLength(1);
+  });
+
+  it("changes only the invalid GREATEST qualification in the claim definition", () => {
+    const originalClaim = normalized.match(
+      /create function public\.claim_subscription_checkout_attempt[\s\S]+?\$\$;/,
+    )?.[0];
+    const correctedClaim = correctiveNormalized.match(
+      /create or replace function public\.claim_subscription_checkout_attempt[\s\S]+?\$\$;/,
+    )?.[0];
+    expect(originalClaim).toBeDefined();
+    expect(correctedClaim).toBeDefined();
+    expect(correctiveNormalized).toContain(
+      "stripe_expires_at = greatest( v_new_stripe_expires_at, attempts.stripe_expires_at + 1 )",
+    );
+    expect(correctiveNormalized).not.toContain("pg_catalog.greatest");
+    expect(
+      correctedClaim
+        ?.replace("create or replace function", "create function")
+        .replace("greatest(", "pg_catalog.greatest("),
+    ).toBe(originalClaim);
+  });
+
+  it("retains the security-definer boundary and service-role-only execution", () => {
+    expect(correctiveNormalized).toContain(
+      "language plpgsql security definer set search_path = ''",
+    );
+    expect(correctiveNormalized).toContain(
+      "revoke all on function public.claim_subscription_checkout_attempt( uuid, text, text, text, text ) from public, anon, authenticated",
+    );
+    expect(correctiveNormalized).toContain(
+      "grant execute on function public.claim_subscription_checkout_attempt( uuid, text, text, text, text ) to service_role",
+    );
+    expect(correctiveNormalized).not.toMatch(
+      /grant execute[^;]+to (?:public|anon|authenticated)/,
+    );
+  });
+
+  it("does not alter schema objects, policies, records, or unrelated functions", () => {
+    expect(correctiveNormalized).not.toContain("create table");
+    expect(correctiveNormalized).not.toContain("alter table");
+    expect(correctiveNormalized).not.toContain("drop ");
+    expect(correctiveNormalized).not.toContain("create policy");
+    expect(correctiveNormalized).not.toContain("bind_subscription_checkout_session");
+    expect(correctiveNormalized).not.toContain(
+      "transition_subscription_checkout_attempt",
+    );
+    expect(correctiveNormalized).not.toContain(
+      "resolve_blocked_subscription_checkout_attempt",
+    );
   });
 });
 
