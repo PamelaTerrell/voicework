@@ -1,6 +1,9 @@
 const DEFAULT_AUTH_DESTINATION = "/members";
 
-const APPROVED_AUTH_DESTINATIONS = new Set([DEFAULT_AUTH_DESTINATION]);
+const APPROVED_AUTH_DESTINATIONS = new Set([
+  DEFAULT_AUTH_DESTINATION,
+  "/join",
+]);
 
 const SENSITIVE_QUERY_KEYS = new Set([
   "access_token",

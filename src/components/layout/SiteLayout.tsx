@@ -1,8 +1,9 @@
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Auth } from "@/components/Auth";
 import { SafeAnalytics } from "@/components/SafeAnalytics";
+import { shouldShowHeaderInlineAuth } from "@/lib/headerAuthVisibility";
 
 function NavItem({
   to,
@@ -30,6 +31,9 @@ function NavItem({
 }
 
 export default function SiteLayout() {
+  const location = useLocation();
+  const showHeaderInlineAuth = shouldShowHeaderInlineAuth(location.pathname);
+
   return (
     <div className="min-h-screen w-full bg-background">
       {/* ======================================================
@@ -138,7 +142,13 @@ export default function SiteLayout() {
 
         {/* MOBILE + AUTH */}
 
-        <div className="w-full border-t">
+        <div
+          className={
+            showHeaderInlineAuth
+              ? "w-full border-t"
+              : "w-full border-t sm:hidden"
+          }
+        >
           <div
             className="
               mx-auto
@@ -198,9 +208,11 @@ export default function SiteLayout() {
               </div>
             </div>
 
-            <div className="w-full">
-              <Auth />
-            </div>
+            {showHeaderInlineAuth && (
+              <div className="w-full">
+                <Auth />
+              </div>
+            )}
           </div>
         </div>
       </header>

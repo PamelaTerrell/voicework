@@ -1,12 +1,16 @@
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabaseClient";
 import { sendMagicLink } from "@/lib/sendMagicLink";
+import {
+  getJoinMembershipView,
+  verifyJoinMembership,
+  type JoinMembershipState,
+} from "@/lib/joinMembership";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
-const FORM_ENDPOINT = "https://formspree.io/f/xykjjvdb";
 
 export default function Join() {
   const [email, setEmail] = useState("");
@@ -16,26 +20,70 @@ export default function Join() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutMessage, setCheckoutMessage] = useState("");
   const [message, setMessage] = useState("");
+  const [membershipState, setMembershipState] =
+    useState<JoinMembershipState>("checking");
+  const membershipRequest = useRef(0);
+
+  const syncMembership = useCallback(async (session: Session | null) => {
+    const requestId = membershipRequest.current + 1;
+    membershipRequest.current = requestId;
+    setSessionEmail(session?.user.email ?? null);
+    setCheckoutMessage("");
+
+    if (!session?.access_token) {
+      setMembershipState("signed_out");
+      return;
+    }
+
+    setMembershipState("checking");
+    const verifiedState = await verifyJoinMembership(session.access_token);
+    if (membershipRequest.current === requestId) {
+      setMembershipState(verifiedState);
+    }
+  }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSessionEmail(data.session?.user.email ?? null);
-    });
+    let active = true;
+    const initialRequest = membershipRequest.current;
+
+    supabase.auth.getSession().then(
+      ({ data, error }) => {
+        if (!active || membershipRequest.current !== initialRequest) {
+          return;
+        }
+        if (error) {
+          setMembershipState("verification_error");
+          return;
+        }
+        void syncMembership(data.session);
+      },
+      () => {
+        if (active && membershipRequest.current === initialRequest) {
+          setMembershipState("verification_error");
+        }
+      },
+    );
 
     const { data: sub } =
       supabase.auth.onAuthStateChange((_event, session) => {
-        setSessionEmail(session?.user.email ?? null);
+        if (active) {
+          void syncMembership(session);
+        }
       });
 
-    return () => sub.subscription.unsubscribe();
-  }, []);
+    return () => {
+      active = false;
+      membershipRequest.current += 1;
+      sub.subscription.unsubscribe();
+    };
+  }, [syncMembership]);
 
   async function handleSendLink() {
     setLoading(true);
     setMessage("");
 
     try {
-      const { error } = await sendMagicLink(email);
+      const { error } = await sendMagicLink(email, "/join");
 
       if (error) {
         setMessage(error.message);
@@ -43,7 +91,7 @@ export default function Join() {
       }
 
       setMessage(
-        "Magic link sent. Check your email and use the same address you used for membership.",
+        "Magic link sent. Check your email to continue.",
       );
 
       setEmail("");
@@ -53,12 +101,44 @@ export default function Join() {
   }
 
   async function signOut() {
+    membershipRequest.current += 1;
     await supabase.auth.signOut();
+    setSessionEmail(null);
+    setMembershipState("signed_out");
     setMessage("");
+    setCheckoutMessage("");
+  }
+
+  async function retryMembershipCheck() {
+    const requestId = membershipRequest.current + 1;
+    membershipRequest.current = requestId;
+    setMembershipState("checking");
+
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      if (membershipRequest.current !== requestId) {
+        return;
+      }
+      if (error) {
+        setMembershipState("verification_error");
+        return;
+      }
+      await syncMembership(data.session);
+    } catch {
+      if (membershipRequest.current === requestId) {
+        setMembershipState("verification_error");
+      }
+    }
   }
 
   async function handleSubscribe() {
     setCheckoutMessage("");
+
+    if (membershipState !== "inactive") {
+      setCheckoutMessage("Unable to start secure checkout.");
+      return;
+    }
+
     setCheckoutLoading(true);
 
     try {
@@ -66,6 +146,8 @@ export default function Join() {
       const token = data.session?.access_token;
 
       if (!token) {
+        setSessionEmail(null);
+        setMembershipState("signed_out");
         setCheckoutMessage(
           "Sign in with your email below before starting secure checkout.",
         );
@@ -97,6 +179,8 @@ export default function Join() {
       setCheckoutLoading(false);
     }
   }
+
+  const membershipView = getJoinMembershipView(membershipState);
 
   return (
     <section className="w-full bg-[#02060b] text-white">
@@ -219,34 +303,95 @@ export default function Join() {
               </div>
 
               <div className="mt-auto pt-8">
-                <Button
-                  type="button"
-                  onClick={handleSubscribe}
-                  disabled={checkoutLoading}
-                  className="
-                    h-12
-                    w-full
-                    rounded-full
-                    bg-[#d7af65]
-                    text-black
-                    hover:bg-[#e7ca90]
-                  "
-                >
-                  {checkoutLoading
-                    ? "Opening secure checkout…"
-                    : "Unlock the Full Library — $4.99/month"}
-                </Button>
-
-                {checkoutMessage && (
-                  <p className="mt-3 text-center text-xs leading-6 text-slate-400">
-                    {checkoutMessage}
-                  </p>
+                {membershipView.showMagicLink && (
+                  <div className="rounded-2xl border border-[#d7af65]/25 bg-[#d7af65]/[0.06] p-5">
+                    <p className="text-sm font-medium text-white">
+                      Sign in first, then continue to secure checkout.
+                    </p>
+                    <p className="mt-2 text-sm leading-7 text-slate-400">
+                      Use the magic-link form to verify your email before joining.
+                    </p>
+                  </div>
                 )}
 
-                <p className="mt-4 text-center text-xs leading-6 text-slate-600">
-                  Secure checkout powered by Stripe. A receipt
-                  will be sent to your email.
-                </p>
+                {membershipView.showChecking && (
+                  <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
+                    <p className="text-sm font-medium text-white">
+                      Checking your membership…
+                    </p>
+                    <p className="mt-2 text-sm leading-7 text-slate-500">
+                      We’re securely verifying your current access.
+                    </p>
+                  </div>
+                )}
+
+                {membershipView.showCheckout && (
+                  <div>
+                    <Button
+                      type="button"
+                      onClick={handleSubscribe}
+                      disabled={checkoutLoading}
+                      className="
+                        h-12
+                        w-full
+                        rounded-full
+                        bg-[#d7af65]
+                        text-black
+                        hover:bg-[#e7ca90]
+                      "
+                    >
+                      {checkoutLoading
+                        ? "Opening secure checkout…"
+                        : "Join Night Listener — $4.99/month"}
+                    </Button>
+
+                    {checkoutMessage && (
+                      <p className="mt-3 text-center text-xs leading-6 text-slate-400">
+                        {checkoutMessage}
+                      </p>
+                    )}
+
+                    <p className="mt-4 text-center text-xs leading-6 text-slate-600">
+                      Opens secure Stripe checkout. A receipt will be sent to your email.
+                    </p>
+                  </div>
+                )}
+
+                {membershipView.showMembersLibrary && (
+                  <div className="rounded-2xl border border-[#d7af65]/25 bg-[#d7af65]/[0.06] p-5">
+                    <p className="text-lg font-medium text-white">
+                      Your membership is active
+                    </p>
+                    <p className="mt-2 text-sm leading-7 text-slate-400">
+                      Your full Night Listener library is ready.
+                    </p>
+                    <Button
+                      asChild
+                      className="mt-4 rounded-full bg-[#d7af65] text-black hover:bg-[#e7ca90]"
+                    >
+                      <Link to="/members">Open Members Library</Link>
+                    </Button>
+                  </div>
+                )}
+
+                {membershipView.showVerificationError && (
+                  <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
+                    <p className="text-sm font-medium text-white">
+                      We couldn’t verify your membership.
+                    </p>
+                    <p className="mt-2 text-sm leading-7 text-slate-500">
+                      Please try the secure membership check again.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={retryMembershipCheck}
+                      className="mt-4 rounded-full border-white/15 bg-transparent text-white hover:bg-white/10 hover:text-white"
+                    >
+                      Retry membership check
+                    </Button>
+                  </div>
+                )}
 
                 <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 p-4">
                   <p className="text-sm font-medium text-white">
@@ -283,57 +428,22 @@ export default function Join() {
                 </p>
 
                 <h2 className="mt-4 text-2xl font-medium tracking-[-0.03em] sm:text-3xl">
-                  Already subscribed?
+                  Sign in to continue
                 </h2>
 
                 <p className="mt-4 max-w-xl text-sm leading-7 text-slate-400 sm:text-base">
-                  Sign in with the same email address you used
-                  for your membership and we&apos;ll send you
-                  a private magic link.
+                  Use your email to verify an existing membership or continue to the joining step.
                 </p>
               </div>
 
               <div className="mt-8 rounded-2xl border border-white/10 bg-black/20 p-5 sm:p-6">
-                {sessionEmail ? (
-                  <div className="space-y-5">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-600">
-                        Signed in
-                      </p>
-
-                      <p className="mt-2 break-all text-sm text-slate-400">
-                        <span className="font-medium text-white">
-                          {sessionEmail}
-                        </span>
-                      </p>
-                    </div>
-
-                    <div className="flex flex-col gap-3 sm:flex-row">
-                      <Button
-                        asChild
-                        className="rounded-full bg-[#d7af65] text-black hover:bg-[#e7ca90]"
-                      >
-                        <Link to="/members">
-                          Open Members Library
-                        </Link>
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        onClick={signOut}
-                        className="rounded-full border-white/15 bg-transparent text-white hover:bg-white/10 hover:text-white"
-                      >
-                        Sign out
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
+                {membershipView.showMagicLink ? (
                   <div>
                     <label
                       htmlFor="member-email"
                       className="text-sm font-medium text-white"
                     >
-                      Membership email
+                      Email address
                     </label>
 
                     <div className="mt-3 flex flex-col gap-3 sm:flex-row">
@@ -380,6 +490,34 @@ export default function Join() {
                       </p>
                     )}
                   </div>
+                ) : sessionEmail ? (
+                  <div className="space-y-5">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.18em] text-slate-600">
+                        Signed in
+                      </p>
+
+                      <p className="mt-2 break-all text-sm text-slate-400">
+                        <span className="font-medium text-white">
+                          {sessionEmail}
+                        </span>
+                      </p>
+                    </div>
+
+                    <div>
+                      <Button
+                        variant="outline"
+                        onClick={signOut}
+                        className="rounded-full border-white/15 bg-transparent text-white hover:bg-white/10 hover:text-white"
+                      >
+                        Sign out
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm leading-7 text-slate-500">
+                    Checking your secure sign-in…
+                  </p>
                 )}
               </div>
 
@@ -395,149 +533,6 @@ export default function Join() {
                     your membership email address.
                   </p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* ======================================================
-            NIGHT LIST — FREE
-        ====================================================== */}
-
-        <div className="mt-8">
-          <Card className="rounded-[2rem] border-white/10 bg-[#050a11] text-white shadow-[0_30px_90px_rgba(0,0,0,.22)]">
-            <CardContent className="p-6 sm:p-8 lg:p-10">
-              <div className="grid gap-10 lg:grid-cols-[0.7fr_1.3fr] lg:items-start">
-                {/* INTRO */}
-
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#d7af65]">
-                    Free Night List
-                  </p>
-
-                  <h2 className="mt-4 text-2xl font-medium tracking-[-0.03em] sm:text-3xl">
-                    Want to hear when something new arrives?
-                  </h2>
-
-                  <p className="mt-4 max-w-xl text-sm leading-7 text-slate-400 sm:text-base">
-                    Join the free Night List for new episode
-                    announcements, story updates, and
-                    occasional thoughtful notes from Night
-                    Listener.
-                  </p>
-
-                  <p className="mt-5 text-xs leading-6 text-slate-600">
-                    No spam. Just new episodes and occasional
-                    notes.
-                  </p>
-                </div>
-
-                {/* FORM */}
-
-                <form
-                  action={FORM_ENDPOINT}
-                  method="POST"
-                  className="rounded-[1.5rem] border border-white/10 bg-black/20 p-5 sm:p-6"
-                >
-                  <input
-                    type="hidden"
-                    name="_subject"
-                    value="Night List signup (stabileusa.com)"
-                  />
-
-                  <input
-                    type="hidden"
-                    name="type"
-                    value="night_list"
-                  />
-
-                  <input
-                    type="hidden"
-                    name="_next"
-                    value="https://stabileusa.com/contact-thanks"
-                  />
-
-                  <input
-                    type="text"
-                    name="_gotcha"
-                    style={{ display: "none" }}
-                    tabIndex={-1}
-                    autoComplete="off"
-                  />
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <label
-                        className="text-sm font-medium text-white"
-                        htmlFor="name"
-                      >
-                        Name
-                        <span className="ml-1 font-normal text-slate-600">
-                          optional
-                        </span>
-                      </label>
-
-                      <Input
-                        id="name"
-                        name="name"
-                        placeholder="Your name"
-                        className="border-white/10 bg-[#03070d] text-white placeholder:text-slate-700"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label
-                        className="text-sm font-medium text-white"
-                        htmlFor="night-list-email"
-                      >
-                        Email
-                      </label>
-
-                      <Input
-                        id="night-list-email"
-                        name="email"
-                        placeholder="you@example.com"
-                        type="email"
-                        required
-                        className="border-white/10 bg-[#03070d] text-white placeholder:text-slate-700"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mt-4 space-y-2">
-                    <label
-                      className="text-sm font-medium text-white"
-                      htmlFor="interest"
-                    >
-                      What do you want more of?
-                      <span className="ml-1 font-normal text-slate-600">
-                        optional
-                      </span>
-                    </label>
-
-                    <Input
-                      id="interest"
-                      name="interest"
-                      placeholder="Relationships, social behavior, emotional patterns, identity…"
-                      className="border-white/10 bg-[#03070d] text-white placeholder:text-slate-700"
-                    />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="
-                      mt-5
-                      h-11
-                      w-full
-                      rounded-full
-                      bg-[#d7af65]
-                      text-black
-                      hover:bg-[#e7ca90]
-                    "
-                  >
-                    Join the Night List — Free
-                  </Button>
-                </form>
               </div>
             </CardContent>
           </Card>

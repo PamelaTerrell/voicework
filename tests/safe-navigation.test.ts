@@ -9,6 +9,8 @@ describe("authentication redirect policy", () => {
   it("accepts every approved internal destination", () => {
     expect(resolveAuthDestination("/members")).toBe("/members");
     expect(resolveAuthDestination(["/members"])).toBe("/members");
+    expect(resolveAuthDestination("/join")).toBe("/join");
+    expect(resolveAuthDestination(["/join"])).toBe("/join");
   });
 
   it.each([
