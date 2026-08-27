@@ -190,19 +190,57 @@ describe("Stripe webhook authorization", () => {
     expect(mocks.transitionAttempt).not.toHaveBeenCalled();
   });
 
-  it("invalidates an owned open attempt for a current subscription event", async () => {
+  it("does not invalidate an in-progress Checkout for an incomplete subscription creation", async () => {
     mocks.constructEvent.mockReturnValue({
-      type: "customer.subscription.updated",
+      type: "customer.subscription.created",
       data: {
         object: {
           customer: "customer-linked",
-          status: "past_due",
+          status: "incomplete",
         },
       },
     });
-    await call();
-    expect(mocks.invalidateOwnedAttempt).toHaveBeenCalledWith("customer-linked");
+    expect((await call()).result.statusCode).toBe(200);
+    expect(mocks.invalidateOwnedAttempt).not.toHaveBeenCalled();
   });
+
+  it.each(["active", "trialing"])(
+    "invalidates an owned open attempt when subscription status is %s",
+    async (status) => {
+      mocks.constructEvent.mockReturnValue({
+        type: "customer.subscription.created",
+        data: {
+          object: {
+            customer: "customer-linked",
+            status,
+          },
+        },
+      });
+      await call();
+      expect(mocks.invalidateOwnedAttempt).toHaveBeenCalledWith(
+        "customer-linked",
+      );
+    },
+  );
+
+  it.each(["past_due", "paused", "unpaid"])(
+    "invalidates an owned open attempt for attention-required status %s",
+    async (status) => {
+      mocks.constructEvent.mockReturnValue({
+        type: "customer.subscription.updated",
+        data: {
+          object: {
+            customer: "customer-linked",
+            status,
+          },
+        },
+      });
+      await call();
+      expect(mocks.invalidateOwnedAttempt).toHaveBeenCalledWith(
+        "customer-linked",
+      );
+    },
+  );
 
   it("keeps webhook retry behavior when owned Session invalidation is ambiguous", async () => {
     mocks.constructEvent.mockReturnValue({

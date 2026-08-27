@@ -20,7 +20,6 @@ export const config = { api: { bodyParser: false } };
 const INVALIDATES_OPEN_CHECKOUT = new Set([
   "active",
   "trialing",
-  "incomplete",
   "past_due",
   "paused",
   "unpaid",
