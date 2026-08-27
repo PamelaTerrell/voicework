@@ -1,7 +1,14 @@
 import { Link } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { sendMagicLink } from "@/lib/sendMagicLink";
+import {
+  attemptAudioPlay,
+  createInitialPlaybackState,
+  createPlaybackRequestManager,
+  playbackReducer,
+  playerScrollBehavior,
+} from "@/lib/memberPlayback";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -187,11 +194,18 @@ function trackEvent(
   eventName: string,
   params: Record<string, unknown> = {},
 ) {
-  if (
-    typeof window !== "undefined" &&
-    typeof (window as any).gtag === "function"
-  ) {
-    (window as any).gtag("event", eventName, {
+  if (typeof window === "undefined") return;
+
+  const analyticsWindow = window as Window & {
+    gtag?: (
+      command: "event",
+      eventName: string,
+      params: Record<string, unknown>,
+    ) => void;
+  };
+
+  if (typeof analyticsWindow.gtag === "function") {
+    analyticsWindow.gtag("event", eventName, {
       site: "stabileusa",
       page_name: "members",
       content_type: "episode",
@@ -225,11 +239,19 @@ export default function Members() {
   const [episodeId, setEpisodeId] =
     useState(DEFAULT_EPISODE_ID);
 
-  const [signedUrl, setSignedUrl] =
-    useState<string | null>(null);
+  const [playback, dispatchPlayback] = useReducer(
+    playbackReducer,
+    DEFAULT_EPISODE_ID,
+    createInitialPlaybackState,
+  );
+  const playbackRequests = useRef(createPlaybackRequestManager());
+  const accountSetupRequest = useRef(0);
+  const selectionVersion = useRef(0);
+  const selectedEpisodeId = useRef(DEFAULT_EPISODE_ID);
+  const playerRegion = useRef<HTMLDivElement>(null);
+  const audioElement = useRef<HTMLAudioElement>(null);
 
   const [status, setStatus] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const [sessionEmail, setSessionEmail] =
     useState<string | null>(null);
@@ -274,9 +296,11 @@ export default function Members() {
   );
 
   const selectedIsFree = isFreeEpisode(episodeId);
+  const playbackEpisode = EPISODES.find(
+    (episode) => episode.id === playback.episodeId,
+  ) ?? selectedEpisode;
 
   const isSignedIn = Boolean(sessionEmail);
-  const hasAccess = Boolean(signedUrl);
 
   const formattedEndDate =
     formatDate(cancellationEffectiveAt);
@@ -290,6 +314,8 @@ export default function Members() {
     !cancellationScheduled;
 
   useEffect(() => {
+    const requestManager = playbackRequests.current;
+
     supabase.auth.getSession().then(({ data }) => {
       setSessionEmail(
         data.session?.user.email ?? null,
@@ -305,8 +331,10 @@ export default function Members() {
         },
       );
 
-    return () =>
+    return () => {
+      requestManager.abortCurrent();
       sub.subscription.unsubscribe();
+    };
   }, []);
 
   async function handleSendMagicLink() {
@@ -348,22 +376,32 @@ export default function Members() {
     setLoginMessage("");
     setCancelMessage("");
     setStatus("");
-    setSignedUrl(null);
+    playbackRequests.current.abortCurrent();
+    dispatchPlayback({
+      type: "select",
+      episodeId: selectedEpisodeId.current,
+    });
     setIsSubscriber(false);
+    setCheckingAccess(false);
     setMembershipUnavailable(false);
     setCancellationScheduled(false);
     setCancellationEffectiveAt(null);
   }
 
-  async function checkMemberAccess() {
+  async function checkMemberAccess(
+    accessToken?: string,
+    isCurrent: () => boolean = () => true,
+  ) {
+    if (!isCurrent()) return false;
     setCheckingAccess(true);
     setCancelMessage("");
 
     try {
-      const { data } =
-        await supabase.auth.getSession();
+      const token = accessToken ?? (
+        await supabase.auth.getSession()
+      ).data.session?.access_token;
 
-      const token = data.session?.access_token;
+      if (!isCurrent()) return false;
 
       if (!token) {
         setStatus("Please sign in again to verify your membership.");
@@ -380,6 +418,8 @@ export default function Members() {
 
       const result: MemberAccessResponse =
         await response.json();
+
+      if (!isCurrent()) return false;
 
       if (!response.ok) {
         setIsSubscriber(false);
@@ -410,6 +450,7 @@ export default function Members() {
 
       return active;
     } catch (error) {
+      if (!isCurrent()) return false;
       setIsSubscriber(false);
       setMembershipUnavailable(true);
       setCancellationScheduled(false);
@@ -423,127 +464,102 @@ export default function Members() {
 
       return false;
     } finally {
-      setCheckingAccess(false);
+      if (isCurrent()) {
+        setCheckingAccess(false);
+      }
     }
   }
 
-  async function fetchSignedUrl(
+  async function prepareSignedAudio(
     selectedId = episodeId,
+    accessToken?: string,
+    subscriberAtRequest = isSubscriber,
   ) {
-    setLoading(true);
+    const request = playbackRequests.current.begin();
     setStatus("");
-    setSignedUrl(null);
-
-    const { data } =
-      await supabase.auth.getSession();
-
-    const token =
-      data.session?.access_token;
-
-    const email =
-      data.session?.user.email ?? null;
-
-    const episodeIsFree =
-      isFreeEpisode(selectedId);
-
-    if (!token || !email) {
-      setIsSubscriber(false);
-      setMembershipUnavailable(false);
-      setCancellationScheduled(false);
-      setCancellationEffectiveAt(null);
-
-      setStatus(
-        episodeIsFree
-          ? "Sign in below to open this free story in your library."
-          : "This story is waiting inside the full Night Listener library.",
-      );
-
-      setLoading(false);
-      return;
-    }
-
-    const hasMembership =
-      await checkMemberAccess();
+    dispatchPlayback({
+      type: "loading",
+      episodeId: selectedId,
+      requestId: request.requestId,
+    });
 
     try {
+      const token = accessToken ?? (
+        await supabase.auth.getSession()
+      ).data.session?.access_token;
+
+      if (!playbackRequests.current.isCurrent(request.requestId)) {
+        return;
+      }
+
+      if (!token) {
+        dispatchPlayback({
+          type: "error",
+          episodeId: selectedId,
+          requestId: request.requestId,
+          message: "Please sign in again to open this story.",
+        });
+        return;
+      }
+
       const response = await fetch(
-        `/api/signed-audio?episodeId=${encodeURIComponent(
-          selectedId,
-        )}`,
+        `/api/signed-audio?episodeId=${encodeURIComponent(selectedId)}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          signal: request.signal,
         },
       );
-
       const result = (await response.json()) as SignedAudioResponse;
 
-      if (!response.ok) {
-        if (
-          !hasMembership &&
-          episodeIsFree &&
-          response.status === 403
-        ) {
-          setStatus(
-            "This free story could not be opened. Please try again.",
-          );
-        } else if (
-          !hasMembership &&
-          response.status === 403
-        ) {
-          setStatus(
-            "This story is part of the full Night Listener library.",
-          );
-        } else {
-          setStatus(
-            result.error ||
-              "Unable to open this story.",
-          );
-        }
-
+      if (!playbackRequests.current.isCurrent(request.requestId)) {
         return;
       }
 
-      if (!result.url) {
-        setSignedUrl(null);
-        setStatus("Unable to open this story. Please try again.");
+      if (!response.ok || !result.url) {
+        dispatchPlayback({
+          type: "error",
+          episodeId: selectedId,
+          requestId: request.requestId,
+          message: "Unable to open this story. Please try again.",
+        });
         return;
       }
 
-      setSignedUrl(result.url);
-
-      setStatus(
-        hasMembership
-          ? "Your library is open."
-          : episodeIsFree
-            ? "This free story is ready."
-            : "Your story is ready.",
-      );
-
-      const loadedEpisode =
-        EPISODES.find(
-          (episode) =>
-            episode.id === selectedId,
-        ) ?? selectedEpisode;
-
-      trackEvent("member_episode_load", {
-        episode_id: selectedId,
-        episode_title:
-          loadedEpisode.title,
-        is_subscriber: hasMembership,
-        is_free_episode: episodeIsFree,
+      dispatchPlayback({
+        type: "ready",
+        episodeId: selectedId,
+        requestId: request.requestId,
+        signedUrl: result.url,
       });
-    } catch (error) {
-      setSignedUrl(null);
 
-      setStatus(
-        error instanceof Error
-          ? error.message
-          : "Something went wrong while opening your story.",
+      const loadedEpisode = EPISODES.find(
+        (episode) => episode.id === selectedId,
       );
+      if (loadedEpisode) {
+        trackEvent("member_episode_load", {
+          episode_id: selectedId,
+          episode_title: loadedEpisode.title,
+          is_subscriber: subscriberAtRequest,
+          is_free_episode: isFreeEpisode(selectedId),
+        });
+      }
+    } catch (error) {
+      if (!playbackRequests.current.isCurrent(request.requestId)) {
+        return;
+      }
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+      dispatchPlayback({
+        type: "error",
+        episodeId: selectedId,
+        requestId: request.requestId,
+        message: "Unable to open this story. Please try again.",
+      });
     } finally {
-      setLoading(false);
+      playbackRequests.current.finish(request.requestId);
     }
   }
 
@@ -610,7 +626,11 @@ export default function Members() {
         "member_cancel_membership",
       );
 
-      setSignedUrl(null);
+      playbackRequests.current.abortCurrent();
+      dispatchPlayback({
+        type: "select",
+        episodeId: selectedEpisodeId.current,
+      });
     } catch {
       setCancelMessage("Unable to schedule cancellation safely.");
     } finally {
@@ -660,7 +680,7 @@ export default function Members() {
         return;
       }
 
-      await checkMemberAccess();
+      await checkMemberAccess(token);
       setCancellationScheduled(false);
       setCancellationEffectiveAt(null);
 
@@ -678,12 +698,41 @@ export default function Members() {
 
   useEffect(() => {
     if (sessionEmail) {
-      fetchSignedUrl(episodeId);
+      const setupRequestId = accountSetupRequest.current + 1;
+      accountSetupRequest.current = setupRequestId;
+      const setupEpisodeId = selectedEpisodeId.current;
+      const setupSelectionVersion = selectionVersion.current;
+
+      void (async () => {
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token;
+        const isCurrent = () =>
+          accountSetupRequest.current === setupRequestId;
+
+        if (!token || !isCurrent()) return;
+
+        const hasMembership = await checkMemberAccess(token, isCurrent);
+        if (
+          !isCurrent() ||
+          selectionVersion.current !== setupSelectionVersion ||
+          selectedEpisodeId.current !== setupEpisodeId
+        ) {
+          return;
+        }
+
+        await prepareSignedAudio(setupEpisodeId, token, hasMembership);
+      })();
       return;
     }
 
-    setSignedUrl(null);
+    accountSetupRequest.current += 1;
+    playbackRequests.current.abortCurrent();
+    dispatchPlayback({
+      type: "select",
+      episodeId: selectedEpisodeId.current,
+    });
     setIsSubscriber(false);
+    setCheckingAccess(false);
     setMembershipUnavailable(false);
     setCancellationScheduled(false);
     setCancellationEffectiveAt(null);
@@ -699,12 +748,12 @@ export default function Members() {
   }, [sessionEmail]);
 
   useEffect(() => {
-    if (sessionEmail) {
-      fetchSignedUrl(episodeId);
-      return;
-    }
+    if (sessionEmail) return;
 
-    setSignedUrl(null);
+    dispatchPlayback({
+      type: "select",
+      episodeId,
+    });
 
     setStatus(
       isFreeEpisode(episodeId)
@@ -715,8 +764,34 @@ export default function Members() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [episodeId]);
 
+  function moveToPlayer() {
+    const stackedLayout = window.matchMedia("(max-width: 1279px)").matches;
+    const reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    const behavior = playerScrollBehavior(stackedLayout, reducedMotion);
+
+    if (!behavior) return;
+
+    window.requestAnimationFrame(() => {
+      playerRegion.current?.focus({ preventScroll: true });
+      playerRegion.current?.scrollIntoView({
+        behavior,
+        block: "start",
+      });
+    });
+  }
+
   function handleEpisodeChange(id: string) {
+    selectedEpisodeId.current = id;
+    selectionVersion.current += 1;
+    playbackRequests.current.abortCurrent();
+    dispatchPlayback({ type: "select", episodeId: id });
     setEpisodeId(id);
+    if (sessionEmail) {
+      void prepareSignedAudio(id);
+    }
+    moveToPlayer();
 
     const nextEpisode =
       EPISODES.find(
@@ -733,6 +808,27 @@ export default function Members() {
           isFreeEpisode(id),
       },
     );
+  }
+
+  async function handlePlay() {
+    const audio = audioElement.current;
+    const requestId = playback.requestId;
+    if (!audio || requestId === null || !playback.signedUrl) return;
+
+    const started = await attemptAudioPlay(audio);
+    if (!started) {
+      dispatchPlayback({
+        type: "error",
+        episodeId: playback.episodeId,
+        requestId,
+        signedUrl: playback.signedUrl,
+        message: "Playback could not start. Use the audio controls or retry.",
+      });
+    }
+  }
+
+  function handleRetry() {
+    void prepareSignedAudio(playback.episodeId);
   }
 
   return (
@@ -1012,6 +1108,8 @@ export default function Members() {
                       <button
                         key={episode.id}
                         type="button"
+                        aria-pressed={active}
+                        aria-controls="member-player"
                         onClick={() =>
                           handleEpisodeChange(
                             episode.id,
@@ -1073,6 +1171,10 @@ export default function Members() {
                                 episode.description
                               }
                             </p>
+
+                            <span className="mt-2 inline-block text-[10px] font-medium uppercase tracking-[0.14em] text-[#d7af65]">
+                              Open player
+                            </span>
                           </div>
                         </div>
                       </button>
@@ -1086,7 +1188,12 @@ export default function Members() {
                 SELECTED STORY
             ===================================== */}
 
-            <Card className="overflow-hidden rounded-[2rem] border-white/10 bg-[#07101a] text-white shadow-[0_25px_80px_rgba(0,0,0,.26)]">
+            <Card
+              ref={playerRegion}
+              id="member-player"
+              tabIndex={-1}
+              className="scroll-mt-6 overflow-hidden rounded-[2rem] border-white/10 bg-[#07101a] text-white shadow-[0_25px_80px_rgba(0,0,0,.26)] focus:outline-none"
+            >
               <div className="relative overflow-hidden bg-black">
                 <img
                   src={
@@ -1107,9 +1214,15 @@ export default function Members() {
                       : "Members"}
                   </Badge>
 
-                  {hasAccess && (
+                  {playback.phase === "ready" && (
                     <Badge className="rounded-full border border-[#d7af65]/20 bg-[#d7af65]/90 text-xs font-normal text-black">
                       Ready to Play
+                    </Badge>
+                  )}
+
+                  {playback.phase === "playing" && (
+                    <Badge className="rounded-full border border-[#d7af65]/20 bg-[#d7af65]/90 text-xs font-normal text-black">
+                      Playing
                     </Badge>
                   )}
                 </div>
@@ -1172,34 +1285,119 @@ export default function Members() {
                     </p>
                   )}
 
-                  {loading ? (
+                  {playback.phase === "loading" ? (
                     <div className="mt-5 rounded-xl border border-white/10 bg-[#03070d] p-4">
                       <p className="text-sm text-slate-400">
-                        Preparing your story…
+                        Preparing {playbackEpisode.title}…
                       </p>
                     </div>
-                  ) : signedUrl ? (
+                  ) : playback.phase === "idle" ? (
+                    <div className="mt-5 rounded-xl border border-white/10 bg-[#03070d] p-4">
+                      <p className="text-sm text-slate-400">
+                        Choose “Open player” on a story to prepare it.
+                      </p>
+                    </div>
+                  ) : null}
+
+                  {playback.phase === "error" && (
+                    <div
+                      className="mt-5 rounded-xl border border-white/10 bg-[#03070d] p-4"
+                      role="alert"
+                    >
+                      <p className="text-sm text-slate-300">
+                        {playback.message}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleRetry}
+                        className="mt-4 rounded-full border-white/15 bg-transparent text-white hover:bg-white/10 hover:text-white"
+                      >
+                        Retry
+                      </Button>
+                    </div>
+                  )}
+
+                  {(playback.phase === "ready" ||
+                    playback.phase === "playing") && (
+                    <div className="mt-5 rounded-xl border border-[#d7af65]/20 bg-[#d7af65]/[0.045] p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <p className="text-sm font-medium text-white">
+                          {playback.phase === "playing"
+                            ? `Playing ${playbackEpisode.title}`
+                            : `${playbackEpisode.title} is ready to play.`}
+                        </p>
+                        {playback.phase === "ready" && (
+                          <Button
+                            type="button"
+                            onClick={() => void handlePlay()}
+                            className="rounded-full bg-[#d7af65] px-6 text-black hover:bg-[#e7ca90]"
+                          >
+                            Play episode
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {playback.signedUrl && (
                     <div className="mt-5">
                       <audio
-                        key={signedUrl}
+                        ref={audioElement}
+                        key={`${playback.episodeId}:${playback.signedUrl}`}
                         controls
                         preload="metadata"
                         className="w-full"
-                        src={signedUrl}
+                        src={playback.signedUrl}
                         onPlay={(e) => {
+                          const requestId = playback.requestId;
+                          if (requestId === null) return;
                           stopOtherAudio(
                             e.currentTarget,
                           );
+
+                          dispatchPlayback({
+                            type: "playing",
+                            episodeId: playback.episodeId,
+                            requestId,
+                          });
 
                           trackEvent(
                             "member_episode_play",
                             {
                               episode_id:
-                                episodeId,
+                                playback.episodeId,
                               episode_title:
-                                selectedEpisode.title,
+                                playbackEpisode.title,
                             },
                           );
+                        }}
+                        onPause={() => {
+                          if (playback.requestId === null) return;
+                          dispatchPlayback({
+                            type: "paused",
+                            episodeId: playback.episodeId,
+                            requestId: playback.requestId,
+                          });
+                        }}
+                        onEnded={() => {
+                          if (playback.requestId === null) return;
+                          dispatchPlayback({
+                            type: "paused",
+                            episodeId: playback.episodeId,
+                            requestId: playback.requestId,
+                          });
+                        }}
+                        onError={() => {
+                          if (playback.requestId === null) return;
+                          dispatchPlayback({
+                            type: "error",
+                            episodeId: playback.episodeId,
+                            requestId: playback.requestId,
+                            signedUrl: playback.signedUrl,
+                            message:
+                              "Unable to play this story. Please retry or use the audio controls.",
+                          });
                         }}
                       />
 
@@ -1209,7 +1407,9 @@ export default function Members() {
                         for quiet listening.
                       </p>
                     </div>
-                  ) : (
+                  )}
+
+                  {!playback.signedUrl && playback.phase !== "loading" && (
                     <div className="mt-5">
                       {!selectedIsFree &&
                         !isSubscriber &&
