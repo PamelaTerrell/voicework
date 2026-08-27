@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
 import { Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabaseClient";
+import { sendMagicLink } from "@/lib/sendMagicLink";
 import {
+  getConfirmationAuthView,
   initialVerificationState,
   isVerifiedCheckoutState,
   resolveVerificationState,
+  type ConfirmationAuthState,
   type CheckoutVerification,
   type VerificationState,
 } from "@/lib/checkoutConfirmation";
@@ -75,15 +79,59 @@ const COPY: Record<
   },
 };
 
+const AUTHENTICATED_DESCRIPTION: Partial<Record<VerificationState, string>> = {
+  verified_subscription:
+    "Your membership is confirmed. Open the Night Listener library to start listening.",
+  verified_one_time:
+    "Your episode purchase is confirmed. Open the Night Listener library to start listening.",
+};
+
 export default function Thanks() {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get("session_id");
   const [verificationState, setVerificationState] =
     useState<VerificationState>(initialVerificationState(sessionId));
+  const [authState, setAuthState] =
+    useState<ConfirmationAuthState>("checking");
+  const [session, setSession] = useState<Session | null>(null);
   const [email, setEmail] = useState("");
   const [sendingLink, setSendingLink] = useState(false);
   const [message, setMessage] = useState("");
   const successTracked = useRef(false);
+  const verifiedCheckout = useRef(false);
+
+  useEffect(() => {
+    let active = true;
+    let authEventObserved = false;
+
+    function syncSession(nextSession: Session | null) {
+      setSession(nextSession);
+      setAuthState(nextSession?.access_token ? "authenticated" : "signed_out");
+    }
+
+    supabase.auth.getSession().then(
+      ({ data, error }) => {
+        if (!active || authEventObserved) return;
+        syncSession(error ? null : data.session);
+      },
+      () => {
+        if (active && !authEventObserved) syncSession(null);
+      },
+    );
+
+    const { data: subscription } = supabase.auth.onAuthStateChange(
+      (_event, nextSession) => {
+        if (!active) return;
+        authEventObserved = true;
+        syncSession(nextSession);
+      },
+    );
+
+    return () => {
+      active = false;
+      subscription.subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     if (!sessionId) {
@@ -92,19 +140,22 @@ export default function Thanks() {
     }
 
     const checkoutSessionId = sessionId;
-    let cancelled = false;
     clearSensitiveBrowserUrl();
+
+    if (authState === "checking" || verifiedCheckout.current) {
+      return;
+    }
+
+    const token = session?.access_token;
+    if (!token) {
+      setVerificationState("invalid");
+      return;
+    }
+
+    let cancelled = false;
 
     async function verifyCheckout() {
       try {
-        const { data } = await supabase.auth.getSession();
-        const token = data.session?.access_token;
-
-        if (!token) {
-          if (!cancelled) setVerificationState("invalid");
-          return;
-        }
-
         const response = await fetch(
           `/api/checkout-session?session_id=${encodeURIComponent(checkoutSessionId)}`,
           { headers: { Authorization: `Bearer ${token}` } },
@@ -116,6 +167,7 @@ export default function Thanks() {
         const nextState = resolveVerificationState(response.ok, result);
 
         if (isVerifiedCheckoutState(nextState)) {
+          verifiedCheckout.current = true;
           setVerificationState(nextState);
 
           if (!successTracked.current) {
@@ -139,7 +191,7 @@ export default function Thanks() {
     return () => {
       cancelled = true;
     };
-  }, [sessionId]);
+  }, [authState, session?.access_token, sessionId]);
 
   async function handleSendMagicLink() {
     const trimmedEmail = email.trim();
@@ -152,11 +204,7 @@ export default function Thanks() {
       setSendingLink(true);
       setMessage("");
 
-      const redirectTo = `${window.location.origin}/auth/callback?next=/members`;
-      const { error } = await supabase.auth.signInWithOtp({
-        email: trimmedEmail,
-        options: { emailRedirectTo: redirectTo },
-      });
+      const { error } = await sendMagicLink(trimmedEmail);
 
       setMessage(
         error
@@ -172,6 +220,10 @@ export default function Thanks() {
 
   const copy = COPY[verificationState];
   const verified = isVerifiedCheckoutState(verificationState);
+  const authView = getConfirmationAuthView(verificationState, authState);
+  const description = authView.showAuthenticatedCopy
+    ? AUTHENTICATED_DESCRIPTION[verificationState] ?? copy.description
+    : copy.description;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-white text-[#2d2a26]">
@@ -189,7 +241,7 @@ export default function Thanks() {
               {copy.title}
             </h1>
             <p className="mt-4 text-base leading-7 text-[#6b645c] sm:text-lg">
-              {copy.description}
+              {description}
             </p>
 
             {verificationState === "verifying" ? (
@@ -202,31 +254,46 @@ export default function Thanks() {
                   </Button>
                 )}
 
-                <div className="space-y-3 text-left">
-                  <label htmlFor="account-email" className="block text-sm font-medium">
-                    Account email
-                  </label>
-                  <Input
-                    id="account-email"
-                    type="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="Enter your email"
-                    autoComplete="email"
-                    className="h-12 rounded-xl border-[#d8cfc4] bg-white"
-                  />
-                  <Button
-                    type="button"
-                    onClick={handleSendMagicLink}
-                    disabled={sendingLink}
-                    className="h-12 rounded-xl bg-[#2d2a26] px-6 text-white"
-                  >
-                    {sendingLink ? "Sending sign-in link…" : "Email me a sign-in link"}
-                  </Button>
-                  {message && (
-                    <p className="text-sm leading-6 text-[#6b645c]">{message}</p>
-                  )}
-                </div>
+                {authView.showAuthLoading && (
+                  <p className="text-sm text-[#8a8175]">
+                    Checking your secure sign-in…
+                  </p>
+                )}
+
+                {authView.showSignInForm && (
+                  <div className="space-y-3 text-left">
+                    <label
+                      htmlFor="account-email"
+                      className="block text-sm font-medium"
+                    >
+                      Account email
+                    </label>
+                    <Input
+                      id="account-email"
+                      type="email"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      placeholder="Enter your email"
+                      autoComplete="email"
+                      className="h-12 rounded-xl border-[#d8cfc4] bg-white"
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleSendMagicLink}
+                      disabled={sendingLink}
+                      className="h-12 rounded-xl bg-[#2d2a26] px-6 text-white"
+                    >
+                      {sendingLink
+                        ? "Sending sign-in link…"
+                        : "Email me a sign-in link"}
+                    </Button>
+                    {message && (
+                      <p className="text-sm leading-6 text-[#6b645c]">
+                        {message}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 

@@ -12,6 +12,17 @@ export type CheckoutVerification = {
   purchaseType?: "subscription" | "one_time";
 };
 
+export type ConfirmationAuthState =
+  | "checking"
+  | "authenticated"
+  | "signed_out";
+
+export type ConfirmationAuthView = {
+  showAuthenticatedCopy: boolean;
+  showAuthLoading: boolean;
+  showSignInForm: boolean;
+};
+
 export function initialVerificationState(sessionId: string | null): VerificationState {
   return sessionId ? "verifying" : "direct";
 }
@@ -31,4 +42,21 @@ export function resolveVerificationState(
 
 export function isVerifiedCheckoutState(state: VerificationState): boolean {
   return state === "verified_subscription" || state === "verified_one_time";
+}
+
+export function getConfirmationAuthView(
+  verificationState: VerificationState,
+  authState: ConfirmationAuthState,
+): ConfirmationAuthView {
+  const verified = isVerifiedCheckoutState(verificationState);
+
+  return {
+    showAuthenticatedCopy: verified && authState === "authenticated",
+    showAuthLoading:
+      verificationState !== "verifying" && authState === "checking",
+    showSignInForm:
+      verificationState !== "verifying" &&
+      authState !== "checking" &&
+      !(verified && authState === "authenticated"),
+  };
 }

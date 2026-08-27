@@ -1,5 +1,8 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  getConfirmationAuthView,
   initialVerificationState,
   isVerifiedCheckoutState,
   resolveVerificationState,
@@ -36,5 +39,71 @@ describe("checkout confirmation state selection", () => {
     expect(isVerifiedCheckoutState("failure")).toBe(false);
     expect(isVerifiedCheckoutState("verified_subscription")).toBe(true);
     expect(isVerifiedCheckoutState("verified_one_time")).toBe(true);
+  });
+});
+
+describe("checkout confirmation authentication presentation", () => {
+  it("shows authenticated confirmation copy without a sign-in form", () => {
+    expect(
+      getConfirmationAuthView("verified_subscription", "authenticated"),
+    ).toEqual({
+      showAuthenticatedCopy: true,
+      showAuthLoading: false,
+      showSignInForm: false,
+    });
+  });
+
+  it("keeps sign-in available when confirmation succeeds without a session", () => {
+    expect(
+      getConfirmationAuthView("verified_subscription", "signed_out"),
+    ).toEqual({
+      showAuthenticatedCopy: false,
+      showAuthLoading: false,
+      showSignInForm: true,
+    });
+  });
+
+  it("suppresses the sign-in form while authentication is loading", () => {
+    expect(
+      getConfirmationAuthView("verified_subscription", "checking"),
+    ).toEqual({
+      showAuthenticatedCopy: false,
+      showAuthLoading: true,
+      showSignInForm: false,
+    });
+  });
+
+  it.each(["failure", "invalid", "pending"] as const)(
+    "preserves the sign-in recovery UI for %s",
+    (state) => {
+      expect(getConfirmationAuthView(state, "signed_out").showSignInForm).toBe(
+        true,
+      );
+    },
+  );
+});
+
+describe("Thanks page authentication integration", () => {
+  const source = readFileSync(resolve("src/pages/Thanks.tsx"), "utf8");
+
+  it("renders authenticated confirmation copy and gates the sign-in form", () => {
+    expect(source).toContain(
+      "Your membership is confirmed. Open the Night Listener library to start listening.",
+    );
+    expect(source).toContain("{authView.showSignInForm && (");
+    expect(source).toContain("{authView.showAuthLoading && (");
+    expect(source).toContain("Open Members Library");
+  });
+
+  it("uses the trusted default /members magic-link destination", () => {
+    expect(source).toContain("await sendMagicLink(trimmedEmail)");
+    expect(source).not.toContain("signInWithOtp");
+    expect(source).not.toContain("window.location.origin");
+  });
+
+  it("retains checkout verification and its generic failure state", () => {
+    expect(source).toContain('fetch(\n          `/api/checkout-session?session_id=');
+    expect(source).toContain('setVerificationState("failure")');
+    expect(source).toContain("clearSensitiveBrowserUrl()");
   });
 });
