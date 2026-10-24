@@ -1,9 +1,15 @@
+
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import {
+  createBrowserRouter,
+  RouterProvider,
+} from "react-router-dom";
+
 import "./index.css";
 
 import SiteLayout from "@/components/layout/SiteLayout";
+
 import Home from "@/pages/Home";
 import Listen from "@/pages/Listen";
 import Join from "@/pages/Join";
@@ -13,6 +19,8 @@ import Thanks from "@/pages/Thanks";
 import Members from "@/pages/Members";
 import AuthCallback from "@/pages/AuthCallback";
 
+// The Human Experience
+import QuestionOfTheWeek from "@/pages/QuestionOfTheWeek";
 
 const router = createBrowserRouter([
   {
@@ -20,20 +28,39 @@ const router = createBrowserRouter([
     element: <SiteLayout />,
     children: [
       { index: true, element: <Home /> },
+
+      // The Human Experience
+      {
+        path: "question",
+        element: <QuestionOfTheWeek />,
+      },
+
+      // Night Listener
       { path: "listen", element: <Listen /> },
-     
       { path: "join", element: <Join /> },
       { path: "demos", element: <Listen /> },
-      { path: "contact", element: <Contact /> },
-      { path: "contact-thanks", element: <ContactThanks /> },
-      { path: "thanks", element: <Thanks /> },
       { path: "members", element: <Members /> },
-      { path: "auth/callback", element: <AuthCallback /> },
+
+      // Contact
+      { path: "contact", element: <Contact /> },
+      {
+        path: "contact-thanks",
+        element: <ContactThanks />,
+      },
+
+      // Checkout and authentication
+      { path: "thanks", element: <Thanks /> },
+      {
+        path: "auth/callback",
+        element: <AuthCallback />,
+      },
     ],
   },
 ]);
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
+ReactDOM.createRoot(
+  document.getElementById("root")!
+).render(
   <React.StrictMode>
     <RouterProvider router={router} />
   </React.StrictMode>
