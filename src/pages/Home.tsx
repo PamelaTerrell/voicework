@@ -40,7 +40,7 @@ const FEATURE_CARDS = [
     eyebrow: "LISTEN",
     title: "Night Listener",
     description: "Original narrated storytelling about memory, human behavior, relationships, and emotions that stay with us.",
-    href: "#night-listener",
+    href: "/listen",
     cta: "Explore the audio stories",
   },
 ];
