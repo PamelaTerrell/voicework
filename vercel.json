@@ -31,5 +31,10 @@
       "source": "/(.*)",
       "destination": "/"
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "release/stabile-story-cutover": false
+    }
+  }
 }
