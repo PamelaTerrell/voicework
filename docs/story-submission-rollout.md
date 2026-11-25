@@ -66,24 +66,17 @@ with check (permission_granted = true and status = 'new');
 commit;
 ```
 
-After the API deployment is no longer in use, its two database objects can be
-removed with the following transaction. This leaves the story table and its
-rows intact.
-
-```sql
-begin;
-drop function public.submit_story_with_rate_limit(text, jsonb);
-drop table public.story_submission_rate_limits;
-commit;
-```
+Leave the additive tables and RPCs in place during recovery. They do not
+interfere with legacy submissions, and deployment rollback does not require
+removing submission data or receipt history.
 
 ## Release recovery reference
 
 Verified on November 25, 2026. The production alias served Vercel deployment
-`dpl_86uRVre43DVYYFQSaWVubYsYLYoq`, at
-`https://voicework-7pf2koh6a-pamelaterrells-projects.vercel.app`, built from
-`main` commit `d420dda4610cd773a1b9e4b1abc426ce2625604f`.
-The local Git rollback tag is `rollback/stabileusa-production-2026-11-25`.
+`dpl_CK2AW41aE3yN5yGwpHdb3ZPCv4pF`, at
+`https://voicework-qg5ufh0dn-pamelaterrells-projects.vercel.app`, built from
+`main` commit `5d3948a25bcc1668ddf19d03ae551e6d7cff3f38`.
+The local Git rollback tag is `rollback/stabileusa-secured-production-2026-11-25`.
 Verify the live alias still points to this deployment or record its current
 replacement before starting production work. Confirm the deployment is
 eligible for rollback and that the operator has access. Keep it available
@@ -113,7 +106,7 @@ throughout cutover.
    operational metadata only. Do not create a test story in production. Keep
    legacy writes available until this confirmation and a suitable window for
    older open pages to refresh. Delay cutover if there is no confirmation.
-6. Under separate approval, apply the reviewed cutover SQL. Compare effective
+6. After intake is confirmed and the cutover is authorized, apply the reviewed cutover SQL. Compare effective
    grants and policies before and after. Confirm both browser roles lack
    SELECT and INSERT privileges and that the service role retains the exact
    access previously verified. Check the next naturally arriving submission
@@ -129,7 +122,7 @@ throughout cutover.
 
 If the legacy INSERT path is still open, roll back the Vercel deployment to
 the recorded live target. Use the Vercel dashboard or, when authorized,
-`vercel rollback dpl_86uRVre43DVYYFQSaWVubYsYLYoq --scope pamelaterrells-projects`.
+`vercel rollback dpl_CK2AW41aE3yN5yGwpHdb3ZPCv4pF --scope pamelaterrells-projects`.
 If the legacy path was closed, restore the original column grant and INSERT
 policy first using the rollback SQL above. Then roll back Vercel and verify
 the live alias, story-form availability, and member access. Vercel rollback
