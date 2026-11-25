@@ -4,4 +4,4 @@ Allow: /
 Disallow: /members
 Disallow: /auth/
 
-Sitemap: https://stabileusa.com/sitemap.xml
+Sitemap: https://www.stabileusa.com/sitemap.xml

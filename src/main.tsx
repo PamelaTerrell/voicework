@@ -4,6 +4,8 @@ import ReactDOM from "react-dom/client";
 import {
   createBrowserRouter,
   RouterProvider,
+  Link,
+  Navigate,
 } from "react-router-dom";
 
 import "./index.css";
@@ -19,8 +21,7 @@ import Thanks from "@/pages/Thanks";
 import Members from "@/pages/Members";
 import AuthCallback from "@/pages/AuthCallback";
 
-// The Human Experience
-import QuestionOfTheWeek from "@/pages/QuestionOfTheWeek";
+import Voice from "@/pages/Voice";
 
 const router = createBrowserRouter([
   {
@@ -29,16 +30,11 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Home /> },
 
-      // The Human Experience
-      {
-        path: "question",
-        element: <QuestionOfTheWeek />,
-      },
-
       // Night Listener
       { path: "listen", element: <Listen /> },
       { path: "join", element: <Join /> },
-      { path: "demos", element: <Listen /> },
+      { path: "voice", element: <Voice /> },
+      { path: "demos", element: <Navigate to="/voice" replace /> },
       { path: "members", element: <Members /> },
 
       // Contact
@@ -53,6 +49,15 @@ const router = createBrowserRouter([
       {
         path: "auth/callback",
         element: <AuthCallback />,
+      },
+      {
+        path: "*",
+        element: (
+          <section className="mx-auto max-w-4xl px-5 py-20">
+            <h1 className="text-4xl font-semibold">Page not found</h1>
+            <Link className="mt-5 inline-block underline" to="/">Return to Stabile USA</Link>
+          </section>
+        ),
       },
     ],
   },

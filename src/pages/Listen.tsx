@@ -26,19 +26,14 @@ function stopOtherAudio(current: HTMLAudioElement) {
   });
 }
 
-function trackEvent(
-  eventName: string,
-  params: Record<string, any> = {},
-) {
-  if (typeof window !== "undefined" && (window as any).gtag) {
-    (window as any).gtag("event", eventName, {
-      site: "stabileusa",
-      page_name: "listen",
-      content_type: "episode",
-      page_location: window.location.pathname,
-      ...params,
-    });
-  }
+function trackEvent(eventName: string, params: Record<string, unknown> = {}) {
+  window.gtag?.("event", eventName, {
+    site: "stabileusa",
+    page_name: "listen",
+    content_type: "episode",
+    page_location: window.location.pathname,
+    ...params,
+  });
 }
 
 function EpisodeCard({ episode }: { episode: Episode }) {

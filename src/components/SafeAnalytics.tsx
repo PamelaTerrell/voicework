@@ -12,9 +12,11 @@ export function SafeAnalytics() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    window.gtag?.("config", "G-FBR1LBB567", {
+    if (["/auth/callback", "/thanks", "/contact-thanks"].includes(pathname)) return;
+
+    window.gtag?.("event", "page_view", {
       page_path: pathname,
-      page_location: pathname,
+      page_location: new URL(pathname, window.location.origin).href,
     });
   }, [pathname]);
 

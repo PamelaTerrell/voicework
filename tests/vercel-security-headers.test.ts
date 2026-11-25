@@ -7,7 +7,7 @@ const config = JSON.parse(
 ) as unknown;
 
 describe("Vercel global browser security headers", () => {
-  it("contains only the approved global headers and unchanged rewrites", () => {
+  it("keeps the approved global headers and explicitly routes application pages", () => {
     expect(config).toEqual({
       headers: [
         {
@@ -25,10 +25,20 @@ describe("Vercel global browser security headers", () => {
             },
           ],
         },
+        {
+          source: "/:path(members|thanks|contact-thanks|demos)",
+          headers: [{ key: "X-Robots-Tag", value: "noindex" }],
+        },
+        {
+          source: "/auth/callback",
+          headers: [{ key: "X-Robots-Tag", value: "noindex" }],
+        },
       ],
       rewrites: [
         { source: "/api/(.*)", destination: "/api/$1" },
-        { source: "/(.*)", destination: "/" },
+        { source: "/:page(listen|voice|join|contact)", destination: "/:page.html" },
+        { source: "/:path(members|thanks|contact-thanks|demos)", destination: "/" },
+        { source: "/auth/callback", destination: "/" },
       ],
     });
   });

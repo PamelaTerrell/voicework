@@ -1,4 +1,4 @@
-import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, ScrollRestoration, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Auth } from "@/components/Auth";
@@ -40,6 +40,9 @@ export default function SiteLayout() {
           HEADER
       ====================================================== */}
 
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded focus:bg-background focus:px-4 focus:py-2">
+        Skip to content
+      </a>
       <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur">
         {/* TOP ANNOUNCEMENT BAR */}
 
@@ -92,7 +95,7 @@ export default function SiteLayout() {
               </div>
 
               <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                Independent Digital Brand
+                Storytelling, Audio &amp; Digital Media
               </div>
             </div>
           </Link>
@@ -103,6 +106,7 @@ export default function SiteLayout() {
             <NavItem to="/" label="Home" />
             <NavItem to="/listen" label="Listen" />
             <NavItem to="/join" label="Join" />
+            <NavItem to="/voice" label="Voice & Production" />
             <NavItem to="/contact" label="Contact" />
           </nav>
 
@@ -173,6 +177,7 @@ export default function SiteLayout() {
                 <NavItem to="/" label="Home" />
                 <NavItem to="/listen" label="Listen" />
                 <NavItem to="/join" label="Join" />
+                <NavItem to="/voice" label="Voice & Production" />
                 <NavItem to="/contact" label="Contact" />
               </div>
 
@@ -221,7 +226,7 @@ export default function SiteLayout() {
           MAIN — FULL WIDTH
       ====================================================== */}
 
-      <main className="w-full">
+      <main id="main-content" tabIndex={-1} className="w-full scroll-mt-48 sm:scroll-mt-36">
         <Outlet />
       </main>
 
@@ -261,7 +266,7 @@ export default function SiteLayout() {
                 </p>
 
                 <p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                  Independent Digital Brand
+                  Storytelling, Audio &amp; Digital Media
                 </p>
               </div>
 
@@ -333,18 +338,8 @@ export default function SiteLayout() {
                 Submit a Story
               </a>
 
-              <Link
-                to="/contact"
-                className="transition hover:text-foreground"
-              >
-                Work with Me
-              </Link>
-
-              <Link
-                to="/contact"
-                className="transition hover:text-foreground"
-              >
-                Voice Work
+              <Link to="/voice" className="transition hover:text-foreground">
+                Voice &amp; Production
               </Link>
 
               <a
@@ -364,6 +359,7 @@ export default function SiteLayout() {
         </div>
       </footer>
 
+      <ScrollRestoration />
       <SafeAnalytics />
     </div>
   );

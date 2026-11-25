@@ -20,6 +20,24 @@
           "value": "camera=(), microphone=(), geolocation=(), usb=()"
         }
       ]
+    },
+    {
+      "source": "/:path(members|thanks|contact-thanks|demos)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex"
+        }
+      ]
+    },
+    {
+      "source": "/auth/callback",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex"
+        }
+      ]
     }
   ],
   "rewrites": [
@@ -28,13 +46,16 @@
       "destination": "/api/$1"
     },
     {
-      "source": "/(.*)",
+      "source": "/:page(listen|voice|join|contact)",
+      "destination": "/:page.html"
+    },
+    {
+      "source": "/:path(members|thanks|contact-thanks|demos)",
+      "destination": "/"
+    },
+    {
+      "source": "/auth/callback",
       "destination": "/"
     }
-  ],
-  "git": {
-    "deploymentEnabled": {
-      "release/stabile-story-cutover": false
-    }
-  }
+  ]
 }

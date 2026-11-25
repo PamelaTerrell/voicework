@@ -181,9 +181,8 @@ describe("browser source contract", () => {
 
   it("submits exactly the seven approved public story fields", () => {
     const homeSource = readFileSync(resolve("src/pages/Home.tsx"), "utf8");
-    const insert = homeSource.match(
-      /\.from\s*\(\s*["'`]story_submissions["'`]\s*\)\s*\.insert\s*\(\s*\{([\s\S]*?)\}\s*\)/,
-    );
+    const insert = homeSource.match(/const story = \{([\s\S]*?)\};/);
+    expect(homeSource).toContain('.from("story_submissions").insert(story)');
 
     expect(insert).not.toBeNull();
     const submittedColumns = [

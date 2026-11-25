@@ -194,7 +194,7 @@ export default function Contact() {
                   <input
                     type="hidden"
                     name="_next"
-                    value="https://stabileusa.com/contact-thanks"
+                    value="https://www.stabileusa.com/contact-thanks"
                   />
 
                   <input
