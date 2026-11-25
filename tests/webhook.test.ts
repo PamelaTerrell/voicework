@@ -3,6 +3,7 @@ import { request, response } from "./helpers.js";
 
 const mocks = vi.hoisted(() => ({
   constructEvent: vi.fn(),
+  retrieveSubscription: vi.fn(),
   entitlementUpsert: vi.fn(),
   profileUpsert: vi.fn(),
   profileUpdate: vi.fn(),
@@ -19,6 +20,7 @@ vi.mock("../api/_checkoutAttempt.js", () => ({
 vi.mock("../api/_lib.js", () => ({
   stripe: {
     webhooks: { constructEvent: mocks.constructEvent },
+    subscriptions: { retrieve: mocks.retrieveSubscription },
   },
   readRawBody: vi.fn(async () => Buffer.from("isolated")),
   isActiveSub: (status?: string | null) =>
@@ -72,9 +74,22 @@ function checkoutEvent(overrides: Record<string, unknown> = {}) {
   };
 }
 
+const subscription = (status = "active", price = "price_subscription") => ({
+  id: "subscription-linked",
+  customer: "customer-linked",
+  status,
+  cancel_at_period_end: false,
+  cancel_at: null,
+  current_period_end: Math.floor(Date.now() / 1000) + 3600,
+  items: { has_more: false, data: [{ price: { id: price } }] },
+});
+
 beforeEach(() => {
+  vi.stubEnv("STRIPE_PRICE_ID_SUBSCRIPTION", "price_subscription");
+  vi.stubEnv("STRIPE_LEGACY_MEMBERSHIP_PRICE_IDS", undefined);
   process.env.STRIPE_WEBHOOK_SECRET = "test-only-placeholder";
   mocks.constructEvent.mockReturnValue(checkoutEvent());
+  mocks.retrieveSubscription.mockResolvedValue(subscription());
   mocks.entitlementUpsert.mockResolvedValue({ error: null });
   mocks.profileUpsert.mockResolvedValue({ error: null });
   mocks.transitionAttempt.mockResolvedValue(undefined);
@@ -194,10 +209,7 @@ describe("Stripe webhook authorization", () => {
     mocks.constructEvent.mockReturnValue({
       type: "customer.subscription.created",
       data: {
-        object: {
-          customer: "customer-linked",
-          status: "incomplete",
-        },
+        object: subscription("incomplete"),
       },
     });
     expect((await call()).result.statusCode).toBe(200);
@@ -210,10 +222,7 @@ describe("Stripe webhook authorization", () => {
       mocks.constructEvent.mockReturnValue({
         type: "customer.subscription.created",
         data: {
-          object: {
-            customer: "customer-linked",
-            status,
-          },
+          object: subscription(status),
         },
       });
       await call();
@@ -229,10 +238,7 @@ describe("Stripe webhook authorization", () => {
       mocks.constructEvent.mockReturnValue({
         type: "customer.subscription.updated",
         data: {
-          object: {
-            customer: "customer-linked",
-            status,
-          },
+          object: subscription(status),
         },
       });
       await call();
@@ -246,10 +252,7 @@ describe("Stripe webhook authorization", () => {
     mocks.constructEvent.mockReturnValue({
       type: "customer.subscription.created",
       data: {
-        object: {
-          customer: "customer-linked",
-          status: "active",
-        },
+        object: subscription("active"),
       },
     });
     mocks.invalidateOwnedAttempt.mockRejectedValue(new Error("isolated"));
@@ -266,5 +269,53 @@ describe("Stripe webhook authorization", () => {
     const output = await call();
     expect(output.result.body).toBe("Webhook handler failed");
     expect(log).toHaveBeenCalledWith("Stripe webhook processing failed.");
+  });
+});
+
+describe("webhook price isolation", () => {
+  it("does not activate or invalidate checkout off an unrelated subscription event", async () => {
+    mocks.constructEvent.mockReturnValue({
+      type: "customer.subscription.updated",
+      data: { object: subscription("active", "price_unrelated") },
+    });
+    expect((await call()).result.statusCode).toBe(200);
+    expect(mocks.profileUpsert).not.toHaveBeenCalled();
+    expect(mocks.profileUpdate).not.toHaveBeenCalled();
+    expect(mocks.invalidateOwnedAttempt).not.toHaveBeenCalled();
+  });
+
+  it("does not transition checkout or write active membership for an unrelated price", async () => {
+    mocks.retrieveSubscription.mockResolvedValue(subscription("active", "price_unrelated"));
+    mocks.constructEvent.mockReturnValue(checkoutEvent({
+      mode: "subscription",
+      metadata: { userId: "user-current", purchaseType: "subscription" },
+      subscription: "subscription-linked",
+    }));
+    expect((await call()).result.statusCode).toBe(200);
+    expect(mocks.profileUpsert).not.toHaveBeenCalled();
+    expect(mocks.transitionAttempt).not.toHaveBeenCalled();
+  });
+
+  it.each(["price_unrelated", "price_subscription"])("validates the invoice subscription before writing a profile", async (price) => {
+    mocks.retrieveSubscription.mockResolvedValue(subscription("active", price));
+    mocks.constructEvent.mockReturnValue({
+      type: "invoice.payment_succeeded",
+      data: { object: { customer: "customer-linked", subscription: "subscription-linked" } },
+    });
+    expect((await call()).result.statusCode).toBe(200);
+    if (price === "price_subscription") {
+      expect(mocks.profileUpdate).toHaveBeenCalledWith({ subscription_status: "active", is_subscriber: true });
+    } else {
+      expect(mocks.profileUpdate).not.toHaveBeenCalled();
+    }
+  });
+
+  it("removes the cached active marker on a failed renewal of an approved subscription", async () => {
+    mocks.constructEvent.mockReturnValue({
+      type: "invoice.payment_failed",
+      data: { object: { customer: "customer-linked", subscription: "subscription-linked" } },
+    });
+    expect((await call()).result.statusCode).toBe(200);
+    expect(mocks.profileUpdate).toHaveBeenCalledWith({ subscription_status: "past_due", is_subscriber: false });
   });
 });

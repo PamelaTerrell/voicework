@@ -1,3 +1,4 @@
+import { hasApprovedMembershipPrice, membershipPaidThrough } from "./_membershipPrice.js";
 import type { User } from "@supabase/supabase-js";
 import { isActiveSub, normalizeEmail, stripe, supabaseAdmin } from "./_lib.js";
 
@@ -175,8 +176,7 @@ async function validateCustomerMembership(
       !subscription ||
       typeof subscription !== "object" ||
       typeof subscription.cancel_at_period_end !== "boolean" ||
-      (subscription.cancel_at !== null && typeof subscription.cancel_at !== "number") ||
-      typeof subscription.current_period_end !== "number"
+      (subscription.cancel_at !== null && typeof subscription.cancel_at !== "number")
     ) {
       return { ...inactive("conflict", null, "subscription_malformed"), subscriptionStatus: null, reconcile: false };
     }
@@ -192,7 +192,7 @@ async function validateCustomerMembership(
   }
 
   const activeSubscriptions = subscriptions.data.filter((subscription) =>
-    isActiveSub(subscription.status),
+    isActiveSub(subscription.status) && hasApprovedMembershipPrice(subscription),
   );
   if (activeSubscriptions.length > 1) {
     return { ...inactive("conflict", null, "multiple_current_subscriptions"), subscriptionStatus: null, reconcile: false };
@@ -208,14 +208,17 @@ async function validateCustomerMembership(
   const subscription = activeSubscriptions[0];
   const cancellationScheduled =
     subscription.cancel_at_period_end === true || subscription.cancel_at !== null;
-  const cancellationEffectiveAt = cancellationScheduled
-    ? subscription.cancel_at ?? subscription.current_period_end ?? null
-    : null;
+  const paidThrough = membershipPaidThrough(subscription);
+  const cancellationEffectiveAt = cancellationScheduled ? paidThrough : null;
   if (
     cancellationScheduled &&
     (!cancellationEffectiveAt || cancellationEffectiveAt <= Date.now() / 1000)
   ) {
     return { ...inactive("conflict", null, "cancellation_timing_invalid"), subscriptionStatus: null, reconcile: false };
+  }
+
+  if (paidThrough === null || paidThrough <= Date.now() / 1000) {
+    return { ...inactive("inactive", customerId), subscriptionStatus: null, reconcile: true };
   }
 
   return {

@@ -44,6 +44,7 @@ import cancelMembership from "../api/cancel-membership.js";
 const future = () => Math.floor(Date.now() / 1000) + 3600;
 
 const subscription = (overrides: Record<string, unknown> = {}) => ({
+  items: { has_more: false, data: [{ price: { id: "price_subscription" } }] },
   id: "subscription-linked",
   customer: "customer-linked",
   status: "active",
@@ -62,6 +63,8 @@ async function call(body?: unknown) {
 }
 
 beforeEach(() => {
+  vi.stubEnv("STRIPE_PRICE_ID_SUBSCRIPTION", "price_subscription");
+  vi.stubEnv("STRIPE_LEGACY_MEMBERSHIP_PRICE_IDS", undefined);
   mocks.requireUser.mockResolvedValue({ id: "user-current", email: "trusted" });
   mocks.profileResult = {
     data: { id: "user-current", stripe_customer_id: "customer-linked" },
@@ -270,4 +273,13 @@ describe("authenticated membership cancellation", () => {
     expect(serialized).not.toContain("subscription-linked");
     expect(serialized).not.toContain("trusted");
   });
+});
+
+it("does not cancel an unrelated subscription on the verified customer", async () => {
+  mocks.listSubscriptions.mockResolvedValue({
+    data: [subscription({ items: { has_more: false, data: [{ price: { id: "price_unrelated" } }] } })],
+    has_more: false,
+  });
+  expect((await call()).statusCode).toBe(400);
+  expect(mocks.updateSubscription).not.toHaveBeenCalled();
 });

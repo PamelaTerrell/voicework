@@ -1,5 +1,5 @@
+import { hasApprovedMembershipPrice, hasCurrentMembershipAccess, membershipPaidThrough, stripeObjectId } from "./_membershipPrice.js";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import type Stripe from "stripe";
 import {
   isActiveSub,
   normalizeEmail,
@@ -22,22 +22,6 @@ function hasRequestParameters(body: unknown): boolean {
   if (body === undefined || body === null || body === "") return false;
   if (typeof body !== "object" || Array.isArray(body)) return true;
   return Object.keys(body as Record<string, unknown>).length > 0;
-}
-
-function subscriptionCustomerId(subscription: Stripe.Subscription) {
-  return typeof subscription.customer === "string"
-    ? subscription.customer
-    : subscription.customer.id;
-}
-
-function trustedPaidThrough(subscription: Stripe.Subscription): number | null {
-  const effectiveAt =
-    subscription.cancel_at ?? subscription.current_period_end ?? null;
-  return typeof effectiveAt === "number" &&
-    Number.isFinite(effectiveAt) &&
-    effectiveAt > Date.now() / 1000
-    ? effectiveAt
-    : null;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -82,6 +66,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const customer = await stripe.customers.retrieve(profile.stripe_customer_id);
     if (
+      customer.id !== profile.stripe_customer_id ||
       ("deleted" in customer && customer.deleted) ||
       normalizeEmail(customer.email) !== trustedEmail
     ) {
@@ -101,7 +86,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const candidates = subscriptions.data.filter((subscription) =>
-      isActiveSub(subscription.status),
+      isActiveSub(subscription.status) && hasApprovedMembershipPrice(subscription),
     );
 
     if (candidates.length !== 1) {
@@ -114,14 +99,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const candidate = candidates[0];
-    if (subscriptionCustomerId(candidate) !== profile.stripe_customer_id) {
+    if (stripeObjectId(candidate.customer) !== profile.stripe_customer_id || !hasCurrentMembershipAccess(candidate)) {
       return res.status(409).json({ error: "Unable to process cancellation safely." });
     }
 
     const alreadyScheduled =
       candidate.cancel_at_period_end || candidate.cancel_at !== null;
     let cancellationEffectiveAt = alreadyScheduled
-      ? trustedPaidThrough(candidate)
+      ? membershipPaidThrough(candidate)
       : null;
 
     if (alreadyScheduled && !cancellationEffectiveAt) {
@@ -135,14 +120,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
 
       if (
-        subscriptionCustomerId(updated) !== profile.stripe_customer_id ||
-        !isActiveSub(updated.status) ||
+        stripeObjectId(updated.customer) !== profile.stripe_customer_id ||
+        !hasCurrentMembershipAccess(updated) ||
         !updated.cancel_at_period_end
       ) {
         return res.status(409).json({ error: "Unable to process cancellation safely." });
       }
 
-      cancellationEffectiveAt = trustedPaidThrough(updated);
+      cancellationEffectiveAt = membershipPaidThrough(updated);
       if (!cancellationEffectiveAt) {
         return res.status(409).json({ error: "Unable to process cancellation safely." });
       }

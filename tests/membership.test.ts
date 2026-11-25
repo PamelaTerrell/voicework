@@ -1,7 +1,10 @@
+import { request, response } from "./helpers.js";
 import type { User } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
+  entitlement: vi.fn(),
+  signAudio: vi.fn(),
   profileResult: { data: null as unknown, error: null as unknown },
   retrieveCustomer: vi.fn(),
   listCustomers: vi.fn(),
@@ -16,6 +19,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("../api/_lib.js", () => ({
   isActiveSub: (status?: string | null) =>
     status === "active" || status === "trialing",
+  requireUser: async () => ({ id: "user-current", email: "trusted" }),
   normalizeEmail: (value?: string | null) =>
     value?.trim().toLowerCase() ?? null,
   stripe: {
@@ -26,7 +30,10 @@ vi.mock("../api/_lib.js", () => ({
     subscriptions: { list: mocks.listSubscriptions },
   },
   supabaseAdmin: {
-    from: () => ({
+    storage: { from: () => ({ createSignedUrl: mocks.signAudio }) },
+    from: (table: string) => table === "entitlements"
+      ? { select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: mocks.entitlement }) }) }) }
+      : ({
       select: () => ({
         eq: mocks.profileEq.mockImplementation(() => ({
           maybeSingle: async () => mocks.profileResult,
@@ -50,12 +57,15 @@ import {
   reconcileAuthenticatedMembership,
 } from "../api/_membership.js";
 
+import signedAudio from "../api/signed-audio.js";
+
 const validateAuthenticatedMembership = reconcileAuthenticatedMembership;
 
 const user = (email: string | undefined = "trusted") =>
   ({ id: "user-current", email }) as User;
 
 const subscription = (overrides: Record<string, unknown> = {}) => ({
+  items: { has_more: false, data: [{ price: { id: "price_subscription" } }] },
   customer: "customer-linked",
   status: "active",
   cancel_at_period_end: false,
@@ -65,6 +75,8 @@ const subscription = (overrides: Record<string, unknown> = {}) => ({
 });
 
 beforeEach(() => {
+  vi.stubEnv("STRIPE_PRICE_ID_SUBSCRIPTION", "price_subscription");
+  vi.stubEnv("STRIPE_LEGACY_MEMBERSHIP_PRICE_IDS", undefined);
   for (const mock of [
     mocks.retrieveCustomer,
     mocks.listCustomers,
@@ -99,6 +111,8 @@ beforeEach(() => {
     has_more: false,
   });
   mocks.profileWriteResult = { data: { id: "user-current" }, error: null };
+  mocks.entitlement.mockResolvedValue({ data: null, error: null });
+  mocks.signAudio.mockResolvedValue({ data: { signedUrl: "https://audio.invalid/fixture" }, error: null });
 });
 
 describe("authenticated membership validation", () => {
@@ -540,5 +554,84 @@ describe("authenticated membership validation", () => {
       .mockResolvedValueOnce({ data: [subscription({ customer: "customer-a" })], has_more: false })
       .mockResolvedValueOnce({ data: [subscription({ customer: "customer-b" })], has_more: false });
     expect((await reconcileAuthenticatedMembership(user(), { reconcileByVerifiedEmail: true })).outcome).toBe("conflict");
+  });
+});
+
+describe("Night Listener subscription prices", () => {
+  const items = (...prices: string[]) => ({
+    has_more: false,
+    data: prices.map((id) => ({ price: { id } })),
+  });
+
+  function useSubscription(overrides: Record<string, unknown>) {
+    mocks.listSubscriptions.mockResolvedValue({
+      data: [subscription(overrides)], has_more: false,
+    });
+  }
+
+  it("accepts an active subscription for the configured price", async () => {
+    expect((await validateAuthenticatedMembership(user())).active).toBe(true);
+  });
+
+  it.each([
+    items("price_unrelated"),
+    items("price_subscription", "price_unrelated"),
+    items("price_subscription", "price_subscription"),
+    { ...items("price_subscription"), has_more: true },
+    { has_more: false, data: [{ price: "price_subscription" }] },
+    { has_more: false, data: [] },
+    undefined,
+  ])("denies unrelated, multi-item, missing, or unverifiable Stripe item data", async (value) => {
+    useSubscription({ items: value });
+    expect((await validateAuthenticatedMembership(user())).active).toBe(false);
+  });
+
+  it("accepts an explicitly listed historical plan but denies it when omitted", async () => {
+    useSubscription({ items: items("plan_historical") });
+    expect((await validateAuthenticatedMembership(user())).active).toBe(false);
+    vi.stubEnv("STRIPE_LEGACY_MEMBERSHIP_PRICE_IDS", "price_historical, plan_historical");
+    expect((await validateAuthenticatedMembership(user())).active).toBe(true);
+  });
+
+  it.each([undefined, "", "not_a_stripe_price"])("denies access when the current price is misconfigured", async (value) => {
+    vi.stubEnv("STRIPE_PRICE_ID_SUBSCRIPTION", value);
+    expect((await validateAuthenticatedMembership(user())).active).toBe(false);
+  });
+
+  it("denies access when a legacy entry is malformed", async () => {
+    vi.stubEnv("STRIPE_LEGACY_MEMBERSHIP_PRICE_IDS", "price_historical,");
+    expect((await validateAuthenticatedMembership(user())).active).toBe(false);
+  });
+
+  it.each([
+    { current_period_end: 1 },
+    { status: "past_due" },
+    { status: "canceled" },
+  ])("denies expired access, failed renewals, and terminal cancellations", async (overrides) => {
+    useSubscription(overrides);
+    expect((await validateAuthenticatedMembership(user())).active).toBe(false);
+  });
+
+  it("caps a scheduled cancellation at the verified period end", async () => {
+    const end = Math.floor(Date.now() / 1000) + 3600;
+    useSubscription({ cancel_at_period_end: true, current_period_end: end, cancel_at: end + 3600 });
+    expect(await validateAuthenticatedMembership(user())).toMatchObject({
+      active: true, cancellationEffectiveAt: end,
+    });
+  });
+
+  it("denies an unrelated subscription at the signed-audio endpoint and preserves a one-time entitlement", async () => {
+    useSubscription({ items: items("price_unrelated") });
+    const req = request({ query: { episodeId: "conversation-ep2" } });
+    let output = response();
+    await signedAudio(req, output.res);
+    expect(output.result.statusCode).toBe(403);
+    expect(mocks.signAudio).not.toHaveBeenCalled();
+
+    mocks.entitlement.mockResolvedValue({ data: { id: "independent-entitlement" }, error: null });
+    output = response();
+    await signedAudio(req, output.res);
+    expect(output.result.statusCode).toBe(200);
+    expect(mocks.signAudio).toHaveBeenCalledWith("conversation-ep2/full.mp3", 600);
   });
 });

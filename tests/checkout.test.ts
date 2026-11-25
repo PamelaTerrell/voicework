@@ -29,7 +29,7 @@ const attempt = (overrides: Record<string, unknown> = {}) => ({
   state: "creating",
   customerId: "customer-linked",
   sessionId: null,
-  priceId: "price_subscription_server",
+  priceId: "price_subscription",
   successUrl: "https://site.invalid/thanks?session_id={CHECKOUT_SESSION_ID}",
   cancelUrl: "https://site.invalid/listen?canceled=1",
   stripeExpiresAt: 2_000_000_000,
@@ -77,9 +77,12 @@ vi.mock("../api/_lib.js", () => ({
 
 import checkout from "../api/checkout.js";
 
+const membershipItems = { has_more: false, data: [{ price: { id: "price_subscription" } }] };
+
 beforeEach(() => {
+  vi.stubEnv("STRIPE_LEGACY_MEMBERSHIP_PRICE_IDS", undefined);
   vi.useRealTimers();
-  process.env.STRIPE_PRICE_ID_SUBSCRIPTION = "price_subscription_server";
+  process.env.STRIPE_PRICE_ID_SUBSCRIPTION = "price_subscription";
   process.env.SITE_URL = "https://site.invalid";
   mocks.requireUser.mockResolvedValue({ id: "user-current", email: "trusted" });
   mocks.reconcileMembership.mockResolvedValue({
@@ -180,7 +183,7 @@ describe("authenticated checkout creation", () => {
     expect(mocks.createSession).toHaveBeenCalledWith(
       expect.objectContaining({
         mode: "subscription",
-        line_items: [{ price: "price_subscription_server", quantity: 1 }],
+        line_items: [{ price: "price_subscription", quantity: 1 }],
         metadata: { userId: "user-current", purchaseType: "subscription" },
         subscription_data: {
           metadata: { userId: "user-current", purchaseType: "subscription" },
@@ -374,7 +377,7 @@ describe("authenticated checkout creation", () => {
     "blocks a verified %s subscription with a minimal response",
     async (status) => {
       mocks.listSubscriptions.mockResolvedValue({
-        data: [{ customer: "customer-linked", status }],
+        data: [{ customer: "customer-linked", status, items: membershipItems }],
         has_more: false,
       });
 
@@ -419,7 +422,7 @@ describe("authenticated checkout creation", () => {
     "allows the conclusively terminal %s status",
     async (status) => {
       mocks.listSubscriptions.mockResolvedValue({
-        data: [{ customer: "customer-linked", status }],
+        data: [{ customer: "customer-linked", status, items: membershipItems }],
         has_more: false,
       });
 
@@ -433,7 +436,7 @@ describe("authenticated checkout creation", () => {
     "blocks the nonterminal %s status with a minimal attention response",
     async (status) => {
       mocks.listSubscriptions.mockResolvedValue({
-        data: [{ customer: "customer-linked", status }],
+        data: [{ customer: "customer-linked", status, items: membershipItems }],
         has_more: false,
       });
 
@@ -466,7 +469,7 @@ describe("authenticated checkout creation", () => {
       mocks.listSubscriptions.mockResolvedValue({
         data: [
           { customer: "customer-linked", status: "canceled" },
-          { customer: "customer-linked", status },
+          { customer: "customer-linked", status, items: membershipItems },
           { customer: "customer-linked", status: "incomplete_expired" },
         ],
         has_more: false,
@@ -481,8 +484,8 @@ describe("authenticated checkout creation", () => {
   it("retains the active response when a mixed collection also needs attention", async () => {
     mocks.listSubscriptions.mockResolvedValue({
       data: [
-        { customer: "customer-linked", status: "past_due" },
-        { customer: "customer-linked", status: "active" },
+        { customer: "customer-linked", status: "past_due", items: membershipItems },
+        { customer: "customer-linked", status: "active", items: membershipItems },
       ],
       has_more: false,
     });
@@ -861,7 +864,7 @@ describe("authenticated checkout creation", () => {
       "browser-nominated",
       "bearer-token-sensitive",
       "secret-sensitive",
-      "price_subscription_server",
+      "price_subscription",
     ];
     mocks.requireUser.mockResolvedValue({
       id: "trusted-user-for-key",
@@ -923,4 +926,16 @@ describe("authenticated checkout creation", () => {
     expect(result.statusCode).toBe(500);
     expect(result.body).toEqual({ error: "Unable to start checkout." });
   });
+});
+
+it("permits Night Listener checkout when the only active subscription has unrelated prices", async () => {
+  mocks.listSubscriptions.mockResolvedValue({
+    data: [{
+      customer: "customer-linked", status: "active",
+      items: { has_more: false, data: [{ price: { id: "price_unrelated" } }] },
+    }],
+    has_more: false,
+  });
+  expect((await call({ mode: "subscription" })).result.statusCode).toBe(200);
+  expect(mocks.createSession).toHaveBeenCalledTimes(1);
 });

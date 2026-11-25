@@ -1,3 +1,4 @@
+import { membershipPriceConfiguration, subscriptionPriceIds } from "./_membershipPrice.js";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createHash } from "node:crypto";
 import {
@@ -58,7 +59,7 @@ function subscriptionCustomerId(subscription: { customer?: unknown }) {
   return null;
 }
 
-async function verifyNoCurrentSubscription(customerId: string) {
+async function verifyNoCurrentSubscription(customerId: string, approved: ReadonlySet<string>) {
   const subscriptions = await stripe.subscriptions.list({
     customer: customerId,
     status: "all",
@@ -74,17 +75,17 @@ async function verifyNoCurrentSubscription(customerId: string) {
 
   for (const subscription of subscriptions.data) {
     if (subscriptionCustomerId(subscription) !== customerId) return "unclear" as const;
+    if (TERMINAL_SUBSCRIPTION_STATUSES.has(subscription.status)) continue;
+    if (subscription.status !== "active" && subscription.status !== "trialing" &&
+        !ATTENTION_REQUIRED_SUBSCRIPTION_STATUSES.has(subscription.status)) return "unclear" as const;
+    const prices = subscriptionPriceIds(subscription);
+    if (!prices) return "unclear" as const;
+    if (!prices.some((price) => approved.has(price))) continue;
     if (subscription.status === "active" || subscription.status === "trialing") {
       hasCurrentSubscription = true;
       continue;
     }
-    if (ATTENTION_REQUIRED_SUBSCRIPTION_STATUSES.has(subscription.status)) {
-      hasAttentionRequiredSubscription = true;
-      continue;
-    }
-    if (!TERMINAL_SUBSCRIPTION_STATUSES.has(subscription.status)) {
-      return "unclear" as const;
-    }
+    hasAttentionRequiredSubscription = true;
   }
 
   if (hasCurrentSubscription) return "current" as const;
@@ -151,10 +152,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: "Invalid checkout request." });
     }
 
-    const priceId = process.env.STRIPE_PRICE_ID_SUBSCRIPTION;
+    const priceConfiguration = membershipPriceConfiguration();
     const siteUrl = process.env.SITE_URL;
 
-    if (!priceId || !siteUrl) {
+    if (!priceConfiguration || !siteUrl) {
       console.error("Checkout is not configured.");
       return res.status(500).json({ error: "Unable to start checkout." });
     }
@@ -177,7 +178,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let customerId = membership.customerId;
 
     if (customerId) {
-      const subscriptionState = await verifyNoCurrentSubscription(customerId);
+      const subscriptionState = await verifyNoCurrentSubscription(customerId, priceConfiguration.approved);
       if (subscriptionState === "current") {
         await invalidateOwnedOpenAttemptForUser(user.id, customerId);
         return res.status(409).json({
@@ -230,7 +231,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const attempt = await claimCheckoutAttempt({
       userId: user.id,
       customerId,
-      priceId,
+      priceId: priceConfiguration.current,
       successUrl,
       cancelUrl,
     });
@@ -240,7 +241,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         error: "Checkout is already being prepared. Please try again shortly.",
       });
     }
-    if (attempt.outcome === "blocked") {
+    if (attempt.outcome === "blocked" || !priceConfiguration.approved.has(attempt.priceId)) {
       return res.status(409).json({ error: "Unable to start checkout safely." });
     }
 
@@ -326,7 +327,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    const finalSubscriptionState = await verifyNoCurrentSubscription(customerId);
+    const finalSubscriptionState = await verifyNoCurrentSubscription(customerId, priceConfiguration.approved);
     if (finalSubscriptionState !== "available") {
       if (
         finalSubscriptionState === "current" ||

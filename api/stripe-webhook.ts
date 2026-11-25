@@ -1,3 +1,4 @@
+import { hasApprovedMembershipPrice, hasCurrentMembershipAccess, stripeObjectId } from "./_membershipPrice.js";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import type Stripe from "stripe";
 import { isApprovedEpisodeId } from "./_episodes.js";
@@ -5,7 +6,6 @@ import {
   stripe,
   supabaseAdmin,
   readRawBody,
-  isActiveSub,
   normalizeEmail,
   getCustomerEmail,
 } from "./_lib.js";
@@ -82,6 +82,13 @@ async function upsertProfileSubscription(args: {
       return;
     }
   }
+}
+
+async function retrieveOwnedSubscription(subscriptionId: string, customerId: string) {
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  return subscription.id === subscriptionId && stripeObjectId(subscription.customer) === customerId
+    ? subscription
+    : null;
 }
 
 async function setSubscriptionByCustomerId(args: {
@@ -177,12 +184,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         customerId &&
         session.subscription
       ) {
+        const subscriptionId = stripeObjectId(session.subscription);
+        const subscription = subscriptionId && await retrieveOwnedSubscription(subscriptionId, customerId);
+        if (!subscription || !hasCurrentMembershipAccess(subscription)) {
+          return res.status(200).json({ received: true });
+        }
         await upsertProfileSubscription({
           userId,
           email,
           stripeCustomerId: customerId,
           isSubscriber: true,
-          subscriptionStatus: "active",
+          subscriptionStatus: subscription.status,
         });
         await transitionAttemptFromVerifiedSession(userId, session);
       }
@@ -197,15 +209,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ) {
       const sub = event.data.object as Stripe.Subscription;
 
-      const customerId =
-        typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+      const customerId = stripeObjectId(sub.customer);
+      if (!customerId || !hasApprovedMembershipPrice(sub)) {
+        return res.status(200).json({ received: true });
+      }
 
       const email = await getCustomerEmail(customerId);
 
       await upsertProfileSubscription({
         email,
         stripeCustomerId: customerId,
-        isSubscriber: isActiveSub(sub.status),
+        isSubscriber: hasCurrentMembershipAccess(sub),
         subscriptionStatus: sub.status,
       });
 
@@ -216,39 +230,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ received: true });
     }
 
-    if (event.type === "invoice.payment_succeeded") {
-      const invoice = event.data.object as Stripe.Invoice;
-
-      const customerId =
-        typeof invoice.customer === "string"
-          ? invoice.customer
-          : invoice.customer?.id;
-
-      if (customerId) {
-        await setSubscriptionByCustomerId({
-          stripeCustomerId: customerId,
-          subscriptionStatus: "active",
-          isSubscriber: true,
-        });
-      }
-
-      return res.status(200).json({ received: true });
-    }
-
-    if (event.type === "invoice.payment_failed") {
-      const invoice = event.data.object as Stripe.Invoice;
-
-      const customerId =
-        typeof invoice.customer === "string"
-          ? invoice.customer
-          : invoice.customer?.id;
-
-      if (customerId) {
-        await setSubscriptionByCustomerId({
-          stripeCustomerId: customerId,
-          subscriptionStatus: "past_due",
-          isSubscriber: false,
-        });
+    if (event.type === "invoice.payment_succeeded" || event.type === "invoice.payment_failed") {
+      const invoice = event.data.object as Stripe.Invoice & { subscription?: unknown };
+      const customerId = stripeObjectId(invoice.customer);
+      const subscriptionId = stripeObjectId(
+        invoice.subscription ?? invoice.parent?.subscription_details?.subscription,
+      );
+      if (customerId && subscriptionId) {
+        const subscription = await retrieveOwnedSubscription(subscriptionId, customerId);
+        if (subscription && hasApprovedMembershipPrice(subscription)) {
+          const failed = event.type === "invoice.payment_failed";
+          await setSubscriptionByCustomerId({
+            stripeCustomerId: customerId,
+            subscriptionStatus: failed ? "past_due" : subscription.status,
+            isSubscriber: !failed && hasCurrentMembershipAccess(subscription),
+          });
+        }
       }
 
       return res.status(200).json({ received: true });
