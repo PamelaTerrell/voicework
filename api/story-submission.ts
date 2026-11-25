@@ -60,7 +60,7 @@ type Story = {
   submitter_email: string | null;
 };
 
-async function saveStory(bucket: string, story: Story) {
+async function saveStory(bucket: string, story: Story, submissionId: string) {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
@@ -71,8 +71,9 @@ async function saveStory(bucket: string, story: Story) {
   const { data, error } = await client.rpc("submit_story_with_rate_limit", {
     p_bucket: bucket,
     p_story: story,
+    p_submission_id: submissionId,
   });
-  return !error && typeof data === "boolean" ? data : null;
+  return error ? null : data;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -125,6 +126,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ message: "Check your story, category, name preference, and optional contact details for invalid or overly long entries." });
   }
 
+  const submissionId = req.headers["idempotency-key"];
+  if (typeof submissionId !== "string" ||
+      !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(submissionId)) {
+    return res.status(400).json({ message: "Refresh the story form before submitting." });
+  }
+
   const secret = process.env.STORY_RATE_LIMIT_SECRET;
   const address = clientAddress(req);
   if (!address || !secret || Buffer.byteLength(secret) < 32) {
@@ -141,9 +148,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       name_preference: preference,
       submitter_name: name,
       submitter_email: email,
-    });
-    if (result === true) return res.status(201).json({ message: ACCEPTED });
-    if (result === false) {
+    }, submissionId);
+    if (result === "accepted") return res.status(201).json({ message: ACCEPTED });
+    if (result === "conflict") {
+      return res.status(409).json({ message: "This submission ID is already in use. Review your story and try again." });
+    }
+    if (result === "rate_limited") {
       res.setHeader("Retry-After", "3600");
       return res.status(429).json({ message: "Too many stories have been submitted from this connection. Please try again in an hour." });
     }

@@ -6,6 +6,8 @@ import { request, response } from "./helpers";
 const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
 vi.mock("@supabase/supabase-js", () => ({ createClient: () => ({ rpc }) }));
 
+const submissionId = "00000000-0000-4000-8000-000000000001";
+
 const story = {
   story_title: "A memory",
   story_category: "Intuition",
@@ -25,7 +27,7 @@ async function submit(
   const stream = Readable.from([Buffer.from(body)]);
   const req = Object.assign(stream, request({
     method,
-    headers: { "content-type": "application/json", ...headers },
+    headers: { "content-type": "application/json", "idempotency-key": submissionId, ...headers },
   }), { socket: { remoteAddress: "127.0.0.1" } });
   const { res, result } = response();
   await handler(req, res);
@@ -37,7 +39,7 @@ beforeEach(() => {
   vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-key");
   vi.stubEnv("STORY_RATE_LIMIT_SECRET", "only-for-tests-at-least-32-bytes");
   vi.stubEnv("VERCEL", "1");
-  rpc.mockResolvedValue({ data: true, error: null });
+  rpc.mockResolvedValue({ data: "accepted", error: null });
 });
 afterEach(() => vi.unstubAllEnvs());
 
@@ -54,6 +56,7 @@ describe("story submission endpoint", () => {
     expect(rpc).toHaveBeenCalledWith("submit_story_with_rate_limit", {
       p_bucket: expect.stringMatching(/^[0-9a-f]{64}$/),
       p_story: { ...fields, submitter_name: "Fictional" },
+      p_submission_id: submissionId,
     });
   });
 
@@ -90,10 +93,23 @@ describe("story submission endpoint", () => {
   });
 
   it("returns a retry hint after the database refuses the rate bucket", async () => {
-    rpc.mockResolvedValue({ data: false, error: null });
+    rpc.mockResolvedValue({ data: "rate_limited", error: null });
     const result = await submit(JSON.stringify(story), vercelIp);
     expect(result.statusCode).toBe(429);
     expect(result.headers.get("retry-after")).toBe("3600");
+  });
+
+  it("rejects malformed identifiers without calling the database", async () => {
+    const result = await submit(JSON.stringify(story), { ...vercelIp, "idempotency-key": "invalid" });
+    expect(result.statusCode).toBe(400);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("returns a generic conflict when a submission ID was already used for different content", async () => {
+    rpc.mockResolvedValue({ data: "conflict", error: null });
+    const result = await submit(JSON.stringify(story), vercelIp);
+    expect(result.statusCode).toBe(409);
+    expect(JSON.stringify(result.body)).not.toContain(story.story_body);
   });
 
   it("returns generic failures when the database is unavailable", async () => {

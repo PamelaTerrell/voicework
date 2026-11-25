@@ -75,4 +75,27 @@ describe("magic-link destination policy", () => {
       "https://www.stabileusa.com/auth/callback?next=/join",
     );
   });
+
+  it("uses the explicitly configured Preview origin only on that exact host", () => {
+    const host = "voicework-git-release-team.vercel.app";
+    expect(getMagicLinkRedirectTo(host, "/join", `https://${host}`)).toBe(
+      `https://${host}/auth/callback?next=/join`,
+    );
+    expect(() => getMagicLinkRedirectTo("other.vercel.app", "/join", `https://${host}`)).toThrow();
+    expect(getMagicLinkRedirectTo("www.stabileusa.com", "/join", `https://${host}`)).toBe(
+      "https://www.stabileusa.com/auth/callback?next=/join",
+    );
+  });
+
+  it.each([
+    "http://voicework.vercel.app",
+    "https://voicework.vercel.app/path",
+    "https://user@voicework.vercel.app",
+    "https://voicework.vercel.app:8080",
+    "https://voicework.vercel.app?redirect=bad",
+    "https://voicework.vercel.app.attacker.invalid",
+  ])("rejects untrusted configured origins", (url) => {
+    expect(() => getMagicLinkRedirectTo("voicework.vercel.app", "/join", url)).toThrow();
+  });
+
 });

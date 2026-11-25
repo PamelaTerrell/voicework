@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,7 @@ export default function Home() {
   const [submitterName, setSubmitterName] = useState("");
   const [submitterEmail, setSubmitterEmail] = useState("");
   const [permissionGranted, setPermissionGranted] = useState(false);
+  const pendingStory = useRef<{ payload: string; id: string } | null>(null);
   const [storySubmitting, setStorySubmitting] = useState(false);
   const [storyMessage, setStoryMessage] = useState("");
   const [sharing, setSharing] = useState(false);
@@ -111,10 +112,14 @@ export default function Home() {
         submitter_email: submitterEmail.trim() || null,
       };
       if (USE_STORY_API) {
+        const payload = JSON.stringify({ ...story, website });
+        if (pendingStory.current?.payload !== payload) {
+          pendingStory.current = { payload, id: crypto.randomUUID() };
+        }
         const response = await fetch("/api/story-submission", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...story, website }),
+          headers: { "Content-Type": "application/json", "Idempotency-Key": pendingStory.current.id },
+          body: payload,
         });
         if (!response.ok) {
           const result: { message?: unknown } | null = await response.json().catch(() => null);
@@ -130,6 +135,7 @@ export default function Home() {
         if (error) { setStoryMessage(STORY_UNAVAILABLE); return; }
       }
       setStoryMessage("Thank you for trusting Stabile USA with your story. Your submission was received.");
+      pendingStory.current = null;
       setStoryTitle("");
       setStoryCategory("Something I never forgot");
       setStoryBody("");

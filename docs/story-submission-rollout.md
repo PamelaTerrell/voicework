@@ -122,8 +122,8 @@ throughout cutover.
    and access with an existing authorized account. An unconfirmed save shows
    an error and retains the draft in the open page. Ask users to keep that
    tab open during an outage. The form does not save a draft across reloads.
-   A network failure after a committed insert can lead to a duplicate if the
-   user retries. Handle potential duplicates in the private editorial queue.
+   Retrying an unchanged submission in the same open tab reuses its receipt.
+   Reloading or changing the story starts a new submission.
 
 ### Recovery during a release
 
@@ -136,3 +136,20 @@ the live alias, story-form availability, and member access. Vercel rollback
 does not change Supabase grants or undo migrations. Leave the additive RPC
 and counters in place during recovery. Neither recovery step removes stories
 or touches member or subscription data.
+
+## Submission retry receipts
+
+Before deploying a build that sends `Idempotency-Key`, also apply
+`20261125190000_add_story_submission_receipts.sql` after the original additive
+migration. The old two-argument RPC remains available for rollback. The new
+overload uses a private receipt to confirm the same validated submission
+without writing a duplicate or charging the rate limit again. The receipt
+contains a random ID and a fingerprint, with no story text or contact fields.
+The form retains the ID for an unchanged retry in the open page. Reloading
+the page loses the draft and its retry ID.
+
+For hosted sign-in tests, set `VITE_PREVIEW_SITE_URL` on the release branch's
+Preview environment only. Use the stable HTTPS Vercel branch alias and add its
+exact `/auth/callback` URL and the `next=/members` and `next=/join` variants to
+the isolated Supabase project's redirect allowlist. Production uses the
+existing canonical callback.
