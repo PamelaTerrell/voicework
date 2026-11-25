@@ -33,12 +33,25 @@ function session(overrides: Record<string, unknown> = {}) {
       purchaseType: "one_time",
       episodeId: "conversation-ep2",
     },
+    customer: "customer-linked",
     subscription: null,
     ...overrides,
   };
 }
 
+const subscription = (status = "active", price = "price_subscription") => ({
+  id: "subscription-linked",
+  customer: "customer-linked",
+  status,
+  cancel_at_period_end: false,
+  cancel_at: null,
+  current_period_end: Math.floor(Date.now() / 1000) + 3600,
+  items: { has_more: false, data: [{ price: { id: price } }] },
+});
+
 beforeEach(() => {
+  vi.stubEnv("STRIPE_PRICE_ID_SUBSCRIPTION", "price_subscription");
+  vi.stubEnv("STRIPE_LEGACY_MEMBERSHIP_PRICE_IDS", undefined);
   mocks.requireUser.mockResolvedValue({ id: "user-current", email: "trusted" });
   mocks.retrieveSession.mockResolvedValue(session());
   mocks.transitionAttempt.mockResolvedValue(undefined);
@@ -121,7 +134,7 @@ describe("checkout session verification", () => {
       session({
         mode: "subscription",
         metadata: { userId: "user-current", purchaseType: "subscription" },
-        subscription: { status },
+        subscription: subscription(status),
       })
     );
     expect((await call()).result.body).toEqual({
@@ -156,7 +169,7 @@ describe("checkout session verification", () => {
       session({
         mode: "subscription",
         metadata: { userId: "user-current", purchaseType: "subscription" },
-        subscription: { status: "active" },
+        subscription: subscription(),
       }),
     );
     expect((await call()).result.body).toEqual({
@@ -182,7 +195,7 @@ describe("checkout session verification", () => {
     {
       mode: "subscription",
       metadata: { userId: "user-current", purchaseType: "subscription" },
-      subscription: { status: "canceled" },
+      subscription: subscription("canceled"),
     },
   ])("rejects unsupported checkout state %#", async (overrides) => {
     mocks.retrieveSession.mockResolvedValue(session(overrides));
@@ -194,4 +207,19 @@ describe("checkout session verification", () => {
     const { result } = await call();
     expect(result).toEqual({ statusCode: 404, body: { state: "invalid" } });
   });
+});
+
+it("denies confirmation for an active subscription on a different price or customer", async () => {
+  for (const sub of [
+    subscription("active", "price_unrelated"),
+    { ...subscription(), customer: "customer-other" },
+  ]) {
+    mocks.retrieveSession.mockResolvedValue(session({
+      mode: "subscription",
+      metadata: { userId: "user-current", purchaseType: "subscription" },
+      subscription: sub,
+    }));
+    expect((await call()).result.statusCode).toBe(404);
+    expect(mocks.transitionAttempt).not.toHaveBeenCalled();
+  }
 });

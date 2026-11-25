@@ -1,6 +1,7 @@
+import { hasCurrentMembershipAccess, stripeObjectId } from "./_membershipPrice.js";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { isApprovedEpisodeId } from "./_episodes.js";
-import { isActiveSub, requireUser, stripe } from "./_lib.js";
+import { requireUser, stripe } from "./_lib.js";
 import { setApiResponseHeaders } from "./_responseHeaders.js";
 import { transitionAttemptFromVerifiedSession } from "./_checkoutAttempt.js";
 
@@ -59,7 +60,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const validSubscription =
       subscriptionCheckout &&
       !!subscription &&
-      isActiveSub(subscription.status);
+      !!stripeObjectId(session.customer) &&
+      stripeObjectId(subscription.customer) === stripeObjectId(session.customer) &&
+      hasCurrentMembershipAccess(subscription);
 
     if (session.status === "expired" && (validOneTime || subscriptionCheckout)) {
       if (subscriptionCheckout) {

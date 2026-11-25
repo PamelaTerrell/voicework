@@ -60,6 +60,8 @@ import memberAccess from "../api/member-access.js";
 import resumeMembership from "../api/resume-membership.js";
 
 beforeEach(() => {
+  vi.stubEnv("STRIPE_PRICE_ID_SUBSCRIPTION", "price_subscription");
+  vi.stubEnv("STRIPE_LEGACY_MEMBERSHIP_PRICE_IDS", undefined);
   mocks.requireUser.mockResolvedValue({ id: "user-current", email: "trusted" });
   mocks.validateMembership.mockResolvedValue({
     outcome: "inactive",
@@ -83,11 +85,13 @@ beforeEach(() => {
 });
 
 const subscription = (overrides: Record<string, unknown> = {}) => ({
+  items: { has_more: false, data: [{ price: { id: "price_subscription" } }] },
   id: "subscription-linked",
   customer: "customer-linked",
   status: "active",
   cancel_at_period_end: true,
   cancel_at: null,
+  current_period_end: Math.floor(Date.now() / 1000) + 3600,
   ...overrides,
 });
 
@@ -451,4 +455,15 @@ describe("resume membership endpoint", () => {
     expect(resumeClient).not.toContain("result.url");
     expect(resumeClient).not.toContain("window.location.href");
   });
+});
+
+it("does not resume an unrelated subscription on the verified customer", async () => {
+  mocks.listSubscriptions.mockResolvedValue({
+    data: [subscription({ items: { has_more: false, data: [{ price: { id: "price_unrelated" } }] } })],
+    has_more: false,
+  });
+  const { res, result } = response();
+  await resumeMembership(request({ method: "POST" }), res);
+  expect(result.statusCode).toBe(400);
+  expect(mocks.updateSubscription).not.toHaveBeenCalled();
 });

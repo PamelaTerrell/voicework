@@ -33,7 +33,8 @@ export type CheckoutAttempt = {
 };
 
 export type CheckoutAttemptClaim =
-  | { outcome: "busy" | "blocked" }
+  | { outcome: "busy" }
+  | { outcome: "blocked" }
   | ({ outcome: "open" } & CheckoutAttempt)
   | ({ outcome: "new" | "reclaimed" | "rotated"; leaseToken: string } & CheckoutAttempt);
 

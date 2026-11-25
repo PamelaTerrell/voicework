@@ -4,6 +4,8 @@ import type { IncomingMessage } from "http";
 import type { VercelRequest } from "@vercel/node";
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  // Keep the existing API contract until the Stripe version is upgraded separately.
+  // @ts-expect-error The SDK types its latest API version only.
   apiVersion: "2024-06-20",
 });
 
